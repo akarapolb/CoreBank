@@ -1,0 +1,1266 @@
+<title>CoreBank Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: operator console. Fixed left rail of modules, a context bar for tenant and business date, dense working panes. */
+:root {
+  --bg: #F3F5F4;
+  --surface: #FFFFFF;
+  --surface-2: #E9EEEC;
+  --line: #D3DBD8;
+  --fg: #13201D;
+  --muted: #586863;
+  --accent: #0B6E63;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DAEEE9;
+  --s2: #4A6A8A;
+  --agent: #9A4A1E;
+  --agent-soft: #F5E5DB;
+  --good: #1D7A3B;
+  --good-soft: #DFF1E4;
+  --warn: #8E6200;
+  --warn-soft: #FAEFD3;
+  --crit: #B3261E;
+  --crit-soft: #F8E0DD;
+  --font-ui: "IBM Plex Sans", "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "IBM Plex Sans Condensed", "IBM Plex Sans", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1B; --surface-2: #1B2623; --line: #2A3733; --fg: #E2EAE7; --muted: #92A39E;
+    --accent: #4CC0AF; --accent-ink: #062019; --accent-soft: #15322D; --s2: #8EB1D2;
+    --agent: #E59569; --agent-soft: #382317; --good: #6CCB8C; --good-soft: #14301E;
+    --warn: #E6B64B; --warn-soft: #33290E; --crit: #F28B81; --crit-soft: #3A1916; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1B; --surface-2: #1B2623; --line: #2A3733; --fg: #E2EAE7; --muted: #92A39E;
+  --accent: #4CC0AF; --accent-ink: #062019; --accent-soft: #15322D; --s2: #8EB1D2;
+  --agent: #E59569; --agent-soft: #382317; --good: #6CCB8C; --good-soft: #14301E;
+  --warn: #E6B64B; --warn-soft: #33290E; --crit: #F28B81; --crit-soft: #3A1916; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45; }
+h1, h2, h3 { font-family: var(--font-head); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: 0.005em; }
+h1 { font-size: 24px; }
+h2 { font-size: 17px; }
+h3 { font-size: 14px; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.num { text-align: right; white-space: nowrap; }
+.muted { color: var(--muted); }
+.label { font-family: var(--font-head); font-size: 11.5px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+
+/* Shell */
+.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.side { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 18px; padding-block: 18px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; overflow-y: auto; }
+.brand { padding-inline: 18px; display: flex; flex-direction: column; gap: 2px; }
+.brand strong { font-family: var(--font-head); font-size: 19px; letter-spacing: 0.01em; }
+.brand span { font-size: 12px; color: var(--muted); }
+.navgroup { display: flex; flex-direction: column; gap: 2px; padding-inline: 10px; }
+.navgroup .label { padding: 0 8px 6px; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 7px 8px; border: 0; border-radius: var(--r); background: none; text-align: left; cursor: pointer; color: var(--fg); text-decoration: none; }
+.nav:hover { background: var(--surface-2); }
+.nav[aria-current="page"] { background: var(--accent-soft); color: var(--fg); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+.badge { font-family: var(--font-data); font-size: 11px; min-width: 20px; text-align: center; padding: 1px 6px; border-radius: 999px; background: var(--crit-soft); color: var(--crit); font-weight: 500; }
+.side-foot { margin-top: auto; padding-inline: 18px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px 24px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.top .ctx { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.top .ctx div { display: flex; gap: 6px; align-items: baseline; }
+.top .spacer { flex: 1; }
+.view { padding: 22px 24px 48px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.view[hidden] { display: none !important; }
+.view-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; }
+.view-head p { color: var(--muted); max-width: 70ch; margin-top: 4px; }
+
+/* Primitives */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g-wide { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.g-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.crit { background: var(--crit-soft); color: var(--crit); }
+.chip.agent { background: var(--agent-soft); color: var(--agent); }
+.chip.acc { background: var(--accent-soft); color: var(--accent); }
+.chip.sample { border: 1px dashed var(--line); background: transparent; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--crit); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { font-family: var(--font-head); font-weight: 500; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 8px 10px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+th.num { text-align: right; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+tr.hl td { background: var(--warn-soft); }
+tr.paid td { color: var(--muted); }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; min-width: 0; }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .v { font-family: var(--font-data); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+
+/* Stream */
+.stream { display: flex; flex-direction: column; font-size: 12.5px; max-height: 330px; overflow: hidden; }
+.stream-row { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); align-items: baseline; }
+.stream-row:first-child { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .stream-row:first-child { animation: none; } }
+
+.sev { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.sev:last-child { border-bottom: 0; }
+.sev i { border-radius: 2px; background: var(--line); }
+.sev.crit i { background: var(--crit); }
+.sev.warn i { background: var(--warn); }
+.sev.good i { background: var(--good); }
+.sev.agent i { background: var(--agent); }
+
+/* Facility bars */
+.fac { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.fac:last-child { border-bottom: 0; }
+.fac.child { padding-left: 18px; }
+.bar { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); }
+.bar > span.warn { background: var(--warn); }
+
+/* Forms */
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 12.5px; color: var(--muted); }
+.field input, .field select, textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); width: 100%; min-width: 0; }
+.field.check { flex-direction: row; align-items: center; gap: 8px; }
+.field.check input { width: auto; }
+pre.code { margin: 0; padding: 12px; background: var(--surface-2); border-radius: var(--r); font-family: var(--font-data); font-size: 12px; line-height: 1.55; overflow-x: auto; white-space: pre; max-height: 420px; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.checks div { display: flex; gap: 8px; align-items: baseline; }
+
+/* Ledger batches */
+.batch { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.batch summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr) auto auto; gap: 10px 14px; align-items: baseline; padding: 10px 12px; }
+.batch summary::-webkit-details-marker { display: none; }
+.batch[open] summary { border-bottom: 1px solid var(--line); }
+.batch .legs { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.balanced { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; }
+
+/* Approvals */
+.appr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.appr:last-child { border-bottom: 0; }
+.appr .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--muted); }
+.appr .act { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.appr .reason { display: flex; gap: 6px; }
+.appr .reason input { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); min-width: 0; width: 200px; }
+.note { font-size: 12.5px; color: var(--muted); }
+.err { font-size: 12.5px; color: var(--crit); }
+
+/* Agent console */
+.convo { display: flex; flex-direction: column; gap: 10px; }
+.msg { display: flex; flex-direction: column; gap: 4px; max-width: 78ch; }
+.msg .who { font-size: 12px; color: var(--muted); }
+.msg .bubble { padding: 10px 12px; border-radius: var(--r); background: var(--surface-2); }
+.msg.agent .bubble { background: var(--agent-soft); }
+.tool { border: 1px solid var(--line); border-left: 3px solid var(--agent); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; background: var(--surface); }
+.tool .call { font-family: var(--font-data); font-size: 12px; overflow-wrap: anywhere; }
+.tool.blocked { border-left-color: var(--warn); }
+.tool.ok { border-left-color: var(--good); }
+.switch { position: relative; width: 36px; height: 20px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; padding: 0; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s; }
+.switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); background: var(--accent-ink); }
+
+/* Diagrams */
+figure.dia { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.dia-scroll { overflow-x: auto; }
+.dia-scroll svg { display: block; width: 100%; height: auto; color: var(--fg); }
+.dia-scroll svg.wide { min-width: 760px; }
+figure.dia figcaption { color: var(--muted); font-size: 13px; max-width: 80ch; }
+svg .box { fill: var(--surface); stroke: var(--line); }
+svg .box.acc { fill: var(--accent-soft); stroke: var(--accent); }
+svg .box.agent { fill: var(--agent-soft); stroke: var(--agent); }
+svg .box.grp { fill: var(--surface-2); stroke: var(--line); stroke-dasharray: 4 3; }
+svg .box.bus { fill: var(--surface-2); stroke: var(--s2); }
+svg .clk { cursor: pointer; }
+svg .clk:hover .box, svg .clk:focus .box { stroke: var(--accent); stroke-width: 2; }
+svg .clk.sel .box { stroke: var(--accent); stroke-width: 2.5; }
+svg text { fill: currentColor; font-family: var(--font-ui); font-size: 12.5px; }
+svg text.t { font-weight: 600; }
+svg text.s { font-size: 11px; fill: var(--muted); }
+svg text.lyr { font-family: var(--font-head); font-size: 11px; letter-spacing: 0.08em; fill: var(--muted); }
+svg text.edge { font-size: 11px; fill: var(--muted); }
+svg .ln { stroke: currentColor; stroke-width: 1.3; fill: none; opacity: 0.7; }
+svg .ln.dash { stroke-dasharray: 4 3; }
+svg .ln.agent { stroke: var(--agent); opacity: 1; }
+svg .ln.money { stroke: var(--accent); stroke-width: 2; opacity: 1; }
+.detail { border-left: 3px solid var(--accent); }
+.rules { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 80ch; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .g-wide, .g-side, .g3 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 820px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; height: auto; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding: 10px 16px; gap: 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .brand { padding: 0; justify-content: center; flex-shrink: 0; }
+  .brand span { display: none; }
+  .navgroup { flex-direction: row; padding: 0; flex-shrink: 0; }
+  .navgroup .label { display: none; }
+  .nav { white-space: nowrap; }
+  .side-foot { display: none; }
+  .top { position: static; padding: 10px 16px; }
+  .view { padding: 18px 16px 40px; }
+  .g2, .form { grid-template-columns: minmax(0, 1fr); }
+  .batch summary { grid-template-columns: minmax(0, 1fr) auto; }
+  .appr { grid-template-columns: minmax(0, 1fr); }
+  .appr .act { align-items: flex-start; }
+}
+</style>
+
+<div class="shell">
+  <aside class="side" aria-label="Modules">
+    <div class="brand"><strong>CoreBank</strong><span>Operations console · prototype</span></div>
+    <nav class="navgroup" aria-label="Operate">
+      <div class="label">Operate</div>
+      <a class="nav" href="#overview" data-view="overview">Overview</a>
+      <a class="nav" href="#customer" data-view="customer">Customer 360</a>
+      <a class="nav" href="#contract" data-view="contract">Contracts</a>
+      <a class="nav" href="#studio" data-view="studio">Product Studio</a>
+      <a class="nav" href="#ledger" data-view="ledger">Ledger</a>
+      <a class="nav" href="#approvals" data-view="approvals">Approvals <span class="badge" id="apprBadge">0</span></a>
+      <a class="nav" href="#agents" data-view="agents">AI agents</a>
+    </nav>
+    <nav class="navgroup" aria-label="Blueprint">
+      <div class="label">Blueprint</div>
+      <a class="nav" href="#architecture" data-view="architecture">Application architecture</a>
+      <a class="nav" href="#modules" data-view="modules">Module diagram</a>
+    </nav>
+    <div class="side-foot">
+      <span class="label">Signed in</span>
+      <span>Ploy Chaiyaporn</span>
+      <span class="muted">Operations checker · TH01</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="ctx">
+        <div><span class="label">Tenant</span><span>Demo Virtual Bank</span></div>
+        <div><span class="label">Entity</span><span class="mono">TH01 · THB</span></div>
+        <div><span class="label">Business date</span><span class="mono">13 Oct 2026</span></div>
+      </div>
+      <span class="spacer"></span>
+      <span class="chip good">Ledger balanced</span>
+      <span class="chip sample">Sample data</span>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section class="view" id="view-overview" aria-labelledby="h-overview">
+      <div class="view-head">
+        <div>
+          <h1 id="h-overview">Overview</h1>
+          <p>Live state of the bank. There is no end-of-day freeze: accrual, billing and aging run per account, all day.</p>
+        </div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span class="label">Deposits</span><span class="v">฿48.21bn</span><span class="d">412,880 accounts</span></div>
+        <div class="kpi"><span class="label">Loans and leases</span><span class="v">฿31.74bn</span><span class="d">96,415 contracts</span></div>
+        <div class="kpi"><span class="label">NPL ratio</span><span class="v">2.14%</span><span class="d">Stage 3 · TFRS 9</span></div>
+        <div class="kpi"><span class="label">Postings today</span><span class="v" id="kpiPostings">3,841,220</span><span class="d">Σ debit = Σ credit</span></div>
+        <div class="kpi"><span class="label">Posting p99</span><span class="v">18 ms</span><span class="d">Target &lt; 50 ms</span></div>
+        <div class="kpi"><span class="label">Sub-ledger vs GL</span><span class="v">0.00</span><span class="d">Reconciled 13 Oct 06:00</span></div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <div class="panel-head"><h2>Postings per second, last 60 minutes</h2><span class="chip acc" id="tpsNow"></span></div>
+          <figure class="dia" style="gap:6px">
+            <svg id="spark" viewBox="0 0 640 170" role="img" aria-label="Postings per second over the last 60 minutes, between about 2,700 and 4,300" style="width:100%;height:auto;color:var(--fg)"></svg>
+          </figure>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Needs attention</h2><span class="label">4 open</span></div>
+          <div>
+            <div class="sev crit"><i></i><div><strong>PromptPay settlement break</strong><p class="muted">ITMX file 13 Oct 05:00 differs by ฿4,200.00 on 1 item. Reconciliation agent drafted a match for review.</p></div></div>
+            <div class="sev warn"><i></i><div><strong>Covenant watch · Siam Freight Logistics</strong><p class="muted">Debt/EBITDA 3.1x against a 3.5x limit, third quarter of increase.</p></div></div>
+            <div class="sev agent"><i></i><div><strong>AI proposal waiting for a checker</strong><p class="muted">Restructure TL-2024-000311, proposed by RM copilot for Wanida K.</p></div></div>
+            <div class="sev good"><i></i><div><strong>Product AUTO_HP_USED v2 simulated</strong><p class="muted">1,200 scenarios passed. Waiting for publish approval.</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Posting stream</h2>
+          <button class="btn" id="streamToggle" type="button">Pause</button>
+        </div>
+        <div class="stream" id="stream" aria-live="off"></div>
+      </div>
+    </section>
+
+    <!-- CUSTOMER 360 -->
+    <section class="view" id="view-customer" aria-labelledby="h-customer" hidden>
+      <div class="view-head">
+        <div>
+          <span class="label">Party P-200118 · Company</span>
+          <h1 id="h-customer">Siam Freight Logistics Co., Ltd.</h1>
+          <p>Commercial customer with a group limit, a term loan, a leasing line for trucks and an overdraft.</p>
+        </div>
+        <div class="row"><span class="chip good">KYC verified · review Mar 2027</span><span class="chip">Risk grade 5 of 10</span><span class="chip">RM: Wanida K.</span></div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <div class="panel-head"><h2>Facility tree</h2><span class="muted">Utilization, THB</span></div>
+          <div id="facilities"></div>
+        </div>
+        <div class="panel">
+          <h2>Profile</h2>
+          <dl class="kv">
+            <dt>Registration</dt><dd class="mono">0105556123456</dd>
+            <dt>Group</dt><dd>Siam Freight Group (3 companies)</dd>
+            <dt>Directors</dt><dd>Anan Rattanakul, Suda Rattanakul</dd>
+            <dt>Beneficial owner</dt><dd>Anan Rattanakul · 62%</dd>
+            <dt>Segment</dt><dd>Mid-market SME · transport</dd>
+            <dt>Consents</dt><dd>Credit bureau, statement analysis</dd>
+          </dl>
+          <div class="panel" style="background:var(--agent-soft);border-color:transparent">
+            <div class="row"><span class="chip agent">AI insight</span><span class="muted" style="font-size:12px">Source: Q2 2026 financial statements, uploaded 2 Oct</span></div>
+            <p>DSCR fell from 1.71 to 1.42 over three quarters while fuel costs rose 18%. Still above the 1.25 covenant. Suggest an early review of the leasing line before the next truck drawdown.</p>
+          </div>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="panel">
+          <h2>Covenants</h2>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Covenant</th><th class="num">Limit</th><th class="num">Q2 2026</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Debt service coverage</td><td class="num">≥ 1.25x</td><td class="num">1.42x</td><td><span class="chip good">Pass</span></td></tr>
+              <tr><td>Debt / EBITDA</td><td class="num">≤ 3.50x</td><td class="num">3.10x</td><td><span class="chip warn">Watch</span></td></tr>
+              <tr><td>Audited FS within 120 days</td><td class="num">—</td><td class="num">Received</td><td><span class="chip good">Pass</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <h2>Collateral</h2>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Item</th><th class="num">Value</th><th class="num">Haircut</th><th>Secures</th></tr></thead>
+            <tbody>
+              <tr><td>Warehouse, Bang Na (title deed 4471)</td><td class="num">142,000,000</td><td class="num">30%</td><td>Term loan</td></tr>
+              <tr><td>Trucks, 38 units (title retained)</td><td class="num">71,600,000</td><td class="num">—</td><td>Leasing line</td></tr>
+              <tr><td>Personal guarantee, A. Rattanakul</td><td class="num">30,000,000</td><td class="num">50%</td><td>Overdraft</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTRACT -->
+    <section class="view" id="view-contract" aria-labelledby="h-contract" hidden>
+      <div class="view-head">
+        <div>
+          <span class="label">Arrangement · Hire purchase · AUTO_HP_NEW v3</span>
+          <h1 id="h-contract">HP-2025-004812 · Napat Srisuk</h1>
+          <p>Toyota Hilux Revo 2.4, title retained by the bank until the final installment.</p>
+        </div>
+        <div class="row" id="contractChips"></div>
+      </div>
+      <div class="grid g3">
+        <div class="panel">
+          <h2>Terms</h2>
+          <dl class="kv" id="contractTerms"></dl>
+        </div>
+        <div class="panel">
+          <h2>Balances by type</h2>
+          <div class="tbl-wrap"><table><thead><tr><th>Balance type</th><th class="num">THB</th></tr></thead><tbody id="balTable"></tbody></table></div>
+        </div>
+        <div class="panel">
+          <h2>Early settlement quote</h2>
+          <p class="muted">As of the business date. Principal on the effective-rate basis, so unearned interest is not charged.</p>
+          <dl class="kv" id="settleQuote"></dl>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Schedule</h2>
+          <div class="row"><span class="muted" id="schedNote"></span><button class="btn" id="schedToggle" type="button">Show all installments</button></div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Due</th><th class="num">Installment</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">VAT 7%</th><th class="num">Total due</th><th class="num">Principal after</th><th>Status</th></tr></thead>
+          <tbody id="schedBody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- PRODUCT STUDIO -->
+    <section class="view" id="view-studio" aria-labelledby="h-studio" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-studio">Product Studio</h1>
+          <p>Build a lending product from configuration. The simulator recalculates the schedule, effective rate and rule checks as you type.</p>
+        </div>
+        <button class="btn primary" id="submitProduct" type="button">Submit for approval</button>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <h2>Definition</h2>
+          <form class="form" id="studioForm" onsubmit="return false">
+            <div class="field"><label for="pCode">Product code</label><input id="pCode" value="AUTO_HP_NEW"></div>
+            <div class="field"><label for="pFamily">Family and rule pack</label>
+              <select id="pFamily">
+                <option value="HP_NEW">Hire purchase · new car</option>
+                <option value="HP_USED">Hire purchase · used car</option>
+                <option value="HP_MOTO">Hire purchase · motorcycle</option>
+                <option value="LEASE">Finance lease · equipment</option>
+                <option value="PL">Personal loan</option>
+              </select></div>
+            <div class="field"><label for="pRateType">Rate type</label>
+              <select id="pRateType"><option value="FLAT">Flat (on original principal)</option><option value="EFFECTIVE">Effective (on outstanding)</option></select></div>
+            <div class="field"><label for="pRate">Rate, % per year</label><input id="pRate" type="number" step="0.01" min="0" value="2.79"></div>
+            <div class="field"><label for="pPrincipal">Financed amount, THB</label><input id="pPrincipal" type="number" step="1000" min="0" value="840000"></div>
+            <div class="field"><label for="pTerm">Term, months</label>
+              <select id="pTerm"><option>12</option><option>24</option><option>36</option><option>48</option><option selected>60</option><option>72</option><option>84</option></select></div>
+            <div class="field"><label for="pBalloon">Balloon, % of financed amount</label><input id="pBalloon" type="number" step="1" min="0" max="50" value="0"></div>
+            <div class="field"><label for="pFee">Origination fee, THB</label><input id="pFee" type="number" step="100" min="0" value="0"></div>
+            <div class="field check"><input id="pVat" type="checkbox" checked><label for="pVat">VAT 7% on each installment</label></div>
+          </form>
+          <div class="grid g3" style="gap:10px">
+            <div class="kpi"><span class="label">Installment</span><span class="v" id="oInst"></span><span class="d" id="oInstVat"></span></div>
+            <div class="kpi"><span class="label">Effective rate</span><span class="v" id="oEir"></span><span class="d">Disclosed to customer</span></div>
+            <div class="kpi"><span class="label">Total interest</span><span class="v" id="oInt"></span><span class="d" id="oVat"></span></div>
+          </div>
+          <figure class="dia">
+            <div class="dia-scroll"><svg id="studioChart" viewBox="0 0 640 230" role="img" aria-label="Principal and interest in each installment"></svg></div>
+            <figcaption id="chartCap"></figcaption>
+          </figure>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="panel">
+            <h2>Rule checks</h2>
+            <div class="checks" id="checks"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Generated definition</h2><button class="btn" id="copyYaml" type="button">Copy</button></div>
+            <pre class="code" id="yaml"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEDGER -->
+    <section class="view" id="view-ledger" aria-labelledby="h-ledger" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-ledger">Ledger</h1>
+          <p>Every movement of value is a balanced, immutable posting batch. Corrections are new batches that reference the original. Balanced per currency, per batch.</p>
+        </div>
+        <div class="row" role="group" aria-label="Filter by actor">
+          <button class="btn primary" data-actor="ALL" type="button">All</button>
+          <button class="btn" data-actor="SYSTEM" type="button">System</button>
+          <button class="btn" data-actor="HUMAN" type="button">Human</button>
+          <button class="btn" data-actor="AGENT" type="button">AI agent</button>
+        </div>
+      </div>
+      <div class="flex-col" id="batches" style="display:flex;flex-direction:column;gap:8px"></div>
+    </section>
+
+    <!-- APPROVALS -->
+    <section class="view" id="view-approvals" aria-labelledby="h-approvals" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-approvals">Approvals</h1>
+          <p>Maker-checker queue. Anything above an AI agent's delegated authority lands here too, with the agent and the person it acted for named.</p>
+        </div>
+        <span class="chip">You: Ploy Chaiyaporn · checker</span>
+      </div>
+      <div class="panel" id="apprList"></div>
+    </section>
+
+    <!-- AGENTS -->
+    <section class="view" id="view-agents" aria-labelledby="h-agents" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-agents">AI agents</h1>
+          <p>Agents act only through the agent gateway, with the same APIs, entitlements and audit as staff. Step through a real servicing case.</p>
+        </div>
+        <div class="row"><button class="btn" id="agentReset" type="button">Restart</button><button class="btn primary" id="agentStep" type="button">Run next step</button></div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <div class="panel-head"><h2>Customer assistant · HP-2025-004812</h2><span class="chip agent">On behalf of Napat Srisuk</span></div>
+          <div class="convo" id="convo"></div>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="panel">
+            <h2>Delegated authority</h2>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Agent</th><th>May execute</th><th>Enabled</th></tr></thead>
+              <tbody id="agentReg"></tbody>
+            </table></div>
+            <p class="note">Turning an agent off stops new tool calls at the gateway immediately. Work it already proposed stays in Approvals.</p>
+          </div>
+          <div class="panel">
+            <h2>Audit trail</h2>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Time</th><th>Tool</th><th>Decision</th></tr></thead>
+              <tbody id="audit"><tr><td colspan="3" class="muted">No tool calls yet. Run the first step.</td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="view" id="view-architecture" aria-labelledby="h-arch" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-arch">Application architecture</h1>
+          <p>Select any component to see what it owns, how it talks to the rest, and the open-source stack behind it.</p>
+        </div>
+        <div class="row"><span class="chip acc">Money path</span><span class="chip agent">Agent path</span></div>
+      </div>
+      <div class="panel">
+          <figure class="dia">
+            <div class="dia-scroll">
+            <svg id="archSvg" class="wide" viewBox="0 0 1040 720" role="img" aria-label="Layered architecture: channels call the API gateway; agents call the same gateway through the agent gateway; workflows and the scheduler drive domain services; only the ledger moves money; the ledger and services publish events to Kafka for accounting, reporting, the feature store and notifications.">
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+                <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+                <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--agent)"/></marker>
+              </defs>
+              <g class="layers">
+                <text class="lyr" x="20" y="46">CHANNELS</text>
+                <text class="lyr" x="20" y="139">EDGE</text>
+                <text class="lyr" x="20" y="232">ORCHESTRATION</text>
+                <text class="lyr" x="20" y="329">DOMAIN</text>
+                <text class="lyr" x="20" y="437">CORE</text>
+                <text class="lyr" x="20" y="527">EVENTS</text>
+                <text class="lyr" x="20" y="617">DOWNSTREAM</text>
+                <text class="lyr" x="20" y="687">PLATFORM</text>
+              </g>
+              <!-- edges first so boxes sit on top -->
+              <line class="ln" x1="410" y1="64" x2="410" y2="108" marker-end="url(#ah)"/><text class="edge" x="418" y="91">REST · OAuth2</text>
+              <line class="ln agent" x1="941" y1="64" x2="941" y2="108" marker-end="url(#aha)"/><text class="edge" x="949" y="91">chat · voice</text>
+              <line class="ln agent" x1="700" y1="146" x2="672" y2="146" marker-end="url(#aha)"/><text class="edge" x="672" y="182">calls the same APIs</text>
+              <line class="ln" x1="360" y1="160" x2="360" y2="203" marker-end="url(#ah)"/><text class="edge" x="368" y="186">commands</text>
+              <line class="ln" x1="360" y1="251" x2="360" y2="298" marker-end="url(#ah)"/><text class="edge" x="368" y="279">saga steps</text>
+              <line class="ln" x1="810" y1="251" x2="810" y2="298" marker-end="url(#ah)"/><text class="edge" x="818" y="279">accrue · bill · age</text>
+              <line class="ln money" x1="580" y1="350" x2="580" y2="403" marker-end="url(#ahm)"/><text class="edge" x="588" y="382">PostBatch</text>
+              <line class="ln money" x1="350" y1="433" x2="398" y2="433" marker-end="url(#ahm)"/>
+              <line class="ln" x1="963" y1="350" x2="963" y2="403" marker-end="url(#ah)"/><text class="edge" x="971" y="382">score</text>
+              <line class="ln" x1="580" y1="461" x2="580" y2="503" marker-end="url(#ah)"/><text class="edge" x="588" y="487">outbox → Debezium</text>
+              <line class="ln" x1="251" y1="541" x2="251" y2="588" marker-end="url(#ah)"/><text class="edge" x="259" y="569">events</text>
+              <line class="ln" x1="473" y1="541" x2="473" y2="588" marker-end="url(#ah)"/>
+              <line class="ln" x1="640" y1="541" x2="640" y2="588" marker-end="url(#ah)"/>
+              <line class="ln" x1="917" y1="541" x2="917" y2="588" marker-end="url(#ah)"/>
+              <polyline class="ln dash" points="760,590 760,476 900,476 900,463" marker-end="url(#ah)"/><text class="edge" x="768" y="572">features</text>
+
+              <g class="clk" data-id="channels" tabindex="0"><rect class="box" x="150" y="20" width="158" height="44" rx="5"/><text class="t" x="229" y="47" text-anchor="middle">Mobile app</text></g>
+              <g class="clk" data-id="channels" tabindex="0"><rect class="box" x="328" y="20" width="158" height="44" rx="5"/><text class="t" x="407" y="47" text-anchor="middle">Internet banking</text></g>
+              <g class="clk" data-id="channels" tabindex="0"><rect class="box" x="506" y="20" width="158" height="44" rx="5"/><text class="t" x="585" y="47" text-anchor="middle">Back-office console</text></g>
+              <g class="clk" data-id="channels" tabindex="0"><rect class="box" x="684" y="20" width="158" height="44" rx="5"/><text class="t" x="763" y="47" text-anchor="middle">RM workstation</text></g>
+              <g class="clk" data-id="channels" tabindex="0"><rect class="box" x="862" y="20" width="158" height="44" rx="5"/><text class="t" x="941" y="47" text-anchor="middle">Dealers, partners</text></g>
+
+              <g class="clk" data-id="apigw" tabindex="0"><rect class="box" x="150" y="110" width="520" height="50" rx="5"/><text class="t" x="410" y="132" text-anchor="middle">API gateway</text><text class="s" x="410" y="149" text-anchor="middle">APISIX · OAuth2 · rate limits · idempotency keys</text></g>
+              <g class="clk" data-id="agentgw" tabindex="0"><rect class="box agent" x="700" y="110" width="320" height="50" rx="5"/><text class="t" x="860" y="132" text-anchor="middle">Agent gateway</text><text class="s" x="860" y="149" text-anchor="middle">MCP tools · authority · policy · audit</text></g>
+
+              <g class="clk" data-id="workflow" tabindex="0"><rect class="box" x="150" y="205" width="420" height="46" rx="5"/><text class="t" x="360" y="226" text-anchor="middle">Workflow workers</text><text class="s" x="360" y="242" text-anchor="middle">Temporal sagas · onboarding · origination · repossession</text></g>
+              <g class="clk" data-id="scheduler" tabindex="0"><rect class="box" x="600" y="205" width="420" height="46" rx="5"/><text class="t" x="810" y="226" text-anchor="middle">Scheduler</text><text class="s" x="810" y="242" text-anchor="middle">durable per-account timers · no batch window</text></g>
+
+              <g class="clk" data-id="party" tabindex="0"><rect class="box" x="150" y="300" width="114" height="50" rx="5"/><text class="t" x="207" y="330" text-anchor="middle">party</text></g>
+              <g class="clk" data-id="catalog" tabindex="0"><rect class="box" x="276" y="300" width="114" height="50" rx="5"/><text class="t" x="333" y="322" text-anchor="middle">product</text><text class="t" x="333" y="338" text-anchor="middle">catalog</text></g>
+              <g class="clk" data-id="deposit" tabindex="0"><rect class="box" x="402" y="300" width="114" height="50" rx="5"/><text class="t" x="459" y="330" text-anchor="middle">deposit</text></g>
+              <g class="clk" data-id="lending" tabindex="0"><rect class="box" x="528" y="300" width="114" height="50" rx="5"/><text class="t" x="585" y="330" text-anchor="middle">lending</text></g>
+              <g class="clk" data-id="leasing" tabindex="0"><rect class="box" x="654" y="300" width="114" height="50" rx="5"/><text class="t" x="711" y="330" text-anchor="middle">leasing</text></g>
+              <g class="clk" data-id="limits" tabindex="0"><rect class="box" x="780" y="300" width="114" height="50" rx="5"/><text class="t" x="837" y="322" text-anchor="middle">limits &amp;</text><text class="t" x="837" y="338" text-anchor="middle">collateral</text></g>
+              <g class="clk" data-id="collections" tabindex="0"><rect class="box" x="906" y="300" width="114" height="50" rx="5"/><text class="t" x="963" y="330" text-anchor="middle">collections</text></g>
+
+              <g class="clk" data-id="payments" tabindex="0"><rect class="box" x="150" y="405" width="200" height="56" rx="5"/><text class="t" x="250" y="429" text-anchor="middle">payments-hub</text><text class="s" x="250" y="446" text-anchor="middle">PromptPay · ISO 20022 · SWIFT</text></g>
+              <g class="clk" data-id="ledger" tabindex="0"><rect class="box acc" x="400" y="405" width="360" height="56" rx="5"/><text class="t" x="580" y="429" text-anchor="middle">ledger</text><text class="s" x="580" y="446" text-anchor="middle">postings · balances · holds · FX · bitemporal</text></g>
+              <g class="clk" data-id="ai" tabindex="0"><rect class="box agent" x="810" y="405" width="210" height="56" rx="5"/><text class="t" x="915" y="429" text-anchor="middle">ai-decisioning</text><text class="s" x="915" y="446" text-anchor="middle">credit · fraud · AML · LLM gateway</text></g>
+
+              <g class="clk" data-id="kafka" tabindex="0"><rect class="box bus" x="150" y="505" width="870" height="36" rx="5"/><text class="t" x="585" y="528" text-anchor="middle">Kafka event backbone · Apicurio schemas · replayable</text></g>
+
+              <g class="clk" data-id="accounting" tabindex="0"><rect class="box" x="150" y="590" width="202" height="46" rx="5"/><text class="t" x="251" y="611" text-anchor="middle">accounting</text><text class="s" x="251" y="627" text-anchor="middle">GL · TFRS 9 · TFRS 16</text></g>
+              <g class="clk" data-id="reporting" tabindex="0"><rect class="box" x="372" y="590" width="202" height="46" rx="5"/><text class="t" x="473" y="611" text-anchor="middle">reporting</text><text class="s" x="473" y="627" text-anchor="middle">BOT returns · Iceberg · Trino</text></g>
+              <g class="clk" data-id="features" tabindex="0"><rect class="box" x="594" y="590" width="202" height="46" rx="5"/><text class="t" x="695" y="611" text-anchor="middle">feature store</text><text class="s" x="695" y="627" text-anchor="middle">Feast · Valkey online</text></g>
+              <g class="clk" data-id="notify" tabindex="0"><rect class="box" x="816" y="590" width="204" height="46" rx="5"/><text class="t" x="918" y="611" text-anchor="middle">notifications</text><text class="s" x="918" y="627" text-anchor="middle">statements · e-Tax invoices</text></g>
+
+              <g class="clk" data-id="platform" tabindex="0"><rect class="box grp" x="150" y="665" width="870" height="36" rx="5"/><text class="s" x="585" y="688" text-anchor="middle">Kubernetes · Istio mTLS · Keycloak · OPA · OpenBao + HSM · OpenTelemetry · PostgreSQL (default) / Oracle (bank-provided)</text></g>
+            </svg>
+            </div>
+            <figcaption>Two arrows carry money, both into the ledger: domain services and the payments hub send balanced posting batches. Nothing downstream calls back into that path; accounting, reporting, features and notifications read events from Kafka. The agent path enters only through the API gateway.</figcaption>
+          </figure>
+      </div>
+      <div class="grid g-side">
+      <div class="panel detail" id="archDetail" aria-live="polite"></div>
+      <div class="panel">
+        <h2>Communication rules</h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>From → to</th><th>Mechanism</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Channel → service</td><td>REST/JSON through the API gateway</td><td>One public contract in OpenAPI</td></tr>
+            <tr><td>Service → service, read</td><td>gRPC, read-only</td><td>Low latency, no distributed writes</td></tr>
+            <tr><td>Service → ledger</td><td>gRPC <span class="mono">PostBatch</span> with idempotency key</td><td>The single synchronous call on the money path</td></tr>
+            <tr><td>Write across services</td><td>Temporal saga with compensations</td><td>No two-phase commit between services</td></tr>
+            <tr><td>State change → others</td><td>Transactional outbox → Kafka</td><td>Consumers are idempotent, so retries are safe</td></tr>
+            <tr><td>Agent → anything</td><td>MCP tool → agent gateway → API gateway</td><td>Same entitlements, limits and audit as a person</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      </div>
+    </section>
+
+    <!-- MODULES -->
+    <section class="view" id="view-modules" aria-labelledby="h-modules" hidden>
+      <div class="view-head">
+        <div>
+          <h1 id="h-modules">Module diagram</h1>
+          <p>One Maven multi-module build. Arrows mean "depends on". The build fails if a module adds a dependency these rules do not allow.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Repository modules</h2>
+        <figure class="dia">
+          <div class="dia-scroll">
+          <svg class="wide" viewBox="0 0 1040 510" role="img" aria-label="Product services depend on the calculation engines; every service depends on the platform kernel and publishes contracts; the ledger depends on the platform only; engines depend only on platform money and time.">
+            <defs><marker id="mh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="mhm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+            <text class="lyr" x="20" y="18">SERVICES · DEPLOYABLE</text>
+            <!-- edges -->
+            <line class="ln money" x1="45" y1="80" x2="45" y2="388" marker-end="url(#mhm)"/><text class="edge" x="52" y="140">platform</text><text class="edge" x="52" y="154">only</text>
+            <line class="ln" x1="270" y1="80" x2="270" y2="198" marker-end="url(#mh)"/><text class="edge" x="278" y="146">uses</text>
+            <line class="ln" x1="430" y1="80" x2="430" y2="198" marker-end="url(#mh)"/><text class="edge" x="438" y="146">uses</text>
+            <line class="ln" x1="590" y1="80" x2="590" y2="198" marker-end="url(#mh)"/><text class="edge" x="598" y="146">uses</text>
+            <line class="ln" x1="850" y1="80" x2="850" y2="198" marker-end="url(#mh)"/><text class="edge" x="858" y="146">publishes *-api</text>
+            <line class="ln" x1="690" y1="80" x2="690" y2="388" marker-end="url(#mh)"/><text class="edge" x="697" y="352">every service</text>
+            <line class="ln" x1="430" y1="310" x2="430" y2="388" marker-end="url(#mh)"/><text class="edge" x="438" y="352">money · time only</text>
+            <line class="ln" x1="180" y1="268" x2="198" y2="268" marker-end="url(#mh)"/>
+
+            <rect class="box acc" x="20" y="30" width="150" height="50" rx="5"/><text class="t" x="95" y="52" text-anchor="middle">ledger</text><text class="s" x="95" y="68" text-anchor="middle">no product knowledge</text>
+            <rect class="box" x="200" y="30" width="140" height="50" rx="5"/><text class="t" x="270" y="60" text-anchor="middle">lending</text>
+            <rect class="box" x="360" y="30" width="140" height="50" rx="5"/><text class="t" x="430" y="60" text-anchor="middle">leasing</text>
+            <rect class="box" x="520" y="30" width="140" height="50" rx="5"/><text class="t" x="590" y="60" text-anchor="middle">deposit</text>
+            <rect class="box" x="680" y="30" width="340" height="50" rx="5"/><text class="t" x="850" y="52" text-anchor="middle">party · catalog · limits · collections</text><text class="s" x="850" y="68" text-anchor="middle">accounting · payments-hub · agent-gateway · ai-decisioning</text>
+
+            <rect class="box" x="70" y="245" width="110" height="46" rx="5"/><text class="t" x="125" y="265" text-anchor="middle">simulator</text><text class="s" x="125" y="281" text-anchor="middle">replays engines</text>
+
+            <rect class="box grp" x="200" y="200" width="460" height="110" rx="6"/>
+            <text class="lyr" x="215" y="222">ENGINES · PURE FUNCTIONS, NO I/O</text>
+            <rect class="box" x="215" y="245" width="100" height="46" rx="5"/><text class="t" x="265" y="265" text-anchor="middle">schedule</text><text class="s" x="265" y="281" text-anchor="middle">annuity · flat · EIR</text>
+            <rect class="box" x="325" y="245" width="100" height="46" rx="5"/><text class="t" x="375" y="265" text-anchor="middle">interest</text><text class="s" x="375" y="281" text-anchor="middle">accrual · day count</text>
+            <rect class="box" x="435" y="245" width="100" height="46" rx="5"/><text class="t" x="485" y="265" text-anchor="middle">product</text><text class="s" x="485" y="281" text-anchor="middle">DSL · CEL</text>
+            <rect class="box" x="545" y="245" width="100" height="46" rx="5"/><text class="t" x="595" y="265" text-anchor="middle">tax</text><text class="s" x="595" y="281" text-anchor="middle">VAT · WHT</text>
+
+            <rect class="box grp" x="710" y="200" width="310" height="110" rx="6"/>
+            <text class="lyr" x="725" y="222">CONTRACTS</text>
+            <rect class="box" x="722" y="245" width="65" height="46" rx="5"/><text class="t" x="754" y="273" text-anchor="middle">OpenAPI</text>
+            <rect class="box" x="797" y="245" width="65" height="46" rx="5"/><text class="t" x="829" y="273" text-anchor="middle">Proto</text>
+            <rect class="box" x="872" y="245" width="65" height="46" rx="5"/><text class="t" x="904" y="273" text-anchor="middle">Avro</text>
+            <rect class="box agent" x="947" y="245" width="65" height="46" rx="5"/><text class="t" x="979" y="273" text-anchor="middle">MCP</text>
+
+            <rect class="box grp" x="20" y="390" width="1000" height="100" rx="6"/>
+            <text class="lyr" x="35" y="412">PLATFORM · SHARED KERNEL</text>
+            <rect class="box" x="35" y="430" width="128" height="44" rx="5"/><text class="t" x="99" y="450" text-anchor="middle">money</text><text class="s" x="99" y="465" text-anchor="middle">no float, ever</text>
+            <rect class="box" x="173" y="430" width="128" height="44" rx="5"/><text class="t" x="237" y="450" text-anchor="middle">time</text><text class="s" x="237" y="465" text-anchor="middle">calendars · clock</text>
+            <rect class="box" x="311" y="430" width="128" height="44" rx="5"/><text class="t" x="375" y="450" text-anchor="middle">tenancy</text><text class="s" x="375" y="465" text-anchor="middle">tenant · entity</text>
+            <rect class="box" x="449" y="430" width="128" height="44" rx="5"/><text class="t" x="513" y="450" text-anchor="middle">persistence</text><text class="s" x="513" y="465" text-anchor="middle">MyBatis · Flyway</text>
+            <rect class="box" x="587" y="430" width="128" height="44" rx="5"/><text class="t" x="651" y="450" text-anchor="middle">events</text><text class="s" x="651" y="465" text-anchor="middle">outbox · Kafka</text>
+            <rect class="box" x="725" y="430" width="128" height="44" rx="5"/><text class="t" x="789" y="450" text-anchor="middle">security</text><text class="s" x="789" y="465" text-anchor="middle">authz · audit</text>
+            <rect class="box" x="863" y="430" width="128" height="44" rx="5"/><text class="t" x="927" y="450" text-anchor="middle">observability</text><text class="s" x="927" y="465" text-anchor="middle">OpenTelemetry</text>
+          </svg>
+          </div>
+          <figcaption>The ledger is the only service with no arrow into the engines: it moves value and knows nothing about products. The engines are pure functions, which is what lets the simulator replay any contract and get the same result to the satang.</figcaption>
+        </figure>
+      </div>
+        <div class="panel">
+          <h2>Inside one service: leasing</h2>
+          <figure class="dia">
+            <div class="dia-scroll">
+            <svg class="wide" viewBox="0 0 1040 380" role="img" aria-label="Hexagonal service: inbound adapters call the application's ports, the application calls the pure domain, and outbound adapters implement the ports for the database, Kafka and other services.">
+              <defs><marker id="hh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect class="box grp" x="20" y="20" width="1000" height="340" rx="8"/>
+              <text class="lyr" x="36" y="42">LEASING-APP · SPRING BOOT WIRING</text>
+              <text class="lyr" x="40" y="80">INBOUND</text>
+              <text class="lyr" x="800" y="80">OUTBOUND</text>
+              <line class="ln" x1="240" y1="125" x2="318" y2="150" marker-end="url(#hh)"/><text class="edge" x="246" y="124">calls port</text>
+              <line class="ln" x1="240" y1="255" x2="318" y2="230" marker-end="url(#hh)"/><text class="edge" x="246" y="270">calls port</text>
+              <line class="ln dash" x1="798" y1="115" x2="722" y2="140" marker-end="url(#hh)"/><text class="edge" x="732" y="112">implements</text>
+              <line class="ln dash" x1="798" y1="190" x2="722" y2="190" marker-end="url(#hh)"/>
+              <line class="ln dash" x1="798" y1="265" x2="722" y2="240" marker-end="url(#hh)"/>
+              <line class="ln" x1="520" y1="250" x2="520" y2="300" marker-end="url(#hh)"/><text class="edge" x="528" y="282">pure calls</text>
+
+              <rect class="box" x="40" y="95" width="200" height="56" rx="5"/><text class="t" x="140" y="118" text-anchor="middle">adapter-web</text><text class="s" x="140" y="135" text-anchor="middle">REST · gRPC · leasing-api DTOs</text>
+              <rect class="box" x="40" y="225" width="200" height="56" rx="5"/><text class="t" x="140" y="248" text-anchor="middle">adapter-messaging (in)</text><text class="s" x="140" y="265" text-anchor="middle">Kafka consumers · timers</text>
+
+              <rect class="box" x="320" y="70" width="400" height="180" rx="6"/>
+              <text class="t" x="520" y="92" text-anchor="middle">leasing-application</text>
+              <text class="s" x="520" y="108" text-anchor="middle">use cases · ports · transaction boundaries</text>
+              <rect class="box acc" x="390" y="125" width="260" height="105" rx="5"/>
+              <text class="t" x="520" y="152" text-anchor="middle">leasing-domain</text>
+              <text class="s" x="520" y="172" text-anchor="middle">contract · asset · residual value</text>
+              <text class="s" x="520" y="188" text-anchor="middle">VAT lines · state machine · rules</text>
+              <text class="s" x="520" y="210" text-anchor="middle">plain Java, no framework imports</text>
+
+              <rect class="box grp" x="420" y="302" width="200" height="40" rx="5"/><text class="t" x="520" y="327" text-anchor="middle">engines/*</text>
+
+              <rect class="box" x="800" y="88" width="200" height="56" rx="5"/><text class="t" x="900" y="111" text-anchor="middle">adapter-persistence</text><text class="s" x="900" y="128" text-anchor="middle">MyBatis · postgresql/ · oracle/</text>
+              <rect class="box" x="800" y="163" width="200" height="56" rx="5"/><text class="t" x="900" y="186" text-anchor="middle">adapter-messaging (out)</text><text class="s" x="900" y="203" text-anchor="middle">outbox writer</text>
+              <rect class="box" x="800" y="238" width="200" height="56" rx="5"/><text class="t" x="900" y="261" text-anchor="middle">adapter-clients</text><text class="s" x="900" y="278" text-anchor="middle">ledger · limits · payments</text>
+            </svg>
+            </div>
+            <figcaption>Dependencies point inward. The domain never imports Spring, MyBatis, Kafka or JDBC, so the leasing rules run in a plain unit test in milliseconds, and switching PostgreSQL for Oracle touches only the persistence adapter.</figcaption>
+          </figure>
+        </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <h2>Module catalog</h2>
+          <div class="tbl-wrap"><table>
+          <thead><tr><th>Module</th><th>Contains</th><th>May depend on</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">*-domain</td><td>Entities, value objects, state machines, domain events, rules</td><td class="mono">platform-money, platform-time, engines/*</td></tr>
+            <tr><td class="mono">*-application</td><td>Use cases, inbound and outbound ports, transaction boundaries</td><td class="mono">*-domain, platform-* interfaces</td></tr>
+            <tr><td class="mono">*-api</td><td>Public DTOs, OpenAPI, Protobuf, event schemas</td><td class="mono">contracts</td></tr>
+            <tr><td class="mono">*-adapter-web</td><td>REST and gRPC endpoints</td><td class="mono">*-application, *-api</td></tr>
+            <tr><td class="mono">*-adapter-persistence</td><td>MyBatis mappers, per-vendor SQL, Flyway migrations</td><td class="mono">*-application, platform-persistence</td></tr>
+            <tr><td class="mono">*-adapter-messaging</td><td>Outbox writer, Kafka consumers</td><td class="mono">*-application, platform-events</td></tr>
+            <tr><td class="mono">*-adapter-clients</td><td>Clients generated from other services' APIs</td><td class="mono">*-application, other *-api</td></tr>
+            <tr><td class="mono">*-app</td><td>Spring Boot entry point and configuration</td><td class="mono">all of the above</td></tr>
+          </tbody>
+        </table></div>
+        </div>
+        <div class="panel">
+          <h2>Dependency rules</h2>
+          <ol class="rules">
+            <li><span class="mono">*-domain</span> imports no Spring, MyBatis, Kafka or JDBC.</li>
+            <li>Adapters → application → domain. Never the reverse.</li>
+            <li>A service reaches another service only through its <span class="mono">*-api</span> module. No shared tables.</li>
+            <li><span class="mono">engines/*</span> are pure: no clock, no I/O, same input gives the same output.</li>
+            <li><span class="mono">ledger</span> imports no engine and no product service.</li>
+            <li><span class="mono">platform-money</span> bans <span class="mono">float</span> and <span class="mono">double</span>.</li>
+            <li>Database-vendor SQL lives only in <span class="mono">*-adapter-persistence</span>, under <span class="mono">postgresql/</span> and <span class="mono">oracle/</span>.</li>
+          </ol>
+          <p class="note">Enforced by ArchUnit tests and the Maven Enforcer plugin in every build.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var r2 = function (x) { return Math.round((x + Number.EPSILON) * 100) / 100; };
+  var fmt = function (x) { return x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var fmt0 = function (x) { return Math.round(x).toLocaleString("en-US"); };
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var fdate = function (d) { return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear(); };
+  var addMonths = function (d, k) { return new Date(d.getFullYear(), d.getMonth() + k, d.getDate()); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var BUSINESS_DATE = new Date(2026, 9, 13);
+  var VAT = 0.07;
+
+  /* ---------- Schedule engine (mirrors engines/engine-schedule) ---------- */
+  function solveMonthlyRate(P, flows) {
+    var total = flows.reduce(function (a, b) { return a + b; }, 0);
+    if (total <= P) return 0;
+    var pv = function (r) { var s = 0; for (var k = 0; k < flows.length; k++) s += flows[k] / Math.pow(1 + r, k + 1); return s - P; };
+    var lo = 0, hi = 1;
+    for (var i = 0; i < 200; i++) { var mid = (lo + hi) / 2; if (pv(mid) > 0) lo = mid; else hi = mid; }
+    return (lo + hi) / 2;
+  }
+  function buildSchedule(o) {
+    var P = o.principal, n = o.n, B = r2(P * (o.balloonPct || 0)), inst, r, totalFlat = null;
+    var flows = [];
+    if (o.rateType === "FLAT") {
+      totalFlat = r2(P * o.rate * n / 12);
+      inst = r2((P - B + totalFlat) / n);
+      for (var k = 0; k < n; k++) flows.push(inst);
+      flows[n - 1] = r2(flows[n - 1] + B);
+      r = solveMonthlyRate(P, flows);
+    } else {
+      r = o.rate / 12;
+      var pvB = B / Math.pow(1 + r, n);
+      inst = r === 0 ? r2((P - B) / n) : r2((P - pvB) * r / (1 - Math.pow(1 + r, -n)));
+      for (var j = 0; j < n; j++) flows.push(inst);
+      flows[n - 1] = r2(flows[n - 1] + B);
+    }
+    var rows = [], bal = P, sumInt = 0, sumVat = 0;
+    for (var i = 1; i <= n; i++) {
+      var pay = flows[i - 1], interest = r2(bal * r), principal = r2(pay - interest);
+      if (i === n) { principal = r2(bal); interest = r2(pay - principal); }
+      bal = r2(bal - principal);
+      var vat = o.vat ? r2(pay * VAT) : 0;
+      sumInt += interest; sumVat += vat;
+      rows.push({ k: i, due: addMonths(o.firstDue, i - 1), pay: pay, interest: interest, principal: principal, vat: vat, total: r2(pay + vat), bal: bal });
+    }
+    return { rows: rows, inst: inst, monthly: r, eir: r * 12, totalInterest: r2(sumInt), totalVat: r2(sumVat), balloon: B };
+  }
+
+  /* ---------- Contract sample: HP-2025-004812 ---------- */
+  var HP = { principal: 840000, rate: 0.0279, rateType: "FLAT", n: 60, balloonPct: 0, vat: true, firstDue: new Date(2025, 3, 15) };
+  var hp = buildSchedule(HP);
+  var billed = hp.rows.filter(function (x) { return x.due <= BUSINESS_DATE; });
+  var overdue = billed[billed.length - 1];
+  var paidCount = billed.length - 1;
+  var dpd = Math.round((BUSINESS_DATE - overdue.due) / 86400000);
+  var penalty = r2(overdue.total * 0.15 / 365 * dpd);
+  var next = hp.rows[billed.length];
+  var accrued = r2(next.interest * dpd / 30);
+  var principalOutstanding = overdue.bal;
+
+  function renderContract() {
+    $("#contractChips").innerHTML =
+      '<span class="chip warn">DPD ' + dpd + ' · bucket 1–30</span><span class="chip">TFRS 9 stage 1</span><span class="chip acc">Title retained</span>';
+    $("#contractTerms").innerHTML =
+      "<dt>Cash price</dt><dd class='mono'>1,050,000.00</dd>" +
+      "<dt>Down payment</dt><dd class='mono'>210,000.00 (20%)</dd>" +
+      "<dt>Financed</dt><dd class='mono'>" + fmt(HP.principal) + "</dd>" +
+      "<dt>Flat rate</dt><dd class='mono'>" + (HP.rate * 100).toFixed(2) + "% p.a.</dd>" +
+      "<dt>Effective rate</dt><dd class='mono'>" + (hp.eir * 100).toFixed(2) + "% p.a.</dd>" +
+      "<dt>Term</dt><dd class='mono'>60 months · first due " + fdate(HP.firstDue) + "</dd>" +
+      "<dt>Installment</dt><dd class='mono'>" + fmt(hp.inst) + " + VAT " + fmt(r2(hp.inst * VAT)) + "</dd>" +
+      "<dt>Paid</dt><dd class='mono'>" + paidCount + " of 60</dd>";
+    var bals = [
+      ["PRINCIPAL", principalOutstanding], ["PRINCIPAL_DUE", overdue.principal], ["INTEREST_DUE", overdue.interest],
+      ["INTEREST_ACCRUED", accrued], ["VAT_DUE", overdue.vat], ["PENALTY_DUE", penalty]
+    ];
+    var tot = 0;
+    $("#balTable").innerHTML = bals.map(function (b) { tot += b[1]; return "<tr><td class='mono'>" + b[0] + "</td><td class='num'>" + fmt(b[1]) + "</td></tr>"; }).join("") +
+      "<tr><td><strong>Exposure</strong></td><td class='num'><strong>" + fmt(r2(tot)) + "</strong></td></tr>";
+    var settlePrincipal = r2(principalOutstanding);
+    var dueNow = r2(overdue.total + penalty);
+    var accVat = r2(accrued * VAT);
+    $("#settleQuote").innerHTML =
+      "<dt>Outstanding principal</dt><dd class='num'>" + fmt(settlePrincipal) + "</dd>" +
+      "<dt>Accrued interest</dt><dd class='num'>" + fmt(accrued) + "</dd>" +
+      "<dt>VAT on accrued</dt><dd class='num'>" + fmt(accVat) + "</dd>" +
+      "<dt>Overdue installment + charge</dt><dd class='num'>" + fmt(dueNow) + "</dd>" +
+      "<dt><strong>Settle today</strong></dt><dd class='num'><strong>" + fmt(r2(settlePrincipal + accrued + accVat + dueNow)) + "</strong></dd>" +
+      "<dt>Interest not charged</dt><dd class='num'>" + fmt(r2(hp.rows.slice(billed.length).reduce(function (a, x) { return a + x.interest; }, 0) - accrued)) + "</dd>";
+    renderSchedule(false);
+  }
+  var schedAll = false;
+  function renderSchedule(all) {
+    var start = all ? 0 : Math.max(0, billed.length - 4), end = all ? hp.rows.length : Math.min(hp.rows.length, billed.length + 6);
+    $("#schedBody").innerHTML = hp.rows.slice(start, end).map(function (x) {
+      var st, cls = "";
+      if (x.k <= paidCount) { st = "<span class='chip good'>Paid</span>"; cls = "paid"; }
+      else if (x.k === overdue.k) { st = "<span class='chip warn'>Overdue " + dpd + "d</span>"; cls = "hl"; }
+      else st = "<span class='chip'>Scheduled</span>";
+      return "<tr class='" + cls + "'><td class='mono'>" + x.k + "</td><td class='mono'>" + fdate(x.due) + "</td><td class='num'>" + fmt(x.pay) + "</td><td class='num'>" + fmt(x.interest) + "</td><td class='num'>" + fmt(x.principal) + "</td><td class='num'>" + fmt(x.vat) + "</td><td class='num'>" + fmt(x.total) + "</td><td class='num'>" + fmt(x.bal) + "</td><td>" + st + "</td></tr>";
+    }).join("");
+    $("#schedNote").textContent = all ? "All 60 installments" : "Installments " + (start + 1) + "–" + end + " of 60";
+    $("#schedToggle").textContent = all ? "Show around today" : "Show all installments";
+  }
+  $("#schedToggle").addEventListener("click", function () { schedAll = !schedAll; renderSchedule(schedAll); });
+
+  /* ---------- Customer facilities ---------- */
+  var facilities = [
+    { name: "Group limit · Siam Freight Group", limit: 250e6, used: 164.6e6, child: false },
+    { name: "Term loan TL-2024-000311", limit: 120e6, used: 96e6, child: true },
+    { name: "Leasing line · trucks", limit: 80e6, used: 61.4e6, child: true },
+    { name: "Overdraft OD-200118", limit: 30e6, used: 7.2e6, child: true },
+    { name: "Trade line", limit: 20e6, used: 0, child: true }
+  ];
+  $("#facilities").innerHTML = facilities.map(function (f) {
+    var pct = f.limit ? f.used / f.limit * 100 : 0;
+    return "<div class='fac" + (f.child ? " child" : "") + "'><span>" + esc(f.name) + "</span><span class='mono muted'>" + fmt0(f.used) + " / " + fmt0(f.limit) + " · " + pct.toFixed(0) + "%</span><div class='bar'><span class='" + (pct >= 75 ? "warn" : "") + "' style='width:" + pct.toFixed(1) + "%'></span></div></div>";
+  }).join("");
+
+  /* ---------- Ledger batches ---------- */
+  var nextBatch = 88214;
+  function bid() { return "PB-20261013-" + (nextBatch++); }
+  var C = "HP-2025-004812";
+  var batches = [
+    { id: bid(), time: "09:42:07", value: "13 Oct 2026", actor: { type: "SYSTEM", name: "payments-hub" }, reason: "PromptPay transfer in", legs: [
+      { acct: "GL 1190 PromptPay settlement", bt: "—", side: "DR", amt: 25000, ccy: "THB" },
+      { acct: "SAV-0012-88310 · Kanya P.", bt: "PRINCIPAL", side: "CR", amt: 25000, ccy: "THB" } ] },
+    { id: bid(), time: "00:00:04", value: "13 Oct 2026", actor: { type: "SYSTEM", name: "scheduler" }, reason: "Daily interest accrual · " + C, legs: [
+      { acct: C, bt: "INTEREST_ACCRUED", side: "DR", amt: r2(next.interest / 30), ccy: "THB" },
+      { acct: "GL 4110 Interest income · HP", bt: "—", side: "CR", amt: r2(next.interest / 30), ccy: "THB" } ] },
+    { id: bid(), time: "00:00:05", value: "13 Oct 2026", actor: { type: "SYSTEM", name: "scheduler" }, reason: "Late charge, 15% p.a. on overdue installment · " + C, legs: [
+      { acct: C, bt: "PENALTY_DUE", side: "DR", amt: r2(overdue.total * 0.15 / 365), ccy: "THB" },
+      { acct: "GL 4190 Penalty income", bt: "—", side: "CR", amt: r2(overdue.total * 0.15 / 365), ccy: "THB" } ] },
+    { id: bid(), time: "08:15:31", value: "12 Oct 2026", actor: { type: "HUMAN", name: "Somchai T. · checked by Ploy C." }, reason: "Manual journal · suspense clearing, ticket OPS-5521", legs: [
+      { acct: "GL 1990 Suspense", bt: "—", side: "DR", amt: 12400, ccy: "THB" },
+      { acct: "CUR-0031-10442 · Mae Fah Foods", bt: "PRINCIPAL", side: "CR", amt: 12400, ccy: "THB" } ] },
+    { id: bid(), time: "00:00:09", value: "13 Oct 2026", actor: { type: "SYSTEM", name: "scheduler" }, reason: "Term deposit interest, 15% withholding tax", legs: [
+      { acct: "GL 5110 Interest expense · deposits", bt: "—", side: "DR", amt: 3125, ccy: "THB" },
+      { acct: "TD-0044-20918 · Arthit W.", bt: "PRINCIPAL", side: "CR", amt: 2656.25, ccy: "THB" },
+      { acct: "GL 2150 Withholding tax payable", bt: "—", side: "CR", amt: 468.75, ccy: "THB" } ] },
+    { id: bid(), time: "10:03:55", value: "13 Oct 2026", actor: { type: "HUMAN", name: "Treasury desk" }, reason: "FX conversion USD → THB at 36.50 · Siam Freight", legs: [
+      { acct: "FCD-0090-55120 · Siam Freight", bt: "PRINCIPAL", side: "DR", amt: 10000, ccy: "USD" },
+      { acct: "GL 1810 FX position USD", bt: "—", side: "CR", amt: 10000, ccy: "USD" },
+      { acct: "GL 1811 FX position THB", bt: "—", side: "DR", amt: 365000, ccy: "THB" },
+      { acct: "CUR-0090-55100 · Siam Freight", bt: "PRINCIPAL", side: "CR", amt: 365000, ccy: "THB" } ] },
+    { id: bid(), time: "00:00:03", value: "15 Sep 2026", actor: { type: "SYSTEM", name: "scheduler" }, reason: "Installment " + overdue.k + " billed · " + C, legs: [
+      { acct: C, bt: "PRINCIPAL_DUE", side: "DR", amt: overdue.principal, ccy: "THB" },
+      { acct: C, bt: "PRINCIPAL", side: "CR", amt: overdue.principal, ccy: "THB" },
+      { acct: C, bt: "INTEREST_DUE", side: "DR", amt: overdue.interest, ccy: "THB" },
+      { acct: C, bt: "INTEREST_ACCRUED", side: "CR", amt: overdue.interest, ccy: "THB" },
+      { acct: C, bt: "VAT_DUE", side: "DR", amt: overdue.vat, ccy: "THB" },
+      { acct: "GL 2140 Output VAT payable", bt: "—", side: "CR", amt: overdue.vat, ccy: "THB" } ] }
+  ];
+  var actorFilter = "ALL";
+  function actorChip(a) {
+    var cls = a.type === "AGENT" ? "agent" : a.type === "HUMAN" ? "acc" : "";
+    return "<span class='chip " + cls + "'>" + a.type + "</span>";
+  }
+  function renderBatches() {
+    var list = batches.filter(function (b) { return actorFilter === "ALL" || b.actor.type === actorFilter; });
+    $("#batches").innerHTML = list.length ? list.map(function (b) {
+      var sums = {};
+      b.legs.forEach(function (l) { sums[l.ccy] = sums[l.ccy] || { DR: 0, CR: 0 }; sums[l.ccy][l.side] = r2(sums[l.ccy][l.side] + l.amt); });
+      var bal = Object.keys(sums).map(function (c) {
+        var ok = Math.abs(sums[c].DR - sums[c].CR) < 0.005;
+        return "<span><span class='label'>" + c + "</span> <span class='mono'>Dr " + fmt(sums[c].DR) + " · Cr " + fmt(sums[c].CR) + "</span> <span class='chip " + (ok ? "good" : "crit") + "'>" + (ok ? "balanced" : "unbalanced") + "</span></span>";
+      }).join("");
+      var legs = "<div class='tbl-wrap'><table><thead><tr><th>Account</th><th>Balance type</th><th class='num'>Debit</th><th class='num'>Credit</th><th>Ccy</th></tr></thead><tbody>" +
+        b.legs.map(function (l) { return "<tr><td>" + esc(l.acct) + "</td><td class='mono'>" + l.bt + "</td><td class='num'>" + (l.side === "DR" ? fmt(l.amt) : "") + "</td><td class='num'>" + (l.side === "CR" ? fmt(l.amt) : "") + "</td><td class='mono'>" + l.ccy + "</td></tr>"; }).join("") +
+        "</tbody></table></div>";
+      return "<details class='batch'><summary><span class='mono'>" + b.id + "<br><span class='muted'>booked " + b.time + " · value " + b.value + "</span></span><span>" + esc(b.reason) + "<br><span class='muted'>" + esc(b.actor.name) + "</span></span>" + actorChip(b.actor) + "<span class='chip good'>Σ Dr = Σ Cr</span></summary><div class='legs'><div class='balanced'>" + bal + "</div>" + legs + "</div></details>";
+    }).join("") : "<div class='panel muted'>No batches from this actor yet. Run the AI agent case to create one.</div>";
+  }
+  $$("[data-actor]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      actorFilter = b.getAttribute("data-actor");
+      $$("[data-actor]").forEach(function (x) { x.classList.toggle("primary", x === b); });
+      renderBatches();
+    });
+  });
+
+  /* ---------- Approvals ---------- */
+  var ME = "Ploy Chaiyaporn";
+  var approvals = [
+    { id: "APR-1041", title: "Publish product AUTO_HP_USED v2", kind: "Product", maker: "Krit S. · Product", agent: null, detail: "Effective rate cap check passed (≤ 15%). 1,200 simulated scenarios matched golden tests.", status: "PENDING" },
+    { id: "APR-1042", title: "Manual journal ฿12,400.00 · suspense clearing", kind: "Journal", maker: "Ploy Chaiyaporn", agent: null, detail: "You created this journal, so a different checker must approve it.", status: "PENDING" },
+    { id: "APR-1043", title: "Restructure TL-2024-000311 · extend 24 months", kind: "Modification", maker: "RM copilot", agent: "on behalf of Wanida K. (RM)", detail: "Installment falls from ฿2.41M to ฿1.73M. Modification loss ฿0.62M under TFRS 9. Stage moves 1 → 2.", status: "PENDING" }
+  ];
+  function updateBadge() {
+    var n = approvals.filter(function (a) { return a.status === "PENDING"; }).length;
+    $("#apprBadge").textContent = n;
+    $("#apprBadge").hidden = n === 0;
+  }
+  function renderApprovals() {
+    $("#apprList").innerHTML = approvals.map(function (a) {
+      var self = a.maker === ME;
+      var state = a.status === "PENDING" ? "" : "<span class='chip " + (a.status === "APPROVED" ? "good" : "crit") + "'>" + (a.status === "APPROVED" ? "Approved by you" : "Rejected · " + esc(a.reason)) + "</span>";
+      var actions = a.status !== "PENDING" ? state :
+        "<div class='row'><button class='btn primary' type='button' data-approve='" + a.id + "'" + (self ? " disabled" : "") + ">Approve</button></div>" +
+        "<div class='reason'><input id='rs-" + a.id + "' placeholder='Reason to reject' aria-label='Reason to reject " + a.id + "'><button class='btn danger' type='button' data-reject='" + a.id + "'>Reject</button></div>" +
+        "<div class='err' id='er-" + a.id + "'></div>";
+      return "<div class='appr'><div><div class='row'><span class='mono muted'>" + a.id + "</span><span class='chip'>" + a.kind + "</span>" + (a.agent ? "<span class='chip agent'>AI proposed</span>" : "") + "</div><h3 style='margin-top:6px'>" + esc(a.title) + "</h3><p style='margin-top:4px'>" + esc(a.detail) + "</p><div class='meta' style='margin-top:6px'><span>Maker: " + esc(a.maker) + "</span>" + (a.agent ? "<span>" + esc(a.agent) + "</span>" : "") + "</div></div><div class='act'>" + actions + "</div></div>";
+    }).join("");
+    $$("[data-approve]").forEach(function (b) { b.addEventListener("click", function () { decide(b.getAttribute("data-approve"), "APPROVED"); }); });
+    $$("[data-reject]").forEach(function (b) { b.addEventListener("click", function () { decide(b.getAttribute("data-reject"), "REJECTED"); }); });
+    updateBadge();
+  }
+  function decide(id, st) {
+    var a = approvals.filter(function (x) { return x.id === id; })[0];
+    if (st === "REJECTED") {
+      var v = $("#rs-" + id).value.trim();
+      if (!v) { $("#er-" + id).textContent = "Add a reason before rejecting. The maker sees it."; return; }
+      a.reason = v;
+    }
+    a.status = st;
+    renderApprovals();
+  }
+
+  /* ---------- Product Studio ---------- */
+  var CAPS = { HP_NEW: 0.10, HP_USED: 0.15, HP_MOTO: 0.23, PL: 0.25, LEASE: null };
+  var CAP_NAME = { HP_NEW: "new car hire purchase", HP_USED: "used car hire purchase", HP_MOTO: "motorcycle hire purchase", PL: "personal loan", LEASE: "" };
+  function studioInput() {
+    return {
+      code: $("#pCode").value.trim().toUpperCase() || "UNNAMED",
+      family: $("#pFamily").value,
+      rateType: $("#pRateType").value,
+      rate: Math.max(0, parseFloat($("#pRate").value) || 0) / 100,
+      principal: Math.max(0, parseFloat($("#pPrincipal").value) || 0),
+      n: parseInt($("#pTerm").value, 10),
+      balloonPct: Math.min(50, Math.max(0, parseFloat($("#pBalloon").value) || 0)) / 100,
+      fee: Math.max(0, parseFloat($("#pFee").value) || 0),
+      vat: $("#pVat").checked,
+      firstDue: addMonths(BUSINESS_DATE, 1)
+    };
+  }
+  function renderStudio() {
+    var o = studioInput();
+    var s = o.principal > 0 ? buildSchedule(o) : null;
+    if (!s) {
+      $("#oInst").textContent = "—"; $("#oEir").textContent = "—"; $("#oInt").textContent = "—";
+      $("#checks").innerHTML = "<div><span class='chip crit'>Fail</span><span>Enter a financed amount above zero.</span></div>";
+      $("#studioChart").innerHTML = ""; $("#chartCap").textContent = ""; $("#yaml").textContent = "";
+      return null;
+    }
+    var eirWithFee = o.fee > 0 ? solveMonthlyRate(o.principal - o.fee, s.rows.map(function (x) { return x.pay; })) * 12 : s.eir;
+    $("#oInst").textContent = "฿" + fmt(s.inst);
+    $("#oInstVat").textContent = o.vat ? "฿" + fmt(r2(s.inst * (1 + VAT))) + " with VAT" : "No VAT";
+    $("#oEir").textContent = (eirWithFee * 100).toFixed(2) + "%";
+    $("#oInt").textContent = "฿" + fmt0(s.totalInterest);
+    $("#oVat").textContent = o.vat ? "VAT over term ฿" + fmt0(s.totalVat) : "Interest over term";
+
+    var checks = [];
+    var cap = CAPS[o.family];
+    if (cap !== null) {
+      var ok = eirWithFee <= cap + 1e-9;
+      checks.push([ok ? "good" : "crit", ok ? "Pass" : "Fail", "Effective rate " + (eirWithFee * 100).toFixed(2) + "% against the " + (cap * 100).toFixed(0) + "% cap for " + CAP_NAME[o.family] + "."]);
+    } else {
+      checks.push(["good", "Pass", "No regulatory rate cap for equipment finance leases. Lessor accounting under TFRS 16."]);
+    }
+    if (o.family.indexOf("HP") === 0 && o.rateType === "FLAT") checks.push(["good", "Pass", "Flat rate converted to an effective rate for disclosure. Interest income recognized on the effective-rate basis."]);
+    if (o.family === "PL" && o.vat) checks.push(["crit", "Fail", "Personal loan interest is not subject to VAT. Turn VAT off."]);
+    else if (o.family !== "PL" && !o.vat) checks.push(["warn", "Check", "Hire purchase and lease installments normally carry VAT 7%."]);
+    else checks.push(["good", "Pass", o.vat ? "VAT 7% applied at each due date, with a tax invoice per installment." : "No VAT on this product."]);
+    if (o.balloonPct > 0) checks.push(["warn", "Check", "Balloon of ฿" + fmt0(s.balloon) + " due with the last installment. Requires an affordability check at maturity."]);
+    var sumP = s.rows.reduce(function (a, x) { return a + x.principal; }, 0);
+    checks.push([Math.abs(sumP - o.principal) < 0.01 ? "good" : "crit", Math.abs(sumP - o.principal) < 0.01 ? "Pass" : "Fail", "Schedule repays principal exactly: ฿" + fmt(r2(sumP)) + "."]);
+    $("#checks").innerHTML = checks.map(function (c) { return "<div><span class='chip " + c[0] + "'>" + c[1] + "</span><span>" + c[2] + "</span></div>"; }).join("");
+    $("#submitProduct").disabled = checks.some(function (c) { return c[0] === "crit"; });
+
+    drawChart(s, o);
+    var fam = { HP_NEW: "ASSET_FINANCE", HP_USED: "ASSET_FINANCE", HP_MOTO: "ASSET_FINANCE", LEASE: "LEASE", PL: "LOAN" }[o.family];
+    var y = [
+      "product: " + o.code, "version: draft", "family: " + fam, "currency: THB", "",
+      "parameters:", "  principal: { min: 50000, max: 5000000 }", "  term_months: { allowed: [" + o.n + "] }", "  balloon_pct: { max: " + o.balloonPct.toFixed(2) + " }", "",
+      "pricing:", "  rate_type: " + o.rateType, "  rate: " + (o.rate * 100).toFixed(2) + "%", "  disclosed_rate: EFFECTIVE   # " + (eirWithFee * 100).toFixed(2) + "% at these inputs", "  day_count: ACT_365F", "",
+      "schedule:", "  method: " + (o.rateType === "FLAT" ? "ANNUITY_FROM_FLAT" : "ANNUITY") + (o.balloonPct > 0 ? "_BALLOON" : ""), "  frequency: MONTHLY", "  holiday_rule: FOLLOWING", "",
+      "income_recognition:", "  method: EIR" + (o.fee > 0 ? "\n  deferred_fees: [ORIGINATION_FEE]" : ""), "",
+      "tax:", o.vat ? "  vat: { applies_to: [INSTALLMENT], rate: 0.07, point: DUE_DATE }" : "  vat: none", "",
+      "fees:" + (o.fee > 0 ? "\n  - { code: ORIGINATION_FEE, trigger: DISBURSEMENT, amount: \"" + o.fee + "\" }" : ""),
+      "  - { code: LATE_CHARGE, trigger: DAILY_WHILE_OVERDUE,", "      amount: \"overdue_installment * 0.15 / 365\" }", "",
+      "repayment_waterfall: [FEES_DUE, PENALTY_DUE, VAT_DUE, INTEREST_DUE, PRINCIPAL_DUE]",
+      "rule_pack: TH" + (cap !== null ? "   # cap " + (cap * 100).toFixed(0) + "% effective" : ""),
+      "accounting: { gl_mapping: " + (fam === "LOAN" ? "loan_standard_th_v1" : fam === "LEASE" ? "lease_tfrs16_v1" : "hp_standard_th_v2") + " }"
+    ];
+    $("#yaml").textContent = y.join("\n");
+    return { o: o, s: s, eir: eirWithFee };
+  }
+  function drawChart(s, o) {
+    var svg = $("#studioChart");
+    var rows = s.balloon > 0 ? s.rows.slice(0, -1) : s.rows;
+    var W = 640, H = 230, L = 60, R = 630, T = 14, B = 196;
+    var max = Math.max.apply(null, rows.map(function (x) { return x.pay; }));
+    var step = Math.pow(10, Math.floor(Math.log10(max)));
+    var top = Math.ceil(max / step) * step;
+    if (top / step > 6) { step *= 2; top = Math.ceil(max / step) * step; }
+    var y = function (v) { return B - v / top * (B - T); };
+    var bw = (R - L) / rows.length;
+    var out = [];
+    for (var t = 0; t <= top + 1e-6; t += step) {
+      out.push("<line x1='" + L + "' x2='" + R + "' y1='" + y(t).toFixed(1) + "' y2='" + y(t).toFixed(1) + "' stroke='currentColor' opacity='0.12'/>");
+      out.push("<text class='edge' x='" + (L - 6) + "' y='" + (y(t) + 4).toFixed(1) + "' text-anchor='end'>" + fmt0(t) + "</text>");
+    }
+    rows.forEach(function (x, i) {
+      var x0 = L + i * bw + bw * 0.15, w = Math.max(1, bw * 0.7);
+      out.push("<rect x='" + x0.toFixed(1) + "' y='" + y(x.principal).toFixed(1) + "' width='" + w.toFixed(1) + "' height='" + (B - y(x.principal)).toFixed(1) + "' fill='var(--accent)'/>");
+      out.push("<rect x='" + x0.toFixed(1) + "' y='" + y(x.pay).toFixed(1) + "' width='" + w.toFixed(1) + "' height='" + (y(x.principal) - y(x.pay)).toFixed(1) + "' fill='var(--s2)'/>");
+    });
+    [1, Math.ceil(rows.length / 2), rows.length].forEach(function (k) {
+      out.push("<text class='edge' x='" + (L + (k - 0.5) * bw).toFixed(1) + "' y='" + (B + 16) + "' text-anchor='middle'>" + k + "</text>");
+    });
+    out.push("<rect x='" + L + "' y='" + (H - 12) + "' width='10' height='10' fill='var(--accent)'/><text class='edge' x='" + (L + 14) + "' y='" + (H - 3) + "'>principal</text>");
+    out.push("<rect x='" + (L + 84) + "' y='" + (H - 12) + "' width='10' height='10' fill='var(--s2)'/><text class='edge' x='" + (L + 98) + "' y='" + (H - 3) + "'>interest</text>");
+    out.push("<text class='edge' x='" + R + "' y='" + (H - 3) + "' text-anchor='end'>installment number</text>");
+    svg.innerHTML = out.join("");
+    $("#chartCap").textContent = "Each bar is one installment before VAT, in THB. Interest shrinks as principal is repaid, even on a flat-rate product, because income is recognized on the effective rate." + (s.balloon > 0 ? " The balloon of ฿" + fmt0(s.balloon) + " with the last installment is not drawn." : "");
+  }
+  $$("#studioForm input, #studioForm select").forEach(function (el) { el.addEventListener("input", renderStudio); el.addEventListener("change", renderStudio); });
+  $("#pFamily").addEventListener("change", function () {
+    var f = $("#pFamily").value;
+    var preset = { HP_NEW: ["FLAT", 2.79, 840000, true, "AUTO_HP_NEW"], HP_USED: ["FLAT", 4.5, 450000, true, "AUTO_HP_USED"], HP_MOTO: ["FLAT", 11, 60000, true, "MOTO_HP"], LEASE: ["EFFECTIVE", 6.25, 3500000, true, "EQUIP_FIN_LEASE"], PL: ["EFFECTIVE", 18, 200000, false, "PERSONAL_LOAN"] }[f];
+    $("#pRateType").value = preset[0]; $("#pRate").value = preset[1]; $("#pPrincipal").value = preset[2]; $("#pVat").checked = preset[3]; $("#pCode").value = preset[4];
+    renderStudio();
+  });
+  var submitted = 0;
+  $("#submitProduct").addEventListener("click", function () {
+    var r = renderStudio();
+    if (!r) return;
+    submitted++;
+    approvals.unshift({ id: "APR-" + (1050 + submitted), title: "Publish product " + r.o.code + " (draft " + submitted + ")", kind: "Product", maker: "You, in Product Studio", agent: null,
+      detail: "Effective rate " + (r.eir * 100).toFixed(2) + "%, installment ฿" + fmt(r.s.inst) + ", " + r.o.n + " months. Rule checks passed.", status: "PENDING" });
+    renderApprovals();
+    var b = $("#submitProduct"); b.textContent = "Submitted to Approvals"; setTimeout(function () { b.textContent = "Submit for approval"; }, 1800);
+  });
+  $("#copyYaml").addEventListener("click", function () {
+    var b = this, txt = $("#yaml").textContent;
+    var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); };
+    try {
+      navigator.clipboard.writeText(txt).then(done, function () { selectYaml(); });
+    } catch (e) { selectYaml(); }
+  });
+  function selectYaml() { var range = document.createRange(); range.selectNodeContents($("#yaml")); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+
+  /* ---------- AI agent case ---------- */
+  var agents = [
+    { name: "Customer assistant", may: "Waive fees up to ฿1,000 per customer per year. Propose modifications.", on: true },
+    { name: "Collections agent", may: "Record promises to pay. No waivers.", on: true },
+    { name: "Ops copilot", may: "Propose journals and reconciliation matches only.", on: true },
+    { name: "RM copilot", may: "Draft credit memos. Propose restructures.", on: true }
+  ];
+  function renderAgents() {
+    $("#agentReg").innerHTML = agents.map(function (a, i) {
+      return "<tr><td>" + a.name + "</td><td>" + a.may + "</td><td><button type='button' class='switch' role='switch' aria-checked='" + a.on + "' aria-label='Enable " + a.name + "' data-ag='" + i + "'></button></td></tr>";
+    }).join("");
+    $$("[data-ag]").forEach(function (s) { s.addEventListener("click", function () { var a = agents[+s.getAttribute("data-ag")]; a.on = !a.on; renderAgents(); }); });
+  }
+  var overdueTotal = overdue.total;
+  var steps = [
+    { kind: "user", text: "I was in hospital last month and missed my car payment. Can I skip next month's payment?" },
+    { kind: "tool", tool: "contracts.get", args: "{ id: \"" + C + "\" }", result: "AUTO_HP_NEW v3 · " + paidCount + " of 60 paid · installment ฿" + fmt(overdueTotal) + " with VAT", decision: "Allowed · read" },
+    { kind: "tool", tool: "delinquency.get", args: "{ id: \"" + C + "\" }", result: "DPD " + dpd + " · overdue ฿" + fmt(overdueTotal) + " · late charge ฿" + fmt(penalty), decision: "Allowed · read" },
+    { kind: "tool", tool: "policy.check", args: "{ action: \"payment_holiday\", months: 1 }", result: "Product allows 1 holiday per 12 months. Contract is overdue, so a person must approve.", decision: "Needs a checker", blocked: true },
+    { kind: "tool", tool: "modifications.propose", args: "{ type: \"payment_holiday\", months: 1, interest: \"deferred\" }", result: "Simulated: term 60 → 61 months, installment unchanged, deferred interest ฿" + fmt(next.interest) + ". Sent to Approvals.", decision: "Proposed · APR-1044", propose: true },
+    { kind: "tool", tool: "fees.waive", args: "{ fee: \"LATE_CHARGE\", amount: " + penalty.toFixed(2) + " }", result: "฿" + fmt(penalty) + " is within the ฿1,000 authority. Posted as a reversal batch.", decision: "Executed", exec: true },
+    { kind: "agent", text: "I'm sorry you were unwell. I've waived the ฿" + fmt(penalty) + " late charge. Your September payment of ฿" + fmt(overdueTotal) + " is still due. I've asked our team to approve a one-month payment holiday for November; you'll get an answer today, and your monthly payment stays the same." }
+  ];
+  var stepIdx = 0;
+  function nowTime() { var d = new Date(); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2); }
+  function runStep() {
+    if (stepIdx >= steps.length) return;
+    if (!agents[0].on) {
+      $("#convo").insertAdjacentHTML("beforeend", "<div class='tool blocked'><strong>Gateway refused the call</strong><span>Customer assistant is turned off. Turn it on under Delegated authority to continue.</span></div>");
+      return;
+    }
+    var s = steps[stepIdx++];
+    var c = $("#convo");
+    if (s.kind === "user") c.insertAdjacentHTML("beforeend", "<div class='msg'><span class='who'>Napat Srisuk · mobile app</span><div class='bubble'>" + esc(s.text) + "</div></div>");
+    else if (s.kind === "agent") c.insertAdjacentHTML("beforeend", "<div class='msg agent'><span class='who'>Customer assistant</span><div class='bubble'>" + esc(s.text) + "</div></div>");
+    else {
+      c.insertAdjacentHTML("beforeend", "<div class='tool " + (s.blocked ? "blocked" : s.exec ? "ok" : "") + "'><span class='call'>" + esc(s.tool) + " " + esc(s.args) + "</span><span>" + esc(s.result) + "</span><span class='label'>" + esc(s.decision) + "</span></div>");
+      var a = $("#audit");
+      if (a.querySelector("td[colspan]")) a.innerHTML = "";
+      a.insertAdjacentHTML("beforeend", "<tr><td class='mono'>" + nowTime() + "</td><td class='mono'>" + esc(s.tool) + "</td><td>" + esc(s.decision) + "</td></tr>");
+      if (s.propose) {
+        approvals.unshift({ id: "APR-1044", title: "Payment holiday, 1 month · " + C, kind: "Modification", maker: "Customer assistant", agent: "on behalf of Napat Srisuk (customer)", detail: "Contract is " + dpd + " days overdue, above the agent's authority. Interest of ฿" + fmt(next.interest) + " deferred to a new installment 61.", status: "PENDING" });
+        renderApprovals();
+      }
+      if (s.exec) {
+        batches.unshift({ id: bid(), time: nowTime(), value: "13 Oct 2026", actor: { type: "AGENT", name: "Customer assistant · for Napat Srisuk" }, reason: "Late charge waiver · " + C, legs: [
+          { acct: "GL 4190 Penalty income", bt: "—", side: "DR", amt: penalty, ccy: "THB" },
+          { acct: C, bt: "PENALTY_DUE", side: "CR", amt: penalty, ccy: "THB" } ] });
+        renderBatches();
+      }
+    }
+    $("#agentStep").disabled = stepIdx >= steps.length;
+    $("#agentStep").textContent = stepIdx >= steps.length ? "Case complete" : "Run next step";
+  }
+  $("#agentStep").addEventListener("click", runStep);
+  $("#agentReset").addEventListener("click", function () {
+    stepIdx = 0; $("#convo").innerHTML = "";
+    $("#audit").innerHTML = "<tr><td colspan='3' class='muted'>No tool calls yet. Run the first step.</td></tr>";
+    approvals = approvals.filter(function (a) { return a.id !== "APR-1044"; });
+    batches = batches.filter(function (b) { return b.actor.type !== "AGENT"; });
+    renderApprovals(); renderBatches();
+    $("#agentStep").disabled = false; $("#agentStep").textContent = "Run next step";
+  });
+
+  /* ---------- Overview ---------- */
+  function drawSpark() {
+    var pts = [], v = 3300, seed = 7;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (var i = 0; i < 60; i++) { v += (rnd() - 0.48) * 260; v = Math.max(2700, Math.min(4300, v)); pts.push(v); }
+    var L = 50, R = 630, T = 10, B = 150, lo = 2500, hi = 4500;
+    var x = function (i) { return L + i * (R - L) / 59; }, y = function (q) { return B - (q - lo) / (hi - lo) * (B - T); };
+    var line = pts.map(function (q, i) { return x(i).toFixed(1) + "," + y(q).toFixed(1); }).join(" ");
+    var out = [];
+    [2500, 3500, 4500].forEach(function (t) {
+      out.push("<line x1='" + L + "' x2='" + R + "' y1='" + y(t) + "' y2='" + y(t) + "' stroke='currentColor' opacity='0.12'/><text class='edge' x='" + (L - 6) + "' y='" + (y(t) + 4) + "' text-anchor='end'>" + fmt0(t) + "</text>");
+    });
+    out.push("<polygon points='" + L + "," + B + " " + line + " " + R + "," + B + "' fill='var(--accent)' opacity='0.12'/>");
+    out.push("<polyline points='" + line + "' fill='none' stroke='var(--accent)' stroke-width='2'/>");
+    out.push("<circle cx='" + x(59) + "' cy='" + y(pts[59]).toFixed(1) + "' r='4' fill='var(--accent)'/>");
+    out.push("<text class='edge' x='" + L + "' y='166'>60 min ago</text><text class='edge' x='" + R + "' y='166' text-anchor='end'>now</text>");
+    $("#spark").innerHTML = out.join("");
+    $("#tpsNow").textContent = fmt0(pts[59]) + " /s now";
+  }
+  var feed = [
+    ["PromptPay in", "SAV · Kanya P.", 25000], ["Card hold", "CUR · Mae Fah Foods", 1840.5], ["Loan repayment", "PL-2026-018331", 6120], ["Interest accrual", "HP-2025-004812", r2(next.interest / 30)],
+    ["Bill payment", "SAV · Arthit W.", 1290], ["Dealer disbursement", "HP-2026-007702", 612000], ["QR merchant pay", "CUR · Baan Kafe", 85], ["Lease rental + VAT", "FL-2025-000118", 48150]
+  ];
+  var streamOn = true, postings = 3841220, feedI = 0;
+  function pushStream() {
+    var f = feed[feedI++ % feed.length], d = new Date();
+    var t = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+    var el = $("#stream");
+    el.insertAdjacentHTML("afterbegin", "<div class='stream-row'><span class='mono muted'>" + t + "</span><span>" + f[0] + " <span class='muted'>· " + f[1] + "</span></span><span class='num'>" + fmt(f[2]) + "</span></div>");
+    while (el.children.length > 12) el.removeChild(el.lastChild);
+    postings += 3000 + Math.floor(Math.random() * 1200);
+    $("#kpiPostings").textContent = fmt0(postings);
+  }
+  for (var i = 0; i < 8; i++) pushStream();
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) { streamOn = false; $("#streamToggle").textContent = "Resume"; }
+  setInterval(function () { if (streamOn && !document.hidden && current === "overview") pushStream(); }, 1400);
+  $("#streamToggle").addEventListener("click", function () { streamOn = !streamOn; this.textContent = streamOn ? "Pause" : "Resume"; });
+
+  /* ---------- Architecture detail ---------- */
+  var ARCH = {
+    channels: ["Channels", "Mobile, internet banking, back-office, RM workstation and partner portals.", ["Hold no business logic", "Call public APIs only", "Reference apps prove every API"], "React or native apps, OpenAPI clients"],
+    apigw: ["API gateway", "The single public entry point for apps and partners.", ["OAuth2 / OIDC with Keycloak", "Idempotency-Key on every write", "Rate limits and API versions"], "Apache APISIX (Kong OSS as alternative)"],
+    agentgw: ["Agent gateway", "Exposes the same APIs to AI agents as MCP tools.", ["Delegated authority per agent and per tool", "Policy check (OPA) before every write", "Records prompt, tools, model version and outcome", "Kill switch per agent"], "MCP SDK, OPA, LiteLLM"],
+    workflow: ["Workflow workers", "Long-running business processes as durable sagas.", ["Onboarding, origination, disbursement", "Restructuring, repossession, remarketing", "Compensations instead of distributed transactions"], "Temporal (Flowable or Operaton if required)"],
+    scheduler: ["Scheduler", "One durable timer per account instead of a nightly batch.", ["Daily accrual, billing on due date, DPD aging", "Back-valued events replay from the value date", "No end-of-day freeze"], "Temporal timers or DB-backed timers"],
+    party: ["party", "Customers, relationships, group hierarchies, KYC status and consents.", ["Group exposure over the relationship graph", "PII stored in a tokenization vault", "PDPA consent and purpose"], "Java 21, Spring Boot, MyBatis, PostgreSQL"],
+    catalog: ["product-catalog", "Versioned product definitions, pricing tables and fee schedules.", ["Typed building blocks plus CEL formulas", "Simulation and golden tests before publish", "Maker-checker publishing"], "cel-java, JSON Schema"],
+    deposit: ["deposit", "Savings, current, term deposits, pockets, sweeps and overdraft.", ["Tiered interest", "Withholding tax on interest", "Dormancy rules"], "Java 21, MyBatis"],
+    lending: ["lending", "Loans and credit lines: schedules, accrual, billing, allocation, restructuring.", ["Annuity, equal principal, bullet, balloon, stepped", "EIR income recognition", "Waterfall allocation and DPD aging"], "engine-schedule, engine-interest"],
+    leasing: ["leasing", "Hire purchase and leases with the asset at the centre.", ["Annuity from flat rate, residual value", "VAT per installment, tax invoices", "Title, insurance, repossession, remarketing", "TFRS 16 lessor accounting"], "engine-schedule, engine-tax"],
+    limits: ["limits & collateral", "Facility trees, exposure, collateral, guarantees and covenants.", ["Atomic limit check on drawdown", "LTV and haircut monitoring", "Covenant tests and breach workflow"], "Java 21, MyBatis"],
+    collections: ["collections", "Delinquency strategies, promises to pay and agent assignment.", ["Consumes DelinquencyChanged events", "AI propensity-to-pay models", "Conduct rules per jurisdiction"], "Java 21, Kafka consumers"],
+    payments: ["payments-hub", "Adapters to payment rails. Not a payment switch.", ["PromptPay and ITMX", "ISO 20022 and SWIFT", "Posts settlement batches to the ledger"], "Java 21, ISO 20022 libraries"],
+    ledger: ["ledger", "The only service that moves value.", ["Balanced batches, per currency", "Immutable: corrections are reversals", "Balances updated in the same transaction", "Value date and booking time on every posting", "Sharded by account, explicit row locks"], "PostgreSQL default, Oracle certified, plain JDBC"],
+    ai: ["ai-decisioning", "Model serving for credit, fraud, AML and pricing.", ["Fraud score inside the posting budget (< 30 ms)", "Reason codes for every adverse decision", "Drift monitoring with rule-based fallback"], "MLflow, KServe, vLLM, LiteLLM"],
+    kafka: ["Kafka event backbone", "Every state change, published from a transactional outbox.", ["Schemas versioned in Apicurio", "Replay rebuilds any downstream view", "Consumers are idempotent"], "Apache Kafka on Strimzi, Debezium, Apicurio"],
+    accounting: ["accounting", "Maps postings to the GL and runs TFRS 9 and TFRS 16.", ["Sub-ledger to GL reconciled to zero daily", "ECL staging and provisions", "Period close without stopping postings"], "Java 21, Iceberg"],
+    reporting: ["reporting", "Regulatory and management reporting from events.", ["BOT data returns", "Deposit protection reports", "Point-in-time correct"], "Iceberg, Trino, dbt Core, ClickHouse"],
+    features: ["feature store", "The same features for model training and live scoring.", ["Point-in-time correct joins", "Online lookups in about 1 ms", "Consent-gated features"], "Feast, Valkey, Iceberg"],
+    notify: ["notifications", "Statements, alerts and e-Tax invoices.", ["Event-driven", "Per-customer channel preferences", "e-Tax invoice per HP installment"], "Java 21, Kafka consumers"],
+    platform: ["Platform", "Runs every service the same way, in a cell.", ["mTLS between all services", "Secrets in OpenBao, keys in the bank's HSM", "Traces, metrics and logs via OpenTelemetry", "GitOps with Argo CD, infra in OpenTofu"], "Kubernetes or OpenShift, Istio, Keycloak, OPA"]
+  };
+  function showArch(id, g) {
+    var d = ARCH[id]; if (!d) return;
+    $$("#archSvg .clk").forEach(function (x) { x.classList.toggle("sel", x.getAttribute("data-id") === id); });
+    $("#archDetail").innerHTML = "<span class='label'>Component</span><h2>" + esc(d[0]) + "</h2><p>" + esc(d[1]) + "</p><ul class='rules'>" + d[2].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul><div><span class='label'>Open-source stack</span><p class='mono' style='margin-top:4px;font-size:12.5px'>" + esc(d[3]) + "</p></div>";
+  }
+  $$("#archSvg .clk").forEach(function (g) {
+    g.setAttribute("role", "button");
+    g.setAttribute("aria-label", ARCH[g.getAttribute("data-id")][0]);
+    g.addEventListener("click", function () { showArch(g.getAttribute("data-id")); });
+    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showArch(g.getAttribute("data-id")); } });
+  });
+  showArch("ledger");
+
+  /* ---------- Routing ---------- */
+  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "architecture", "modules"];
+  var current = "overview";
+  function route() {
+    var h = (location.hash || "").replace("#", "");
+    current = VIEWS.indexOf(h) >= 0 ? h : "overview";
+    VIEWS.forEach(function (v) { $("#view-" + v).hidden = v !== current; });
+    $$(".nav").forEach(function (a) { if (a.getAttribute("data-view") === current) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener("hashchange", route);
+
+  drawSpark(); renderContract(); renderBatches(); renderApprovals(); renderStudio(); renderAgents(); route();
+})();
+</script>
