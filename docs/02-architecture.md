@@ -47,7 +47,7 @@
 | **leasing** | Lease/HP contracts, asset register, residual value, VAT, insurance, termination, repossession | RDBMS |
 | **limits-collateral** | Facility trees, exposure, collateral valuation, LTV, guarantees, covenants | RDBMS |
 | **ledger** | Posting engine, balances, holds/reservations, FX, bitemporal history | RDBMS (sharded) — see [ADR-0002](adr/0002-ledger-storage.md) |
-| **scheduler** | Per-account timers for accrual, billing, maturity, aging (no batch) | Temporal / durable timers |
+| **scheduler** | Due work for accrual posting, billing, maturity, aging (no batch); partitioned time-wheel per shard ([ADR-0007](adr/0007-scheduling-and-accrual-at-scale.md)) | Due-queue tables per shard |
 | **accounting** | Posting-to-GL mapping, sub-ledger to GL reconciliation, period close, IFRS 9/16 entries | RDBMS + warehouse |
 | **collections** | Delinquency buckets, strategies, promises-to-pay, agent assignment | RDBMS |
 | **agent-gateway** | Exposes service APIs as AI tools, enforces policy and delegated authority, records AI actions | RDBMS |
@@ -96,7 +96,8 @@ Every infrastructure dependency sits behind a port so a bank's approved equivale
 
 
 - **Cell-based architecture**: each cell is a full stack (services + ledger shards) serving a subset of tenants/accounts. Cells limit blast radius and are the unit of scaling and of data residency.
-- Active-active across 3 availability zones within a region; synchronous replication for the ledger (RPO = 0); warm standby region for disaster recovery.
+- Active-active across 3 availability zones within a region; synchronous replication for the ledger (RPO = 0); paired DR region within the same residency boundary (RPO ≤ 60 s, RTO ≤ 30 min).
+- For global banks: accounts have a home region, cells inside regions, and a global directory for routing ([ADR-0008](adr/0008-global-multi-region-topology.md)). Global sizing and targets are in [11](11-global-scale-and-benchmark.md).
 - Deployable to public cloud or a bank's private cloud (regulators may require in-country hosting; see [09](09-open-decisions.md)).
 
 ## Non-functional requirements
@@ -106,8 +107,10 @@ Every infrastructure dependency sits behind a port so a bank's approved equivale
 | Posting throughput | ≥ 10,000 postings/s per cell, linear scale-out by adding cells/shards |
 | Posting latency | p99 < 50 ms, p50 < 10 ms |
 | Balance inquiry | p99 < 20 ms |
-| Availability (posting path) | 99.99% monthly |
-| RPO / RTO | 0 / < 15 min |
+| Availability (posting path) | 99.99% monthly per cell; 99.995% per region (global tier) |
+| RPO / RTO, zone loss | 0 / < 5 min, automatic |
+| RPO / RTO, region loss | ≤ 60 s / ≤ 30 min |
+| Global throughput | 100,000 batches/s sustained, 250,000 burst, by adding cells |
 | Accrual freshness | Interest accrued daily per account, continuously scheduled; no global EOD |
 | Back-valuation | Up to configurable horizon (default 90 days) without manual intervention |
 | Audit retention | ≥ 10 years, tamper-evident |

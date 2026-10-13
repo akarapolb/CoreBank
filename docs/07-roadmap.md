@@ -29,6 +29,8 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 - AI Tier 1: credit decisioning (with reason codes), document intelligence, fraud scoring on the posting path, customer assistant (read + servicing requests)
 - Security baseline, PII vault, audit, PDPA consent
 
+Also in Phase 1: scale-out test reaching 100,000 batches/s across 10 cells with at least 90% linear efficiency; sanctions screening inside the payment latency budget.
+
 **Exit criteria:** end-to-end pilot with internal staff accounts; regulator sandbox / IT risk assessment passed; penetration test clean of high findings; daily automated reconciliation at zero difference for 30 consecutive days.
 
 ## Phase 2 — Asset finance and leasing (months 9–14)
@@ -65,6 +67,17 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 - Advanced products: mortgages with floating resets, syndicated loans, BNPL partner platform, embedded finance APIs
 - AI Tier 2/3: collections agents, product copilot, dynamic pricing, natural-language analytics
 - Certifications: ISO 27001, SOC 2 Type II, PCI DSS scope (if cards)
+
+## Phase 5 — Global bank (months 30–42)
+
+- Multi-region active-active with home-region accounts and paired DR regions in production
+- Billion-account certification: month-end capitalization within the night window, zone and region failover drills
+- Jurisdiction packs beyond Thailand (Singapore, Malaysia, Indonesia, Hong Kong, then EU, UK, US)
+- Islamic banking product blocks; cross-border, cross-currency liquidity pooling
+- Native trade finance and syndication where integration is no longer enough
+- Tier-1 reference program and certifications
+
+See [11](11-global-scale-and-benchmark.md) for the global capability check that drives this phase.
 
 ## Team (initial ~25–35, growing to ~60)
 

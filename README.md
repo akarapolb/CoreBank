@@ -11,7 +11,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 |---|---|
 | Correctness | Double-entry, immutable, bitemporal ledger. Zero tolerance for unbalanced postings. Every balance can be rebuilt from events. |
 | Speed to market | A new deposit or loan product goes from idea to production in **days**, through configuration and simulation, without a core release. |
-| Scale | 10k+ postings/sec per ledger shard at p99 < 50 ms, scaling horizontally to 100M+ accounts. |
+| Scale | 10k postings/s per cell at p99 < 50 ms; 100k/s sustained globally by adding cells; designed and tested for 1 billion accounts. |
 | Availability | 99.99% for the posting path, RPO = 0, RTO < 15 min, active-active across availability zones. |
 | No batch | No end-of-day freeze. Accrual, billing and aging run continuously; "EOD" is a reporting cut, not an outage. |
 | AI-native | Every capability is exposed as a governed tool that AI agents can call, and AI is built into credit, fraud, collections, operations and product design, under bank-grade model risk controls. |
@@ -31,6 +31,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 07 | [Roadmap](docs/07-roadmap.md) | Phases, milestones, exit criteria, team |
 | 08 | [Security, risk and compliance](docs/08-security-and-compliance.md) | Security architecture, regulatory mapping, audit |
 | 10 | [Application architecture and modules](docs/10-application-architecture.md) | Layers, communication rules, request flow, Maven modules, dependency rules |
+| 11 | [Global scale and benchmark](docs/11-global-scale-and-benchmark.md) | Global sizing, high-performance design, capability check against global banks and leading platforms |
 | SDD | [Design reference (HTML)](docs/design/corebank-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Customer 360, HP contract, Product Studio, ledger, approvals, AI agents, architecture and module diagrams |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) and the [open-source-only policy](docs/adr/0006-open-source-only.md) |

@@ -96,7 +96,7 @@ td.num { text-align: right; font-family: var(--font-data); font-variant-numeric:
 .card p, .card li { font-size: 13.5px; color: var(--muted); }
 .card ul { padding-left: 18px; gap: 3px; }
 .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
-.flow span { padding: 5px 11px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; }
+.flow span { padding: 5px 11px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); max-width: 100%; }
 .flow span.alt { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
 .flow i { color: var(--faint); font-style: normal; }
 figure.dia { margin: 4px 0; display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
@@ -142,15 +142,17 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
     <li><a href="#s3"><span class="n">3</span>Module design</a>
       <ol><li><a href="#s3-1">Services</a></li><li><a href="#s3-2">Modules and rules</a></li><li><a href="#s3-3">APIs and events</a></li></ol></li>
     <li><a href="#s4"><span class="n">4</span>Architecture</a>
-      <ol><li><a href="#s4-1">Logical view</a></li><li><a href="#s4-2">Posting path</a></li><li><a href="#s4-3">Data</a></li><li><a href="#s4-4">Integration and AI</a></li><li><a href="#s4-5">Quality targets</a></li><li><a href="#s4-6">Decisions</a></li></ol></li>
+      <ol><li><a href="#s4-1">Logical view</a></li><li><a href="#s4-2">Posting path</a></li><li><a href="#s4-3">Data</a></li><li><a href="#s4-4">Integration and AI</a></li><li><a href="#s4-5">Quality targets</a></li><li><a href="#s4-6">Decisions</a></li><li><a href="#s4-7">Global scale</a></li></ol></li>
     <li><a href="#s5"><span class="n">5</span>Infrastructure</a>
       <ol><li><a href="#s5-1">Deployment</a></li><li><a href="#s5-2">Environments</a></li><li><a href="#s5-3">Delivery pipeline</a></li><li><a href="#s5-4">Resilience</a></li><li><a href="#s5-5">Software stack</a></li></ol></li>
     <li><a href="#s6"><span class="n">6</span>Security</a>
       <ol><li><a href="#s6-1">Identity and access</a></li><li><a href="#s6-2">Data protection</a></li><li><a href="#s6-3">AI security</a></li><li><a href="#s6-4">Threat model</a></li><li><a href="#s6-5">Detection and response</a></li></ol></li>
     <li><a href="#s7"><span class="n">7</span>Compliance</a>
       <ol><li><a href="#s7-1">Regulatory map</a></li><li><a href="#s7-2">Control matrix</a></li><li><a href="#s7-3">Model risk</a></li><li><a href="#s7-4">Retention</a></li></ol></li>
-    <li><a href="#s8"><span class="n">8</span>Open items</a></li>
-    <li><a href="#s9"><span class="n">9</span>Glossary</a></li>
+    <li><a href="#s8g"><span class="n">8</span>Global benchmark</a>
+      <ol><li><a href="#s8-1">Capability check</a></li><li><a href="#s8-2">Against leading platforms</a></li><li><a href="#s8-3">How we win</a></li></ol></li>
+    <li><a href="#s8"><span class="n">9</span>Open items</a></li>
+    <li><a href="#s9"><span class="n">10</span>Glossary</a></li>
   </ol>
 </nav>
 
@@ -340,6 +342,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td>2 · months 9–14</td><td>Adds BNPL, HP</td><td>Adds auto HP</td><td>—</td><td><span class="tag ok">Launch-ready</span> incl. fleet and floor plan</td></tr>
       <tr><td>3 · months 14–20</td><td>Adds SME lending</td><td>Branch, mortgages: <span class="tag ok">new-bank ready</span></td><td><span class="tag ok">Launch-ready</span></td><td>Adds equipment leasing</td></tr>
       <tr><td>4 · months 20–30</td><td>Embedded finance</td><td>Migration toolkit: <span class="tag ok">incumbent ready</span></td><td>Pooling, trade, syndication</td><td>Full-service fleet leasing</td></tr>
+      <tr><td>5 · months 30–42</td><td colspan="4"><span class="tag ok">Global bank ready</span> multi-region active-active, billion-account certification, more jurisdiction packs, Islamic banking, cross-border pooling</td></tr>
     </tbody>
   </table></div>
   <div class="callout">An incumbent retail or commercial bank can adopt CoreBank one product at a time from Phase 3 (for example new digital savings or SME leasing first), with the remaining books migrated in Phase 4.</div>
@@ -546,7 +549,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
               <g class="clk" data-id="agentgw"><rect class="box agent" x="700" y="110" width="320" height="50" rx="5"/><text class="t" x="860" y="132" text-anchor="middle">Agent gateway</text><text class="s" x="860" y="149" text-anchor="middle">MCP tools · authority · policy · audit</text></g>
 
               <g class="clk" data-id="workflow"><rect class="box" x="150" y="205" width="420" height="46" rx="5"/><text class="t" x="360" y="226" text-anchor="middle">Workflow workers</text><text class="s" x="360" y="242" text-anchor="middle">Temporal sagas · onboarding · origination · repossession</text></g>
-              <g class="clk" data-id="scheduler"><rect class="box" x="600" y="205" width="420" height="46" rx="5"/><text class="t" x="810" y="226" text-anchor="middle">Scheduler</text><text class="s" x="810" y="242" text-anchor="middle">durable per-account timers · no batch window</text></g>
+              <g class="clk" data-id="scheduler"><rect class="box" x="600" y="205" width="420" height="46" rx="5"/><text class="t" x="810" y="226" text-anchor="middle">Scheduler</text><text class="s" x="810" y="242" text-anchor="middle">time-wheel per shard · no batch window</text></g>
 
               <g class="clk" data-id="party"><rect class="box" x="150" y="300" width="114" height="50" rx="5"/><text class="t" x="207" y="330" text-anchor="middle">party</text></g>
               <g class="clk" data-id="catalog"><rect class="box" x="276" y="300" width="114" height="50" rx="5"/><text class="t" x="333" y="322" text-anchor="middle">product</text><text class="t" x="333" y="338" text-anchor="middle">catalog</text></g>
@@ -650,12 +653,14 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <div class="tbl"><table>
     <thead><tr><th>Attribute</th><th>Target</th><th>How it is verified</th></tr></thead>
     <tbody>
+      <tr><td>Global throughput</td><td>100,000 batches/s sustained, 250,000 burst</td><td>Scale-out test across 10+ cells, ≥ 90% linear efficiency</td></tr>
+      <tr><td>Scale</td><td>1 billion accounts</td><td>Synthetic billion-account book; month end within the night window</td></tr>
       <tr><td>Posting throughput</td><td>≥ 10,000 batches/s per cell</td><td>Gatling load test in the performance environment on every ledger change</td></tr>
       <tr><td>Posting latency</td><td>p99 &lt; 50 ms, p50 &lt; 10 ms</td><td>CI gate fails on p99 regression</td></tr>
       <tr><td>Balance inquiry</td><td>p99 &lt; 20 ms</td><td>Load test</td></tr>
-      <tr><td>Availability, posting path</td><td>99.99% monthly</td><td>SLO burn-rate alerts</td></tr>
-      <tr><td>Zone failure</td><td>RPO 0, RTO &lt; 15 min</td><td>Quarterly zone failover drill</td></tr>
-      <tr><td>Region failure</td><td>RPO ≤ 5 min, RTO ≤ 4 h</td><td>Twice-yearly region failover drill</td></tr>
+      <tr><td>Availability, posting path</td><td>99.99% per cell, 99.995% per region</td><td>SLO burn-rate alerts</td></tr>
+      <tr><td>Zone failure</td><td>RPO 0, RTO &lt; 5 min, automatic</td><td>Quarterly zone failover drill</td></tr>
+      <tr><td>Region failure</td><td>RPO ≤ 60 s, RTO ≤ 30 min</td><td>Twice-yearly region failover drill</td></tr>
       <tr><td>Correctness</td><td>Zero unbalanced batches; daily GL difference 0.00</td><td>Database constraints, property-based tests, daily rebuild sampling</td></tr>
       <tr><td>Product time to market</td><td>New product variant in days</td><td>Measured from draft to publish</td></tr>
       <tr><td>Audit retention</td><td>≥ 10 years, tamper-evident</td><td>Hash-chained log on WORM storage</td></tr>
@@ -672,8 +677,40 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">0004</td><td>Mainstream components behind ports, swappable for the bank's approved stack</td><td><span class="tag">Proposed</span></td></tr>
       <tr><td class="id">0005</td><td>Multi-database: PostgreSQL default, Oracle certified; MyBatis and plain JDBC, no ORM</td><td><span class="tag ok">Accepted</span></td></tr>
       <tr><td class="id">0006</td><td>Open source only, OSI licences, enforced in CI</td><td><span class="tag ok">Accepted</span></td></tr>
+      <tr><td class="id">0007</td><td>Computed account accrual, aggregate GL accrual, partitioned time-wheel scheduler</td><td><span class="tag">Proposed</span></td></tr>
+      <tr><td class="id">0008</td><td>Home-region accounts, cells, paired DR regions, global directory</td><td><span class="tag">Proposed</span></td></tr>
     </tbody>
   </table></div>
+
+  <h3 id="s4-7"><span class="n">4.7</span>Performance at global scale</h3>
+  <p>The design point is a tier-1 universal bank: 150 million customers, 1 billion accounts, 40 countries, 1 billion posting batches a day and 100,000 per second at peak. Throughput comes from removing contention and unnecessary writes, then scaling out by cells.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Technique</th><th>What it does</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Cells</td><td>Full stacks that share nothing on the posting path; a global directory routes each account to its cell</td><td>Linear scale-out: about 17 cells for 100,000/s at 60% utilization</td></tr>
+      <tr><td>Single-shard batches</td><td>All accounts of a contract on one shard</td><td>Over 95% of postings are one local transaction</td></tr>
+      <tr><td>Group commit</td><td>Batches arriving within about 1 ms commit together</td><td>One disk flush for many batches</td></tr>
+      <tr><td>Asynchronous internal balances</td><td>Only customer accounts check balances synchronously; internal and GL accounts append and are summed later</td><td>No hot settlement-account bottleneck</td></tr>
+      <tr><td>Striped hot accounts</td><td>Very busy customer accounts split into sub-accounts with a reserve pool</td><td>Parallel posting on one logical account</td></tr>
+      <tr><td>Computed accrual</td><td>Account accrual derived from history; GL accrual posted daily in aggregate</td><td>Removes a billion accrual postings a day</td></tr>
+      <tr><td>Time-wheel scheduler</td><td>Due-queue per shard drained by workers</td><td>Due work scales with shards, no per-account workflows</td></tr>
+      <tr><td>Peak spreading</td><td>Month-end booked across the night by shard; value date unchanged</td><td>No month-end spike</td></tr>
+      <tr><td>Tiered storage</td><td>Postings older than 13 months move to Iceberg, still queryable</td><td>OLTP stays small and fast</td></tr>
+      <tr><td>Read separation</td><td>History, statements and analytics from replicas, ClickHouse and Iceberg</td><td>Reads never slow down writes</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Latency budget for one payment, p99</th><th class="num">ms</th></tr></thead>
+    <tbody>
+      <tr><td>Gateway, authentication, idempotency check</td><td class="num">5</td></tr>
+      <tr><td>Domain service logic</td><td class="num">5</td></tr>
+      <tr><td>Fraud score, in parallel with the limit check</td><td class="num">15</td></tr>
+      <tr><td>Ledger lock, validate, write, commit</td><td class="num">20</td></tr>
+      <tr><td>Network and serialization</td><td class="num">5</td></tr>
+      <tr><td><strong>Total</strong></td><td class="num"><strong>50</strong></td></tr>
+    </tbody>
+  </table></div>
+  <p>Accounts have a home region set by data residency; all writes happen there. Cross-region transfers use the reserve → commit saga (p99 under 300 ms). Each region has a paired DR region inside the same residency boundary. Proof points: one cell at 10,000/s (Phase 0), 10 cells at 100,000/s with at least 90% linear efficiency (Phase 1), and a billion-account month end (Phase 3). Detail in <code>docs/11</code>, ADR-0007 and ADR-0008.</p>
 </section>
 
 <!-- 5 -->
@@ -686,7 +723,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <defs><marker id="dp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:currentColor"/></marker></defs>
       <rect class="box" x="20" y="14" width="1000" height="40"/><text class="t" x="520" y="39" text-anchor="middle">Customers · staff over zero-trust access · partners and dealers · payment rails</text>
       <rect class="box zone" x="20" y="80" width="740" height="505"/><text class="lyr" x="36" y="102">PRIMARY REGION · IN-COUNTRY · 3 AVAILABILITY ZONES</text>
-      <rect class="box zone" x="790" y="80" width="230" height="505"/><text class="lyr" x="806" y="102">DR REGION · WARM STANDBY</text>
+      <rect class="box zone" x="790" y="80" width="230" height="505"/><text class="lyr" x="806" y="102">PAIRED DR REGION · SAME RESIDENCY</text>
 
       <text class="lyr" x="40" y="132">DMZ</text>
       <rect class="box" x="110" y="116" width="170" height="42"/><text class="t" x="195" y="142" text-anchor="middle">WAF · DDoS</text>
@@ -724,14 +761,14 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <text class="s" x="110" y="560">Each cell is a full stack for a set of tenants: the unit of scaling, blast radius and data residency.</text>
 
       <rect class="box" x="810" y="184" width="190" height="56"/><text class="t" x="905" y="208" text-anchor="middle">Cells, scaled down</text><text class="s" x="905" y="226" text-anchor="middle">scale up on failover</text>
-      <rect class="box" x="810" y="350" width="190" height="56"/><text class="t" x="905" y="374" text-anchor="middle">Async DB replicas</text><text class="s" x="905" y="392" text-anchor="middle">lag alert at 60 s</text>
+      <rect class="box" x="810" y="350" width="190" height="56"/><text class="t" x="905" y="374" text-anchor="middle">Async DB replicas</text><text class="s" x="905" y="392" text-anchor="middle">RPO ≤ 60 s · alert at 30 s</text>
       <rect class="box bus" x="810" y="418" width="190" height="40"/><text class="t" x="905" y="443" text-anchor="middle">MirrorMaker 2</text>
       <rect class="box" x="810" y="484" width="190" height="40"/><text class="s" x="905" y="508" text-anchor="middle">Backups · immutable copies</text>
       <line class="ln dash" x1="740" y1="378" x2="808" y2="378" marker-end="url(#dp)"/><text class="edge" x="746" y="370">async</text>
       <line class="ln dash" x1="740" y1="438" x2="808" y2="438" marker-end="url(#dp)"/>
     </svg>
     </div>
-    <figcaption><b>Cells inside zones inside regions.</b> Within the primary region, databases replicate synchronously across zones (RPO 0). The DR region receives asynchronous copies, which is why a full region loss allows up to 5 minutes of data loss and a longer recovery.</figcaption>
+    <figcaption><b>Cells inside zones inside regions.</b> Within the primary region, databases replicate synchronously across zones (RPO 0). The DR region receives asynchronous copies, continuously, so a full region loss loses at most 60 seconds of data and recovers within 30 minutes.</figcaption>
   </figure>
   <div class="tbl"><table>
     <thead><tr><th>Zone</th><th>Contains</th><th>Allowed inbound</th></tr></thead>
@@ -911,8 +948,62 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 </section>
 
 <!-- 8 -->
+<section class="part" id="s8g">
+  <h2><span class="n">8</span>Global benchmark</h2>
+  <p>How CoreBank measures up to what a global bank needs, and to the platforms it would replace. Full detail is in <code>docs/11-global-scale-and-benchmark.md</code>.</p>
+  <h3 id="s8-1"><span class="n">8.1</span>Capability check</h3>
+  <p><span class="tag ok">Covered</span> in the plan, <span class="tag p1">Partial</span> partly covered, <span class="tag p0">Gap</span> not planned before this review. Phase is when CoreBank delivers it after this review.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Capability</th><th>Status</th><th>Phase</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td class="id">1</td><td>Billion-account scale, 100,000 postings/s</td><td><span class="tag ok">Partial → covered</span></td><td>0–3</td><td>Section 4.7 design, scale-out and billion-account tests</td></tr>
+      <tr><td class="id">2</td><td>Multi-region active-active with data residency</td><td><span class="tag ok">Partial → covered</span></td><td>3–5</td><td>Home-region routing, paired DR regions</td></tr>
+      <tr><td class="id">3</td><td>24/7 with no end-of-day freeze; business date and cut-offs per entity</td><td><span class="tag ok">Covered</span></td><td>1</td><td>Per-entity cut-off calendars</td></tr>
+      <tr><td class="id">4</td><td>Multi-entity, multi-currency, multi-GAAP</td><td><span class="tag p1">Partial</span></td><td>3</td><td>Parallel ledgers by accounting book</td></tr>
+      <tr><td class="id">5</td><td>Deposits, lending, leasing, hire purchase, fleet, floor plan</td><td><span class="tag ok">Covered</span></td><td>1–2</td><td>—</td></tr>
+      <tr><td class="id">6</td><td>Risk-free-rate loans (SOFR, SONIA, €STR, THOR compounded in arrears)</td><td><span class="tag p0">Gap</span></td><td>3</td><td>RFR compounding block in the product engine</td></tr>
+      <tr><td class="id">7</td><td>Syndicated and agency loans</td><td><span class="tag p0">Gap</span></td><td>4</td><td>Native agency module or specialist integration</td></tr>
+      <tr><td class="id">8</td><td>Trade finance (LCs, guarantees, collections, supply-chain finance)</td><td><span class="tag p0">Gap</span></td><td>4–5</td><td>Integrate a specialist platform first; limits and postings in the core</td></tr>
+      <tr><td class="id">9</td><td>Global cash management and cross-border pooling</td><td><span class="tag p1">Partial</span></td><td>3–5</td><td>Extend sweeps to cross-currency, cross-entity pooling</td></tr>
+      <tr><td class="id">10</td><td>Treasury links: FX positions, nostro reconciliation, LCR and NSFR inputs</td><td><span class="tag p0">Gap</span></td><td>4</td><td>Real-time currency positions, nostro matching, liquidity mart</td></tr>
+      <tr><td class="id">11</td><td>Correspondent banking and SWIFT gpi</td><td><span class="tag p1">Partial</span></td><td>4</td><td>gpi tracking, vostro accounts</td></tr>
+      <tr><td class="id">12</td><td>Card issuing at scale</td><td><span class="tag p1">Partial</span></td><td>2</td><td>Through processors; holds and clearing designed</td></tr>
+      <tr><td class="id">13</td><td>Sanctions screening at payment speed</td><td><span class="tag p1">Partial</span></td><td>1</td><td>Screening inside the 50 ms budget</td></tr>
+      <tr><td class="id">14</td><td>Regulatory capital and risk data (Basel III and IV inputs, BCBS 239 lineage)</td><td><span class="tag p1">Partial</span></td><td>3–4</td><td>Lineage from report figures to postings</td></tr>
+      <tr><td class="id">15</td><td>Jurisdiction packs (TH, SG, HK, MY, ID, EU, UK, US)</td><td><span class="tag p1">Partial</span></td><td>4–5</td><td>One pack per market</td></tr>
+      <tr><td class="id">16</td><td>Islamic banking products</td><td><span class="tag p0">Gap</span></td><td>5</td><td>Profit-based contract blocks</td></tr>
+      <tr><td class="id">17</td><td>Open banking APIs</td><td><span class="tag p1">Partial</span></td><td>3</td><td>Standard API profiles per market</td></tr>
+      <tr><td class="id">18</td><td>Operational resilience rules (DORA, UK, BOT)</td><td><span class="tag p1">Partial</span></td><td>3</td><td>Impact tolerances, scenario tests, third-party register</td></tr>
+      <tr><td class="id">19</td><td>Legacy migration at scale</td><td><span class="tag p1">Partial</span></td><td>4</td><td>Migration factory with parallel run</td></tr>
+      <tr><td class="id">20</td><td>Certifications and tier-1 references</td><td><span class="tag p0">Gap</span></td><td>3–5</td><td>SOC 2, ISO 27001, PCI DSS; design-partner reference</td></tr>
+    </tbody>
+  </table></div>
+  <h3 id="s8-2"><span class="n">8.2</span>Against leading platforms</h3>
+  <div class="callout warn"><strong>Typical public positioning, not a vendor evaluation.</strong> Established global cores include Temenos Transact, Oracle FLEXCUBE, Infosys Finacle and TCS BaNCS. Cloud-native cores include Thought Machine Vault, Mambu and 10x SuperCore. Validate every point in due diligence.</div>
+  <div class="tbl"><table>
+    <thead><tr><th>Dimension</th><th>Established global cores</th><th>Cloud-native cores</th><th>CoreBank</th></tr></thead>
+    <tbody>
+      <tr><td>Functional breadth</td><td>Very broad, incl. trade and treasury</td><td>Retail and SME focus</td><td>Retail, SME, commercial, leasing, fleet, floor plan; trade and treasury by integration first</td></tr>
+      <tr><td>Processing model</td><td>Often batch close of business</td><td>Real time</td><td>Real time with no end-of-day, designed for a billion accounts</td></tr>
+      <tr><td>Product change</td><td>Configuration plus code and releases</td><td>Configuration or smart-contract code</td><td>Typed blocks and CEL, simulated and approved in days</td></tr>
+      <tr><td>AI</td><td>Add-on tools</td><td>Add-on tools</td><td>Agents operate through governed tools with delegated authority and audit</td></tr>
+      <tr><td>Asian lending</td><td>Through localization</td><td>Through localization</td><td>Built in: flat-to-EIR, VAT per installment, HP caps, fleet, floor plan</td></tr>
+      <tr><td>Stack and licences</td><td>Often tied to a commercial database; high licence cost</td><td>Vendor cloud; subscription</td><td>Open source, PostgreSQL default, Oracle certified, runs on the bank's stack</td></tr>
+      <tr><td>Deployment</td><td>On-premises or managed</td><td>Mostly SaaS</td><td>SaaS, private cloud or on-premises, in-country</td></tr>
+      <tr><td>Track record</td><td>Many tier-1 banks</td><td>Growing</td><td><span class="tag p0">None yet</span> the biggest gap</td></tr>
+    </tbody>
+  </table></div>
+  <h3 id="s8-3"><span class="n">8.3</span>How we win</h3>
+  <div class="cards">
+    <div class="card"><h4>Never beaten on</h4><ul><li>Correctness: no unbalanced posting, reconciliation at zero daily</li><li>Real time at a billion accounts, month end included</li><li>A new product variant in days, safely</li><li>Governed AI with full audit</li></ul></div>
+    <div class="card"><h4>Behind today</h4><ul><li>No live reference bank</li><li>Trade finance, treasury, syndication</li><li>Jurisdictions beyond Thailand</li><li>Certifications</li></ul></div>
+    <div class="card"><h4>Closing plan</h4><ul><li>Design-partner bank and an audited parallel run</li><li>Integrate trade and treasury in Phase 4</li><li>One jurisdiction pack per market, ASEAN first</li><li>SOC 2 and ISO 27001 before first launch</li></ul></div>
+  </div>
+</section>
+
+<!-- 8 -->
 <section class="part" id="s8">
-  <h2><span class="n">8</span>Open items</h2>
+  <h2><span class="n">9</span>Open items</h2>
   <div class="tbl"><table>
     <thead><tr><th>#</th><th>Item</th><th>Owner</th><th>Needed by</th></tr></thead>
     <tbody>
@@ -928,7 +1019,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 
 <!-- 9 -->
 <section class="part" id="s9">
-  <h2><span class="n">9</span>Glossary</h2>
+  <h2><span class="n">10</span>Glossary</h2>
   <div class="tbl"><table>
     <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
     <tbody>
