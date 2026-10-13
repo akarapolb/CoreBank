@@ -113,4 +113,13 @@ class MoneyTest {
         assertThatThrownBy(() -> a.times(BigDecimal.ONE, null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> new Money(1, null)).isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void currencyLookup() {
+        assertThat(Currency.of("THB")).isEqualTo(Currency.THB);
+        assertThat(Currency.of("JPY").minorUnits()).isZero();
+        assertThatThrownBy(() -> Currency.of("ZZZ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Currency.of(null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Currency.of("XAU")).isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -27,6 +27,7 @@
     <module>ledger/ledger-application</module>
     <module>ledger/ledger-testkit</module>
     <module>ledger/ledger-adapter-persistence</module>
+    <module>ledger/ledger-adapter-web</module>
   </modules>
 
   <properties>
@@ -48,6 +49,9 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency><groupId>com.google.protobuf</groupId><artifactId>protobuf-java</artifactId><version>3.25.5</version></dependency>
+      <dependency><groupId>com.google.errorprone</groupId><artifactId>error_prone_annotations</artifactId><version>2.28.0</version></dependency>
+      <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>33.2.1-android</version></dependency>
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
@@ -126,9 +130,27 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.12</version>
         </plugin>
+        <plugin>
+          <groupId>org.cyclonedx</groupId>
+          <artifactId>cyclonedx-maven-plugin</artifactId>
+          <version>2.9.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>2.4.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <executions>
+          <execution><phase>package</phase><goals><goal>makeAggregateBom</goal></goals></execution>
+        </executions>
+        <configuration><projectType>library</projectType><schemaVersion>1.6</schemaVersion><outputFormat>json</outputFormat></configuration>
+      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>

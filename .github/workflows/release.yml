@@ -1,0 +1,31 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write   # keyless signing with Sigstore
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - name: Build (tests run in ci.yml; the tag must already be green)
+        run: mvn -B -ntp package -DskipTests
+      - name: Collect artifacts and SBOM
+        run: |
+          mkdir dist
+          find . -path '*/target/*.jar' -not -name '*-sources.jar' -exec cp {} dist/ \;
+          cp target/bom.json dist/fabor-os-sbom.cdx.json
+          (cd dist && sha256sum * > SHA256SUMS)
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign artifacts (keyless)
+        run: |
+          cd dist
+          for f in *; do cosign sign-blob --yes "$f" --bundle "$f.sigstore.json"; done
+      - uses: softprops/action-gh-release@v2
+        with: { files: dist/* }

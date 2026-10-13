@@ -51,3 +51,25 @@ jobs:
           for c in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
             git log -1 --format=%B $c | grep -q '^Signed-off-by:' || { echo "Missing Signed-off-by on $c"; exit 1; }
           done
+
+  licences:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - name: Licence allowlist (ADR-0006)
+        run: scripts/licence-gate.sh
+      - name: SBOM
+        run: mvn -B -ntp package -DskipTests
+      - uses: actions/upload-artifact@v4
+        with: { name: sbom, path: target/bom.json }
+      - name: ORT analyzer (full licence and policy analysis)
+        uses: oss-review-toolkit/ort-ci-github-action@v1
+        with:
+          run: >
+            cache-dependencies,
+            analyzer,
+            evaluator,
+            report

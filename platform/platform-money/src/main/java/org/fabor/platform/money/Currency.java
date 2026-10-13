@@ -20,4 +20,19 @@ public record Currency(String code, int minorUnits) {
             throw new IllegalArgumentException("minorUnits must be 0..4: " + minorUnits);
         }
     }
+
+    /** Looks up an ISO 4217 currency from the JDK's tables. */
+    public static Currency of(String code) {
+        java.util.Currency jdk;
+        try {
+            jdk = java.util.Currency.getInstance(code);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IllegalArgumentException("Unknown currency: " + code, e);
+        }
+        int digits = jdk.getDefaultFractionDigits();
+        if (digits < 0) {
+            throw new IllegalArgumentException("Not a monetary currency: " + code);
+        }
+        return new Currency(code, digits);
+    }
 }

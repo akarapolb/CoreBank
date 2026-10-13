@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package fabor.ledger.v1;
+
+option java_multiple_files = true;
+option java_package = "org.fabor.ledger.api.grpc";
+
+// Public contract of the ledger. Money is always integer minor units; currency is ISO 4217.
+service Ledger {
+  rpc PostBatch(PostBatchRequest) returns (PostBatchResponse);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+}
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  DEBIT = 1;
+  CREDIT = 2;
+}
+
+message Entry {
+  string account = 1;
+  string balance_type = 2;   // SETTLED, PENDING, HOLD, CONTINGENT
+  Direction direction = 3;
+  int64 minor = 4;
+  string currency = 5;
+}
+
+message PostBatchRequest {
+  string tenant = 1;
+  string batch_id = 2;
+  string idempotency_key = 3;
+  string value_date = 4;       // ISO-8601 date
+  repeated Entry entries = 5;
+  string reverses = 6;         // optional: id of the batch this one reverses
+}
+
+message PostBatchResponse {
+  string batch_id = 1;
+  string recorded_at = 2;      // ISO-8601 instant
+  bool replayed = 3;           // true when the idempotency key was already used with the same content
+}
+
+message GetBalanceRequest {
+  string tenant = 1;
+  string account = 2;
+  string balance_type = 3;
+  string currency = 4;
+  string value_as_of = 5;      // ISO-8601 date
+}
+
+message GetBalanceResponse {
+  int64 minor = 1;
+  string currency = 2;
+}
