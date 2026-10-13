@@ -59,7 +59,7 @@ Contracts include an annual minimum commitment, so revenue is predictable while 
 | Customer | Usage | Annual revenue |
 |---|---|---|
 | Thai leasing and hire-purchase company | 400k active contracts at $0.40, platform $250k, AI collections $120k | ≈ $2.3M |
-| Virtual bank, year 3 | 1.5M deposit accounts at $0.06, 150k loans at $0.50, platform $200k, assistant $250k | ≈ $2.5M |
+| Virtual bank, year 3 | 1.5M deposit accounts at $0.06, 150k loans at $0.50, platform $200k, assistant $250k | ≈ $2.4M |
 | Regional commercial bank, Enterprise | Subscription $1.5M, trade and treasury usage $0.6M, extra jurisdiction pack $0.2M | ≈ $2.3M |
 | Fintech lender on Cloud, year 1 | 60k loans at $0.60, platform $150k (minimum commitment) | ≈ $0.6M |
 
