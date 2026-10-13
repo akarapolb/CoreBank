@@ -40,7 +40,7 @@ public abstract class LedgerStoreConformance {
 
     protected abstract LedgerStore newStore();
 
-    protected static PostingBatch deposit(String id, String key, LocalDate value, long minor) {
+    public static PostingBatch deposit(String id, String key, LocalDate value, long minor) {
         return PostingBatch.of(T, new BatchId(id), new IdempotencyKey(key), value, List.of(
                 new Entry(CASH, BalanceType.SETTLED, Direction.DEBIT, Money.ofMinor(minor, Currency.THB)),
                 new Entry(CUSTOMER, BalanceType.SETTLED, Direction.CREDIT, Money.ofMinor(minor, Currency.THB))));

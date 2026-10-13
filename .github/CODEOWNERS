@@ -1,0 +1,6 @@
+# Ledger, money and security changes need review from these owners (two reviewers, see CONTRIBUTING.md).
+/platform/platform-money/   @akarapolb
+/ledger/                    @akarapolb
+/agent-gateway/             @akarapolb
+/docs/adr/                  @akarapolb
+/.github/                   @akarapolb

@@ -30,6 +30,7 @@
     <module>ledger/ledger-adapter-web</module>
     <module>ledger/ledger-adapter-metrics</module>
     <module>ledger/ledger-perf</module>
+    <module>agent-gateway</module>
   </modules>
 
   <properties>
