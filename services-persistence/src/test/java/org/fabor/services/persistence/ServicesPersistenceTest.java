@@ -222,10 +222,12 @@ class ServicesPersistenceTest {
         }
         Draft d = mb.createDraft("maya", yaml);
         mb.submit(d.id(), "maya");
+        assertThat(store.openDrafts()).extracting(Draft::id).containsExactly(d.id());
         mb.approve(d.id(), "bob", "PRODUCT");
         assertThat(store.draft(d.id()).orElseThrow().approvals()).containsEntry("PRODUCT", "bob");
         mb.approve(d.id(), "rita", "RISK");
         PublishedVersion v = mb.publish(d.id(), "maya");
+        assertThat(store.openDrafts()).isEmpty();
         assertThat(store.version("PERSONAL_LOAN_STD", 1)).contains(v);
         assertThat(store.versions("PERSONAL_LOAN_STD")).hasSize(1);
         assertThatThrownBy(() -> store.publish(v)).isInstanceOf(IllegalStateException.class).hasMessageContaining("already published");

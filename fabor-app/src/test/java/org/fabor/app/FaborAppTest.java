@@ -204,6 +204,27 @@ class FaborAppTest {
         List myLoans = http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(me), List.class).getBody();
         assertThat(myLoans).hasSize(1);
         assertThat(((Map) myLoans.get(0)).get("id")).isEqualTo("LN-APP1");
+        // staff views for the console: a customer with contracts, one contract in full, the postings of an account
+        Map<String, Object> cust = call(HttpMethod.GET, "/api/v1/customers/P1", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(cust.get("depositAccountId")).isEqualTo("SAV-P1");
+        assertThat((List<?>) cust.get("loans")).hasSize(1);
+        assertThat(cust.toString()).doesNotContain("Anong").doesNotContain("1101700230678");
+        Map<String, Object> detail = call(HttpMethod.GET, "/api/v1/loans/LN-APP1/detail?asOf=2026-01-15", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat((List<?>) detail.get("instalments")).hasSize(12);
+        assertThat(((Number) detail.get("outstandingMinor")).longValue()).isEqualTo(10_000_000L);
+        assertThat(call(HttpMethod.GET, "/api/v1/loans/LN-APP1/detail", "ops", null, MediaType.APPLICATION_JSON).get("status")).isEqualTo("ACTIVE");
+        ResponseEntity<List> posted = http.exchange("/api/v1/ledger/batches?account=dep:SAV-P1&limit=5", HttpMethod.GET,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class);
+        assertThat(posted.getBody()).hasSize(1);
+        Map firstBatch = (Map) posted.getBody().get(0);
+        assertThat(firstBatch.get("reason")).isEqualTo("Loan paid out");
+        assertThat(firstBatch.get("origin")).isEqualTo("SYSTEM");
+        assertThat((List<?>) firstBatch.get("legs")).hasSize(4);                       // principal, deposit, fee income, VAT
+        assertThat(StaffViewController.origin("SAV-P1:dep-teller-1")).isEqualTo("HUMAN");
+        assertThat(http.exchange("/api/v1/customers/NOPE", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class)
+                .getStatusCode().is4xxClientError()).isTrue();
+        List<?> openDrafts = http.exchange("/api/v1/products/drafts", HttpMethod.GET, new HttpEntity<>(headers("maya", MediaType.APPLICATION_JSON)), List.class).getBody();
+        assertThat(openDrafts).isEmpty();                                                          // both products are published
         HttpHeaders other = headers("P2", MediaType.APPLICATION_JSON);
         other.set("X-Party", "P2");
         ResponseEntity<List> othersLoans = http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(other), List.class);

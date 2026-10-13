@@ -1,60 +1,55 @@
-// Takes the Phase 1 screenshots in docs/ui/ against an app started in demo mode (see scripts/app-smoke.js for the setup).
+// Screenshot tour of the staff console and the customer app against a running demo app (see docs/quickstart.md).
+// Usage: NODE_PATH=$(npm root -g) OUT=docs/ui node scripts/ui-tour.js
 const { chromium, devices } = require('playwright');
-const fs = require('fs');
-const BASE = 'http://localhost:18080', TOKEN = 'ui-smoke-token-123456', OUT = process.env.OUT || 'docs/ui';
-const yamls = ['fabor-app/src/test/resources/products/savings.yaml', 'fabor-app/src/test/resources/products/personal-loan.yaml'];
-async function staff(method, path, actor, body, type) {
-  const r = await fetch(BASE + '/api/v1' + path, { method, headers: { Authorization: 'Bearer ' + TOKEN, 'X-Actor': actor, 'Content-Type': type || 'application/json' },
-    body: body === undefined ? undefined : (type ? body : JSON.stringify(body)) });
-  const t = await r.text(); if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${t}`); return t ? JSON.parse(t) : null;
-}
-const iso = (d) => d.toISOString().slice(0, 10);
-(async () => {
-  const browser = await chromium.launch();
-  // ---------- console
-  const page = await browser.newPage({ viewport: { width: 1180, height: 860 } });
-  const wait = (re) => page.waitForFunction((r) => new RegExp(r).test(document.getElementById('status').textContent), re.source, { timeout: 15000 });
-  const as = async (actor) => { await page.fill('#actor', actor); await page.fill('#token', TOKEN); await page.click('#auth button'); };
-  await page.goto(BASE + '/console/index.html');
-  await as('maya');
-  for (const y of yamls) {
-    await page.fill('#yaml', fs.readFileSync(y, 'utf8')); await page.click('#createDraft'); await wait(/Create draft done/);
-    await page.click('#check'); await wait(/Check done/);
-    if (y.includes('personal')) await page.screenshot({ path: `${OUT}/console-1-master-builder-check.png`, fullPage: true });
-    await page.click('#submit'); await wait(/Submit done/);
-    for (const [a, r] of [['bob', 'PRODUCT'], ['rita', 'RISK'], ['fin', 'FINANCE'], ['carl', 'COMPLIANCE']]) { await as(a); await page.selectOption('#role', r); await page.click('#approve'); await wait(/Approve done/); }
-    await as('maya'); await page.click('#publish'); await wait(/Publish done/);
-  }
-  await page.fill('#versionsCode', 'PERSONAL_LOAN_STD'); await page.click('#listVersions'); await wait(/List versions done/);
-  await page.screenshot({ path: `${OUT}/console-2-published-version.png`, fullPage: true });
+const fs=require('fs');
+const BASE='http://localhost:18080', TOKEN='ui-smoke-token-123456', OUT=process.env.OUT||'docs/ui';
+fs.mkdirSync(OUT,{recursive:true});
+const iso=d=>d.toISOString().slice(0,10);
+async function staff(method,path,actor,body){const r=await fetch(BASE+'/api/v1'+path,{method,headers:{Authorization:'Bearer '+TOKEN,'X-Actor':actor,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const t=await r.text();if(!r.ok)throw new Error(method+path+' '+r.status+' '+t);return t?JSON.parse(t):null}
+(async()=>{
+ const b=await chromium.launch(); const p=await b.newPage({viewport:{width:1440,height:900}});
+ const errs=[]; p.on('console',m=>{if(m.type()==='error')errs.push(m.text())}); p.on('pageerror',e=>errs.push('PAGE '+e));
+ const shot=async(n,full)=>{await p.waitForTimeout(600); await p.screenshot({path:`${OUT}/${n}.png`,fullPage:!!full})};
+ const as=async(a)=>{await p.goto(BASE+'/console/index.html#settings'); await p.waitForTimeout(500); await p.fill('#acActor',a); await p.fill('#acToken',TOKEN); await p.click('#acUse'); await p.waitForTimeout(400)};
+ const go=async h=>{await p.evaluate(h=>{location.hash=h},h); await p.waitForTimeout(500)};
+ // products: savings via API (maker maya), personal loan through the Master Builder screen
+ const sav=require('fs').readFileSync('fabor-app/src/test/resources/products/savings.yaml','utf8');
+ const d=await fetch(BASE+'/api/v1/products/drafts',{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'X-Actor':'maya','Content-Type':'text/plain'},body:sav}).then(r=>r.json());
+ await staff('POST',`/products/drafts/${d.id}/submit`,'maya');
+ for(const [a,r] of [['bob','PRODUCT'],['rita','RISK'],['fin','FINANCE'],['carl','COMPLIANCE']]) await staff('POST',`/products/drafts/${d.id}/approve`,a,{role:r});
+ await staff('POST',`/products/drafts/${d.id}/publish`,'maya');
 
-  await page.click('[data-tab=customers]');
-  await as('ops');
-  await page.fill('[name=partyId]', 'P1'); await page.fill('[name=fullName]', 'Anong Suksan'); await page.fill('[name=nationalId]', '1101700230678');
-  await page.fill('[name=phone]', '0812345678'); await page.fill('[name=dateOfBirth]', '1990-06-01');
-  await page.click('#registerForm button[type=submit]'); await wait(/Register customer done/);
-  await page.screenshot({ path: `${OUT}/console-3-customer-registered.png`, fullPage: true });
+ await as('maya'); await go('builder'); await shot('console-01-master-builder',true);
+ await p.click('#mbTpl >> text=Personal'); await shot('console-02-master-builder-personal-loan',true);
+ await p.click('#mbPublish'); await p.waitForTimeout(1500); await shot('console-03-approvals-pending');
+ await p.click('[data-live=check]'); await shot('console-04-approvals-server-check');
+ const dr=await staff('GET','/products/drafts','maya'); const id=dr.find(x=>x.product==='PERSONAL_LOAN').id;
+ for(const [a,r] of [['bob','PRODUCT'],['rita','RISK'],['fin','FINANCE'],['carl','COMPLIANCE']]) await staff('POST',`/products/drafts/${id}/approve`,a,{role:r});
+ await as('maya'); await go('approvals'); await shot('console-05-approvals-ready-to-publish');
+ await p.click('[data-live=publish]'); await p.waitForTimeout(1000);
 
-  const disb = new Date(Date.now() - 75 * 86400000);
-  await page.click('[data-tab=loans]');
-  const f = { applicationId: 'APP1', partyId: 'P1', amountMinor: '10000000', termMonths: '12', monthlyInstalmentMinor: '916800', monthlyIncomeMinor: '5000000', existingDebtMinor: '500000', monthsAtEmployer: '36', asOf: iso(disb) };
-  for (const [k, v] of Object.entries(f)) await page.fill(`#loanForm [name=${k}]`, v);
-  await page.click('#loanForm button[type=submit]'); await wait(/Loan decision done/);
-  await page.screenshot({ path: `${OUT}/console-4-loan-decision.png`, fullPage: true });
+ await as('ops'); await go('customer');
+ await p.fill('#rgId','P1'); await p.fill('#rgName','Anong Suksan'); await p.fill('#rgNid','1101700230678'); await p.fill('#rgPhone','0812345678'); await p.fill('#rgDob','1990-06-01');
+ await p.click('#rgGo'); await p.waitForTimeout(1500); await shot('console-06-customer-360',true);
 
-  // a declined application shows its reasons
-  for (const [k, v] of Object.entries({ ...f, applicationId: 'APP2', amountMinor: '40000000', monthlyInstalmentMinor: '3600000', existingDebtMinor: '3500000' })) await page.fill(`#loanForm [name=${k}]`, v);
-  await page.click('#loanForm button[type=submit]'); await wait(/Loan decision done/);
-  await page.screenshot({ path: `${OUT}/console-5-loan-declined-with-reasons.png`, fullPage: true });
+ await go('branch'); await p.fill('#tAcct','SAV-P1'); await p.fill('#tAmt','50000'); await p.click('#tPost'); await p.waitForTimeout(800); await shot('console-07-teller-deposit',true);
 
-  await page.click('[data-tab=accounts]');
-  await page.fill('#moveForm [name=account]', 'SAV-P1'); await page.fill('#moveForm [name=reference]', 'r1'); await page.fill('#moveForm [name=amount]', '1'); await page.fill('#moveForm [name=valueDate]', iso(new Date()));
-  await page.click('#doBalance'); await wait(/Balance done/);
-  await page.screenshot({ path: `${OUT}/console-6-account-balance.png`, fullPage: true });
-
+ const disb=new Date(Date.now()-75*86400000);
+ await go('contract');
+ const f={apProd:'PERSONAL_LOAN',apId:'APP1',apParty:'P1',apAmt:'100000',apTerm:'12',apInst:'9168',apInc:'50000',apDebt:'5000',apEmp:'36',apAsOf:iso(disb)};
+ for(const [k,v] of Object.entries(f)) await p.fill('#'+k,v);
+ await p.click('#apGo'); await p.waitForTimeout(2500); await shot('console-08-contract-approved',true);
+ await go('contract');
+ for(const [k,v] of Object.entries({apId:'APP2',apAmt:'400000',apInst:'36000',apDebt:'35000'})) await p.fill('#'+k,v);
+ await p.click('#apGo'); await p.waitForTimeout(1500); await shot('console-09-loan-declined',true);
+ await new Promise(r=>setTimeout(r,6000));
+ await p.fill('#lnId','LN-APP1'); await p.click('#loanLookup button'); await p.waitForTimeout(1500); await shot('console-10-contract-overdue',true);
+ await go('ledger'); await p.fill('#lgAcct','dep:SAV-P1'); await p.click('#ledgerForm button'); await p.waitForTimeout(1200);
+ await p.click('#batches details >> nth=0'); await shot('console-11-ledger-postings',true);
+ console.log(errs.join('\n')||'no console errors');
   // ---------- mobile app: the scheduler has billed the overdue instalments by now
   await new Promise((r) => setTimeout(r, 6000));
-  const ctx = await browser.newContext({ ...devices['Pixel 7'] });
+  const ctx = await b.newContext({ ...devices['Pixel 7'] });
   const app = await ctx.newPage();
   await app.goto(BASE + '/app/index.html');
   await app.screenshot({ path: `${OUT}/app-0-sign-in.png` });
@@ -71,11 +66,11 @@ const iso = (d) => d.toISOString().slice(0, 10);
     await app.click('#confirmOk'); await app.waitForFunction(() => /Payment made/.test(document.getElementById('msg').textContent), null, { timeout: 10000 }); await app.waitForTimeout(500);
     await app.screenshot({ path: `${OUT}/app-5-after-payment.png` });
   }
-  const dark = await browser.newContext({ ...devices['Pixel 7'], colorScheme: 'dark' });
-  const d = await dark.newPage();
-  await d.goto(BASE + '/app/index.html'); await d.fill('#devToken', TOKEN); await d.fill('#devParty', 'P1'); await d.click('#devForm button[type=submit]');
-  await d.waitForFunction(() => document.getElementById('balance').textContent !== '–'); await d.waitForTimeout(400);
-  await d.screenshot({ path: `${OUT}/app-6-home-dark.png` });
-  await browser.close();
+  const dark = await b.newContext({ ...devices['Pixel 7'], colorScheme: 'dark' });
+  const dk = await dark.newPage();
+  await dk.goto(BASE + '/app/index.html'); await dk.fill('#devToken', TOKEN); await dk.fill('#devParty', 'P1'); await dk.click('#devForm button[type=submit]');
+  await dk.waitForFunction(() => document.getElementById('balance').textContent !== '–'); await dk.waitForTimeout(400);
+  await dk.screenshot({ path: `${OUT}/app-6-home-dark.png` });
+  await b.close();
   console.log(fs.readdirSync(OUT).filter((x) => x.endsWith('.png')).join('\n'));
 })().catch((e) => { console.error('TOUR FAILED', e); process.exit(1); });

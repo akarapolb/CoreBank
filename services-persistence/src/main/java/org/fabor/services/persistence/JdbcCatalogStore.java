@@ -46,6 +46,21 @@ public final class JdbcCatalogStore implements CatalogStore {
     }
 
     @Override
+    public java.util.List<Draft> openDrafts() {
+        return Jdbc.tx(ds, c -> {
+            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id, product, version, author, yaml, yaml_hash, status, reviewed_hash, "
+                    + "approvals FROM catalog_draft WHERE status <> 'PUBLISHED' ORDER BY id"); ResultSet rs = ps.executeQuery()) {
+                java.util.List<Draft> out = new java.util.ArrayList<>();
+                while (rs.next()) {
+                    out.add(new Draft(rs.getString(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5), rs.getString(6),
+                            Draft.Status.valueOf(rs.getString(7)), rs.getString(8), decode(rs.getString(9))));
+                }
+                return out;
+            }
+        });
+    }
+
+    @Override
     public void publish(PublishedVersion v) {
         try {
             Jdbc.tx(ds, c -> {

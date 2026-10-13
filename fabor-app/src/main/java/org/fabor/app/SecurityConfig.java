@@ -35,8 +35,24 @@ class SecurityConfig implements WebMvcConfigurer {
         return http.build();
     }
 
+    /**
+     * The staff console is the design prototype shipped as-is, and the customer app shares its typefaces: it loads its typefaces from Google Fonts and styles
+     * elements with style attributes. Scripts stay restricted to this origin, and the API chain below keeps the strict policy.
+     */
     @Bean
     @Order(2)
+    SecurityFilterChain consoleUi(HttpSecurity http, ConsoleProperties console) throws Exception {
+        http.securityMatcher("/console/**", "/app/**").authorizeHttpRequests(a -> a.anyRequest().permitAll())
+                .csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
+                        "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline';"
+                                + " font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' " + console.tokenOrigin()
+                                + "; frame-ancestors 'none'; base-uri 'none'")));
+        return http.build();
+    }
+
+    @Bean
+    @Order(3)
     SecurityFilterChain api(HttpSecurity http, FaborProperties props, ConsoleProperties console) throws Exception {
         http.csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(

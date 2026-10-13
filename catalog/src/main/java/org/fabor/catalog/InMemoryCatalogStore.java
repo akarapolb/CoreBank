@@ -22,6 +22,11 @@ public final class InMemoryCatalogStore implements CatalogStore {
     }
 
     @Override
+    public synchronized List<Draft> openDrafts() {
+        return drafts.values().stream().filter(d -> d.status() != Draft.Status.PUBLISHED).sorted(Comparator.comparing(Draft::id)).toList();
+    }
+
+    @Override
     public synchronized void publish(PublishedVersion v) {
         if (published.putIfAbsent(v.product() + "@" + v.version(), v) != null) {
             throw new IllegalStateException("Version already published: " + v.product() + " v" + v.version());

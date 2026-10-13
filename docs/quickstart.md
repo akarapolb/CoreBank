@@ -45,7 +45,7 @@ export FABOR_AUTH_MODE=token FABOR_API_TOKEN=a-long-development-token
 java -jar fabor-app/target/fabor-app-0.1.0-SNAPSHOT.jar         # API :8080, metrics/health :8081, gRPC :9090
 ```
 
-Open `http://localhost:8080/console/`, enter an actor name and the token, and use the Products tab to publish a product through the four approvals. `scripts/console-smoke.js` drives the same flow in headless Chromium.
+Open `http://localhost:8080/console/`, go to Settings, enter an actor name and the token under Access, then use Master Builder and Approvals to publish a product through the four approvals. The console is the design prototype (`prototype/index.html`) split into `console.css`, `proto.js` and `index.html` without visual changes; `live.js` fills its screens with real data once you are signed in (Master Builder, Approvals, Customer 360, Contracts, Ledger, teller deposits). `scripts/console-smoke.js` drives the flow in headless Chromium and `scripts/ui-tour.js` regenerates the screenshots in `docs/ui/`.
 
 ### Browser sign-in (OIDC, authorization code with PKCE)
 

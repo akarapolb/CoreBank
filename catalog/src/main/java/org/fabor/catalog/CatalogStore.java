@@ -9,6 +9,9 @@ public interface CatalogStore {
 
     Optional<Draft> draft(String id);
 
+    /** Drafts still being worked on or waiting for approval (not yet published), oldest id first. */
+    List<Draft> openDrafts();
+
     /** @throws IllegalStateException if the version already exists */
     void publish(PublishedVersion version);
 

@@ -7,11 +7,14 @@
 <title>Fabor</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <div id="login" class="screen" hidden>
-  <div class="hero"><span class="mark" aria-hidden="true">F</span><h1>Fabor</h1><p>Your accounts and loans in one place.</p></div>
+  <div class="hero"><svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true" class="logo-mark"><rect width="64" height="64" rx="15" fill="#3156F5"/><rect x="18" y="14" width="9" height="36" rx="1.5" fill="#FFFFFF"/><rect x="18" y="14" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="18" y="27.5" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="37" y="41" width="9" height="9" rx="1.5" fill="#14B89A"/></svg><h1>Fabor</h1><p>Your accounts and loans in one place.</p></div>
   <button id="signin" class="primary wide" type="button" hidden>Sign in</button>
   <form id="devForm" class="card" hidden autocomplete="off">
     <p class="note">Development sign-in</p>
@@ -23,7 +26,7 @@
 </div>
 
 <div id="shell" hidden>
-  <header class="bar"><span class="mark small" aria-hidden="true">F</span><strong id="hello">Hello</strong><button id="signout" class="ghost" type="button">Sign out</button></header>
+  <header class="bar"><svg viewBox="0 0 64 64" width="28" height="28" aria-hidden="true" class="logo-mark"><rect width="64" height="64" rx="15" fill="#3156F5"/><rect x="18" y="14" width="9" height="36" rx="1.5" fill="#FFFFFF"/><rect x="18" y="14" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="18" y="27.5" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="37" y="41" width="9" height="9" rx="1.5" fill="#14B89A"/></svg><strong id="hello">Hello</strong><button id="signout" class="ghost" type="button">Sign out</button></header>
   <p id="msg" class="msg" role="status" aria-live="polite" hidden></p>
   <main>
     <section id="home" class="view">

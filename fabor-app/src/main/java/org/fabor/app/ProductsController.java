@@ -27,9 +27,9 @@ class ProductsController {
         this.store = store;
     }
 
-    record DraftView(String id, String product, int version, String status, Map<String, String> approvals) {
+    record DraftView(String id, String product, int version, String status, Map<String, String> approvals, String author) {
         static DraftView of(Draft d) {
-            return new DraftView(d.id(), d.product(), d.version(), d.status().name(), d.approvals());
+            return new DraftView(d.id(), d.product(), d.version(), d.status().name(), d.approvals(), d.author());
         }
     }
 
@@ -40,6 +40,11 @@ class ProductsController {
     }
 
     record ApproveRequest(String role) { }
+
+    @GetMapping("/drafts")
+    List<DraftView> drafts() {
+        return store.openDrafts().stream().map(DraftView::of).toList();
+    }
 
     @PostMapping(value = "/drafts", consumes = {"application/yaml", MediaType.TEXT_PLAIN_VALUE})
     DraftView create(Actor actor, @RequestBody String yaml) {

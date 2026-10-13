@@ -45,12 +45,14 @@ class MasterBuilderTest {
     void happyPathToPublishedImmutableVersion() {
         Draft d = inReview();
         assertThat(d.status()).isEqualTo(Draft.Status.IN_REVIEW);
+        assertThat(store.openDrafts()).extracting(Draft::id).containsExactly(d.id());
         approveAll(d.id());
         PublishedVersion v = mb.publish(d.id(), "maya");
         assertThat(v.product()).isEqualTo("PERSONAL_LOAN_STD");
         assertThat(v.version()).isEqualTo(1);
         assertThat(v.approvals()).containsOnlyKeys(ROLES.toArray(String[]::new));
         assertThat(v.goldenHash()).isNotEmpty();
+        assertThat(store.openDrafts()).isEmpty();
         assertThat(v.publishedAt()).isEqualTo(Instant.parse("2026-02-01T00:00:00Z"));
         assertThat(store.version("PERSONAL_LOAN_STD", 1)).isPresent();
         assertThat(store.draft(d.id()).orElseThrow().status()).isEqualTo(Draft.Status.PUBLISHED);
