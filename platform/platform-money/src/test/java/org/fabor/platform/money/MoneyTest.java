@@ -78,4 +78,39 @@ class MoneyTest {
         return Arbitraries.longs().between(0, 1_000_000).array(long[].class).ofMinSize(1).ofMaxSize(12)
                 .filter(w -> java.util.Arrays.stream(w).sum() > 0);
     }
+
+    @Test
+    void currencyValidation() {
+        assertThatThrownBy(() -> new Currency("thb", 2)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Currency(null, 2)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new Currency("XXX", 5)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Currency("XXX", -1)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(Currency.EUR.minorUnits()).isEqualTo(2);
+        assertThat(Currency.KWD.minorUnits()).isEqualTo(3);
+    }
+
+    @Test
+    void allocateEdgeCases() {
+        Money neg = Money.ofMinor(-100, Currency.THB);
+        assertThat(neg.allocate(1, 1, 1)).extracting(Money::minor).containsExactly(-34L, -33L, -33L);
+        assertThat(Money.ofMinor(5, Currency.THB).allocate(0, 1, 1)).extracting(Money::minor).containsExactly(0L, 3L, 2L);
+        assertThat(Money.ofMinor(1, Currency.THB).allocate(1, 1, 1, 1)).extracting(Money::minor).containsExactly(1L, 0L, 0L, 0L);
+        assertThatThrownBy(() -> neg.allocate()).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> neg.allocate(0, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> neg.allocate(-1, 2)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void helpers() {
+        Money a = Money.ofMinor(150, Currency.THB);
+        assertThat(a.negate().isNegative()).isTrue();
+        assertThat(Money.zero(Currency.THB).isZero()).isTrue();
+        assertThat(a.isZero()).isFalse();
+        assertThat(a.isNegative()).isFalse();
+        assertThat(a.toString()).isEqualTo("1.50 THB");
+        assertThat(a.compareTo(Money.ofMinor(200, Currency.THB))).isNegative();
+        assertThatThrownBy(() -> a.compareTo(Money.ofMinor(1, Currency.USD))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> a.times(BigDecimal.ONE, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new Money(1, null)).isInstanceOf(NullPointerException.class);
+    }
 }

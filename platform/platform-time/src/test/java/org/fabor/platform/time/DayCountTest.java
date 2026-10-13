@@ -25,4 +25,17 @@ class DayCountTest {
         assertThat(DayCount.THIRTY_360.yearFraction(LocalDate.of(2026, 1, 31), LocalDate.of(2027, 1, 31)))
                 .isEqualByComparingTo("1");
     }
+
+    @Test
+    void thirty360EndOfMonthRule() {
+        assertThat(DayCount.THIRTY_360.yearFraction(LocalDate.of(2026, 1, 30), LocalDate.of(2026, 3, 31)))
+                .isEqualByComparingTo(new BigDecimal("60").divide(new BigDecimal("360"), java.math.MathContext.DECIMAL128));
+    }
+
+    @Test
+    void rejectsReversedDates() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> DayCount.ACT_365F.yearFraction(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 1, 1)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
