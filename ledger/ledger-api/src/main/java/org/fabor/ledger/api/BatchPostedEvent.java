@@ -38,4 +38,20 @@ public record BatchPostedEvent(String tenant, String batchId, String idempotency
             throw new IllegalStateException(e);
         }
     }
+
+    /** Parses an outbox payload produced by {@link #toJson()}. */
+    public static BatchPostedEvent fromJson(String json) {
+        try {
+            com.fasterxml.jackson.databind.JsonNode n = MAPPER.readTree(json);
+            List<Line> lines = new java.util.ArrayList<>();
+            for (com.fasterxml.jackson.databind.JsonNode e : n.get("entries")) {
+                lines.add(new Line(e.get("account").asText(), e.get("balanceType").asText(), e.get("direction").asText(),
+                        e.get("minor").asLong(), e.get("currency").asText()));
+            }
+            return new BatchPostedEvent(n.get("tenant").asText(), n.get("batchId").asText(), n.get("idempotencyKey").asText(),
+                    n.get("valueDate").asText(), n.get("recordedAt").asText(), n.get("reverses").asText(), lines);
+        } catch (JsonProcessingException | NullPointerException e) {
+            throw new IllegalArgumentException("Invalid BatchPosted payload", e);
+        }
+    }
 }

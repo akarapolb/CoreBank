@@ -71,4 +71,13 @@ public final class ShardedLedgerStore implements LedgerStore {
     public Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
         return shards.get(directory.shardOf(tenant, account)).currentBalance(tenant, account, type, currency);
     }
+
+    @Override
+    public List<AccountId> accounts(TenantId tenant) {
+        java.util.Set<AccountId> out = new java.util.TreeSet<>(java.util.Comparator.comparing(AccountId::value));
+        for (LedgerStore s : shards) {
+            out.addAll(s.accounts(tenant));
+        }
+        return List.copyOf(out);
+    }
 }

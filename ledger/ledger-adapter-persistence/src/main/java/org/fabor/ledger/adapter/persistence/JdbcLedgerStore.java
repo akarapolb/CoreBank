@@ -308,6 +308,24 @@ public abstract class JdbcLedgerStore implements LedgerStore {
     }
 
     @Override
+    public List<AccountId> accounts(TenantId tenant) {
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT DISTINCT account FROM ledger_balance WHERE tenant = ? ORDER BY account")) {
+            ps.setString(1, tenant.value());
+            try (ResultSet rs = ps.executeQuery()) {
+                List<AccountId> out = new ArrayList<>();
+                while (rs.next()) {
+                    out.add(new AccountId(rs.getString(1)));
+                }
+                return out;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Ledger accounts failed", e);
+        }
+    }
+
+    @Override
     public Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
         try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(

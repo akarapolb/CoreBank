@@ -40,6 +40,9 @@ public interface LedgerStore {
      */
     Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency);
 
+    /** Every account that has at least one entry. Used by reconciliation, not on the posting path. */
+    java.util.List<AccountId> accounts(TenantId tenant);
+
     record StoredBatch(PostingBatch batch, Instant recordedAt) { }
 
     record PostResult(StoredBatch stored, boolean replayed) { }

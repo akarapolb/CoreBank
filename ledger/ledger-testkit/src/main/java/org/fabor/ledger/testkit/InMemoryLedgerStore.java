@@ -90,6 +90,17 @@ public final class InMemoryLedgerStore implements LedgerStore {
     }
 
     @Override
+    public synchronized java.util.List<AccountId> accounts(TenantId tenant) {
+        java.util.Set<AccountId> out = new java.util.TreeSet<>(java.util.Comparator.comparing(AccountId::value));
+        for (StoredBatch s : log) {
+            if (s.batch().tenant().equals(tenant)) {
+                s.batch().entries().forEach(e -> out.add(e.account()));
+            }
+        }
+        return java.util.List.copyOf(out);
+    }
+
+    @Override
     public synchronized Optional<StoredBatch> find(TenantId tenant, BatchId id) {
         return Optional.ofNullable(byId.get(tenant.value() + "/" + id.value()));
     }

@@ -78,6 +78,11 @@ public final class MeteredLedgerStore implements LedgerStore {
         return timed("current_balance", () -> delegate.currentBalance(tenant, account, type, currency));
     }
 
+    @Override
+    public java.util.List<AccountId> accounts(TenantId tenant) {
+        return timed("accounts", () -> delegate.accounts(tenant));
+    }
+
     private <T> T timed(String op, java.util.function.Supplier<T> call) {
         return Timer.builder(READ).tag("op", op).publishPercentiles(0.5, 0.99).register(registry)
                 .record(call);

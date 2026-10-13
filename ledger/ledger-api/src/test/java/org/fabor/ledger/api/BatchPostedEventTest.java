@@ -24,4 +24,16 @@ class BatchPostedEventTest {
             assertThat((List<?>) r.get("entries")).hasSize(2);
         }
     }
+
+    @Test
+    void roundTripAndRejectGarbage() {
+        BatchPostedEvent e = new BatchPostedEvent("bank-a", "b1", "k1", "2026-01-01", "2026-01-01T00:00:00Z", "b0",
+                List.of(new BatchPostedEvent.Line("a", "SETTLED", "DEBIT", 5, "THB"),
+                        new BatchPostedEvent.Line("b", "SETTLED", "CREDIT", 5, "THB")));
+        assertThat(BatchPostedEvent.fromJson(e.toJson())).isEqualTo(e);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> BatchPostedEvent.fromJson("{}"))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> BatchPostedEvent.fromJson("not json"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

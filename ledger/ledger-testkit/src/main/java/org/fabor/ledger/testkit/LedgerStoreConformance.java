@@ -245,4 +245,12 @@ public abstract class LedgerStoreConformance {
         assertThat(ok).isEqualTo(10);
         assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isZero();
     }
+
+    @Test
+    void listsAccountsPerTenant() {
+        LedgerStore s = newStore();
+        s.append(deposit("b1", "k1", LocalDate.of(2026, 1, 1), 100), T0);
+        assertThat(s.accounts(T)).extracting(AccountId::value).containsExactlyInAnyOrder("cust-1", "gl-cash");
+        assertThat(s.accounts(new TenantId("other"))).isEmpty();
+    }
 }
