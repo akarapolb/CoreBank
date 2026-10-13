@@ -1,0 +1,41 @@
+[ {
+  "scenario" : "on_time",
+  "instalments" : 12,
+  "interest" : 1001599,
+  "upfrontFees" : 100000,
+  "lateCharges" : 0,
+  "settlementFee" : 0,
+  "totalPaidByCustomer" : 11101599,
+  "effectiveRate" : 0.218678,
+  "finalBalance" : 0
+}, {
+  "scenario" : "missed_1_by_10d",
+  "instalments" : 12,
+  "interest" : 1001599,
+  "upfrontFees" : 100000,
+  "lateCharges" : 3670,
+  "settlementFee" : 0,
+  "totalPaidByCustomer" : 11105269,
+  "effectiveRate" : 0.219525,
+  "finalBalance" : 0
+}, {
+  "scenario" : "missed_2_by_45d",
+  "instalments" : 12,
+  "interest" : 1001599,
+  "upfrontFees" : 100000,
+  "lateCharges" : 16515,
+  "settlementFee" : 0,
+  "totalPaidByCustomer" : 11118114,
+  "effectiveRate" : 0.222431,
+  "finalBalance" : 0
+}, {
+  "scenario" : "early_settlement_at_6",
+  "instalments" : 6,
+  "interest" : 723980,
+  "upfrontFees" : 100000,
+  "lateCharges" : 0,
+  "settlementFee" : 0,
+  "totalPaidByCustomer" : 10823980,
+  "effectiveRate" : 0.226910,
+  "finalBalance" : 0
+} ]

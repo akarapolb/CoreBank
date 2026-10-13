@@ -34,6 +34,7 @@
     <module>ledger/ledger-adapter-metrics</module>
     <module>ledger/ledger-perf</module>
     <module>agent-gateway</module>
+    <module>simulator</module>
   </modules>
 
   <properties>
