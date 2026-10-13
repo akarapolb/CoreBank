@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build, unit, property and architecture tests
+        run: mvn -B -ntp verify
+      - name: DCO sign-off check
+        if: github.event_name == 'pull_request'
+        run: |
+          for c in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
+            git log -1 --format=%B $c | grep -q '^Signed-off-by:' || { echo "Missing Signed-off-by on $c"; exit 1; }
+          done
