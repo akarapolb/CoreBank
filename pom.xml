@@ -45,6 +45,7 @@
     <module>decisioning</module>
     <module>onboarding</module>
     <module>services-persistence</module>
+    <module>fabor-app</module>
     <module>payments</module>
   </modules>
 

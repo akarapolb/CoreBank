@@ -1,0 +1,21 @@
+product: SAVINGS_STD
+version: 1
+family: DEPOSIT
+currency: THB
+
+pricing:
+  rate_type: TIERED
+  day_count: ACT_365F
+
+deposit:
+  interest_posting: MONTHLY
+  tier_mode: MARGINAL
+  tiers:
+    - { up_to: 100000, rate: 0.0100 }
+    - { up_to: 1000000, rate: 0.0150 }
+    - { rate: 0.0200 }
+  wht_rate: 0.15
+  wht_exempt_annual: 20000
+
+accounting:
+  gl_mapping: savings_th_v1

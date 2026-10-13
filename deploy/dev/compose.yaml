@@ -26,3 +26,14 @@ services:
       OFFSET_STORAGE_TOPIC: connect_offsets
       STATUS_STORAGE_TOPIC: connect_status
     ports: ["8083:8083"]
+  app:
+    profiles: ["app"]
+    build: { context: ../.., dockerfile: fabor-app/Dockerfile }
+    depends_on: [postgres]
+    environment:
+      FABOR_DB_URL: jdbc:postgresql://postgres:5432/fabor
+      FABOR_DB_USER: postgres
+      FABOR_DB_PASSWORD: postgres
+      FABOR_API_TOKEN: dev-only-token-change-me-please
+      FABOR_MASTER_KEY: ZGV2LW9ubHktbWFzdGVyLWtleS1jaGFuZ2UtbWUtMDEyMzQ1Njc4OWFiY2RlZg==
+    ports: ["8080:8080", "8081:8081", "9090:9090"]
