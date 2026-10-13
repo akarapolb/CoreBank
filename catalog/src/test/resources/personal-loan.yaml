@@ -1,0 +1,46 @@
+product: PERSONAL_LOAN_STD
+version: 1
+family: LOAN
+currency: THB
+segment: [RETAIL]
+
+parameters:
+  principal:   { min: 10000, max: 500000, default: 50000 }
+  term_months: { allowed: [6, 12, 24, 36, 48, 60] }
+
+pricing:
+  rate_type: FIXED
+  rate: 0.18
+  disclosed_rate: EFFECTIVE
+  day_count: ACT_365F
+
+schedule:
+  method: ANNUITY
+  frequency: MONTHLY
+  first_due: { rule: ONE_PERIOD_AFTER_DISBURSEMENT }
+  holiday_rule: FOLLOWING
+
+fees:
+  - code: ORIGINATION_FEE
+    trigger: DISBURSEMENT
+    amount: "min(max(rate(principal, 0.01), 20000), 200000)"
+  - code: LATE_CHARGE
+    trigger: DAILY_WHILE_OVERDUE
+    amount: "rate(overdue, 0.0004)"
+
+repayment_waterfall: [FEES_DUE, PENALTY_DUE, VAT_DUE, INTEREST_DUE, PRINCIPAL_DUE]
+
+tax:
+  vat: { applies_to: [FEES], rate: 0.07, point: DUE_DATE }
+
+early_settlement:
+  allowed: true
+  rebate: NONE
+
+delinquency:
+  buckets: [1, 30, 60, 90]
+  non_accrual_at_dpd: 90
+  write_off_at_dpd: 360
+
+accounting:
+  gl_mapping: personal_loan_th_v1

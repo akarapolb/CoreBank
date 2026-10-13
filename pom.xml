@@ -37,6 +37,7 @@
     <module>scheduler/scheduler-adapter-persistence</module>
     <module>agent-gateway</module>
     <module>simulator</module>
+    <module>catalog</module>
   </modules>
 
   <properties>
