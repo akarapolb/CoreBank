@@ -42,6 +42,8 @@
     <module>deposit</module>
     <module>lending</module>
     <module>accounting</module>
+    <module>decisioning</module>
+    <module>payments</module>
   </modules>
 
   <properties>
