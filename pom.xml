@@ -39,6 +39,7 @@
     <module>agent-gateway</module>
     <module>simulator</module>
     <module>catalog</module>
+    <module>deposit</module>
   </modules>
 
   <properties>

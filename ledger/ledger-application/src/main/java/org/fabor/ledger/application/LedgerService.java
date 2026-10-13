@@ -42,4 +42,8 @@ public final class LedgerService {
     public Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
         return store.currentBalance(tenant, account, type, currency);
     }
+
+    public Optional<LedgerStore.StoredBatch> find(TenantId tenant, BatchId id) {
+        return store.find(tenant, id);
+    }
 }

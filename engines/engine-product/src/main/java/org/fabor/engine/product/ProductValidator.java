@@ -49,6 +49,7 @@ public final class ProductValidator {
         waterfall(d, lending, out);
         tax(d, out);
         delinquency(d, lending, out);
+        deposit(d, out);
         if (d.accounting() == null || d.accounting().glMapping() == null || d.accounting().glMapping().isBlank()) {
             out.add(Issue.error("accounting.gl_mapping", "A GL mapping is required"));
         }
@@ -215,6 +216,49 @@ public final class ProductValidator {
         }
         if (v.appliesTo() == null || v.appliesTo().isEmpty()) {
             out.add(Issue.error("tax.vat.applies_to", "Say what VAT applies to"));
+        }
+    }
+
+    private static void deposit(ProductDefinition d, List<Issue> out) {
+        var dep = d.deposit();
+        boolean tiered = d.pricing() != null && d.pricing().rateType() == RateType.TIERED;
+        if (d.family() != Family.DEPOSIT) {
+            if (dep != null) {
+                out.add(Issue.error("deposit", "The deposit block is only for DEPOSIT products"));
+            }
+            if (tiered) {
+                out.add(Issue.error("pricing.rate_type", "TIERED pricing is for DEPOSIT products"));
+            }
+            return;
+        }
+        if (tiered && (dep == null || dep.tiers() == null || dep.tiers().isEmpty())) {
+            out.add(Issue.error("deposit.tiers", "TIERED pricing needs at least one tier"));
+            return;
+        }
+        if (dep == null) {
+            return;
+        }
+        if (dep.whtRate() != null && (dep.whtRate().signum() < 0 || dep.whtRate().compareTo(BigDecimal.ONE) >= 0)) {
+            out.add(Issue.error("deposit.wht_rate", "Withholding rate must be between 0 and 1"));
+        }
+        if (dep.tiers() != null) {
+            for (int i = 0; i < dep.tiers().size(); i++) {
+                var t = dep.tiers().get(i);
+                boolean last = i == dep.tiers().size() - 1;
+                if (t.rate() == null || t.rate().signum() < 0 || t.rate().compareTo(BigDecimal.ONE) > 0) {
+                    out.add(Issue.error("deposit.tiers[" + i + "].rate", "Tier rate must be between 0 and 1"));
+                }
+                if (last && t.upTo() != null) {
+                    out.add(Issue.error("deposit.tiers[" + i + "].up_to", "The last tier must have no upper bound"));
+                }
+                if (!last && t.upTo() == null) {
+                    out.add(Issue.error("deposit.tiers[" + i + "].up_to", "Only the last tier may be unbounded"));
+                }
+                if (!last && t.upTo() != null && i > 0 && dep.tiers().get(i - 1).upTo() != null
+                        && t.upTo().compareTo(dep.tiers().get(i - 1).upTo()) <= 0) {
+                    out.add(Issue.error("deposit.tiers[" + i + "].up_to", "Tier bounds must increase"));
+                }
+            }
         }
     }
 

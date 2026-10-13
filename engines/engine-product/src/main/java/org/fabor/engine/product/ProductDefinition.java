@@ -22,11 +22,12 @@ public record ProductDefinition(
         Tax tax,
         EarlySettlement earlySettlement,
         Delinquency delinquency,
-        Accounting accounting) {
+        Accounting accounting,
+        Deposit deposit) {
 
     public enum Family { DEPOSIT, LOAN, CREDIT_LINE, LEASE, ASSET_FINANCE }
 
-    public enum RateType { FLAT, FIXED, FLOATING, STEPPED, CUSTOM }
+    public enum RateType { FLAT, FIXED, FLOATING, STEPPED, TIERED, CUSTOM }
 
     public record Param(BigDecimal min, BigDecimal max, List<BigDecimal> allowed,
                         @com.fasterxml.jackson.annotation.JsonProperty("default") BigDecimal defaultValue) { }
@@ -49,4 +50,13 @@ public record ProductDefinition(
     public record Delinquency(List<Integer> buckets, Integer nonAccrualAtDpd, Integer writeOffAtDpd) { }
 
     public record Accounting(String glMapping) { }
+
+    /** Tier bound {@code upTo} is in major units; the last tier has no bound. */
+    public record Tier(BigDecimal upTo, BigDecimal rate) { }
+
+    public enum TierMode { WHOLE_BALANCE, MARGINAL }
+
+    /** Savings and current account behaviour. WHT is withholding tax on interest, charged to the customer. */
+    public record Deposit(String interestPosting, TierMode tierMode, List<Tier> tiers, BigDecimal whtRate,
+                          BigDecimal whtExemptAnnual, BigDecimal minBalance) { }
 }
