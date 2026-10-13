@@ -12,6 +12,8 @@
   </properties>
   <dependencyManagement>
     <dependencies>
+      <!-- CEL (product engine) needs protobuf 4.x; gRPC 1.68 generated code runs on it. -->
+      <dependency><groupId>com.google.protobuf</groupId><artifactId>protobuf-java</artifactId><version>4.35.1</version></dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
