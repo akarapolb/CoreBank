@@ -46,6 +46,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | SDD | [Design reference (HTML)](docs/design/fabor-os-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Master Builder, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
 | Brand | [Brand mark](brand/index.html) | Logo, meaning, concepts, colours, sizes and usage rules |
+| — | [Phase 0 ledger benchmark](docs/benchmarks/phase0-ledger-postgresql.md) | Indicative PostgreSQL results and what they mean |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) the [open-source-only policy](docs/adr/0006-open-source-only.md) and the [open-core model](docs/adr/0009-open-core-model.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |
 
