@@ -327,6 +327,34 @@ button.ws:hover { border-color: var(--faint); }
 .mini span.warn { background: var(--warn); }
 td.up { color: var(--good); } td.down { color: var(--crit); }
 
+/* Master Builder */
+.mb { display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 380px); gap: 20px; align-items: start; }
+.mb-steps { display: flex; flex-direction: column; gap: 4px; position: sticky; top: calc(76px + env(safe-area-inset-top, 0px)); }
+.mb-steps button { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid transparent; border-radius: var(--r); background: none; cursor: pointer; text-align: left; color: var(--muted); font-weight: 500; }
+.mb-steps button:hover { background: var(--surface-2); color: var(--fg); }
+.mb-steps button[aria-current="step"] { background: var(--surface); border-color: var(--line); color: var(--fg); box-shadow: var(--shadow); }
+.mb-steps .num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-family: var(--font-data); background: var(--surface-2); flex-shrink: 0; }
+.mb-steps .ok .num { background: var(--good-soft); color: var(--good); }
+.mb-steps .bad .num { background: var(--crit-soft); color: var(--crit); }
+.mb-preview { position: sticky; top: calc(76px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.tpl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tpl button { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); cursor: pointer; }
+.tpl button:hover { border-color: var(--faint); }
+.tpl button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.tpl strong { font-size: 13px; }
+.tpl span { font-size: 12px; color: var(--muted); }
+.understood { display: flex; flex-wrap: wrap; gap: 6px; }
+.order { display: flex; flex-direction: column; gap: 6px; }
+.order div { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-family: var(--font-data); font-size: 12.5px; }
+.order div span { flex: 1; }
+.order button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; cursor: pointer; padding: 0 7px; line-height: 20px; }
+.termset { display: flex; flex-wrap: wrap; gap: 6px; }
+.termset label { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; cursor: pointer; }
+.termset label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.termset input { accent-color: var(--accent); }
+@media (max-width: 1280px) { .mb { grid-template-columns: minmax(0, 1fr) minmax(0, 360px); } .mb-steps { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; position: static; } }
+@media (max-width: 960px) { .mb { grid-template-columns: minmax(0, 1fr); } .mb-preview { position: static; } }
+
 /* Settings */
 .set-row { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px 32px; padding: 20px 0; border-bottom: 1px solid var(--line); }
 .set-row:first-of-type { padding-top: 4px; }
@@ -470,6 +498,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
   <symbol id="i-fx" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></symbol>
   <symbol id="i-synd" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="12" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v9M12 10l-6 6.5M12 10l6 6.5"/></symbol>
+  <symbol id="i-wand" viewBox="0 0 24 24"><path d="M4 20L15 9"/><path d="M14 4l1 2.5L17.5 7.5 15 8.5 14 11l-1-2.5L10.5 7.5 13 6.5z"/><path d="M19 12l.6 1.4 1.4.6-1.4.6L19 16l-.6-1.4L17 14l1.4-.6z"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 </svg>
 
@@ -491,6 +520,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       <a class="nav" href="#customer" data-view="customer"><svg class="ico"><use href="#i-customer"/></svg><span class="grow">Customer 360</span></a>
       <a class="nav" href="#contract" data-view="contract"><svg class="ico"><use href="#i-contract"/></svg><span class="grow">Contracts</span></a>
       <a class="nav" href="#assetfin" data-view="assetfin"><svg class="ico"><use href="#i-truck"/></svg><span class="grow">Fleet and floor plan</span></a>
+      <a class="nav" href="#builder" data-view="builder"><svg class="ico"><use href="#i-wand"/></svg><span class="grow">Master Builder</span></a>
       <a class="nav" href="#studio" data-view="studio"><svg class="ico"><use href="#i-studio"/></svg><span class="grow">Product Studio</span></a>
       <a class="nav" href="#ledger" data-view="ledger"><svg class="ico"><use href="#i-ledger"/></svg><span class="grow">Ledger</span></a>
       <a class="nav" href="#approvals" data-view="approvals"><svg class="ico"><use href="#i-approve"/></svg><span class="grow">Approvals</span><span class="badge" id="apprBadge">0</span></a>
@@ -1025,6 +1055,53 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
         </div>
       </div>
     </section>
+    <!-- MASTER BUILDER -->
+    <section class="view" id="view-builder" aria-labelledby="h-mb" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Product configuration</span>
+          <h1 id="h-mb">Master Builder</h1>
+          <p>Configure any lending product without code. Start from a template or describe it in plain words, then work through eight steps. Every step is checked against the rule pack and simulated before the product goes for approval.</p>
+        </div>
+        <div class="row"><button class="btn" id="mbReset" type="button">Start over</button><button class="btn primary" id="mbPublish" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Submit for approval</span></button></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="panel">
+          <h2>Start from a template</h2>
+          <div class="tpl" id="mbTpl"></div>
+        </div>
+        <div class="panel" style="background:var(--agent-soft);border-color:transparent;box-shadow:none">
+          <div class="row"><span class="chip agent">Product copilot</span><span class="muted" style="font-size:12px">Describe the product; review what it understood</span></div>
+          <div class="field"><label for="mbBrief">Product brief</label><textarea id="mbBrief" rows="3">Used car hire purchase for SME owners, 200k to 1.5M baht, 24 to 72 months, flat 4.25%, 20% balloon, processing fee 1%, no early settlement fee.</textarea></div>
+          <div class="row"><button class="btn primary" id="mbDraft" type="button"><svg class="ico"><use href="#i-wand"/></svg><span>Draft with copilot</span></button></div>
+          <div id="mbUnderstood" hidden></div>
+        </div>
+      </div>
+
+      <div class="mb">
+        <nav class="mb-steps" id="mbSteps" aria-label="Builder steps"></nav>
+        <div class="panel" id="mbStep"></div>
+        <div class="mb-preview">
+          <div class="panel">
+            <div class="panel-head"><h2>Live preview</h2><span class="chip" id="mbExample"></span></div>
+            <div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+              <div class="kpi"><span class="label">Installment</span><span class="v" id="mbInst" style="font-size:20px"></span><span class="d" id="mbInstD"></span></div>
+              <div class="kpi"><span class="label">Effective rate</span><span class="v" id="mbEir" style="font-size:20px"></span><span class="d">Incl. fees, disclosed</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Rule checks</h2><span class="chip" id="mbCheckSum"></span></div>
+            <div class="checks" id="mbChecks"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Definition</h2><button class="btn" id="mbCopy" type="button" style="padding:5px 10px">Copy</button></div>
+            <pre class="code" id="mbYaml" style="max-height:260px"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ASSET FINANCE: fleet and floor plan -->
     <section class="view" id="view-assetfin" aria-labelledby="h-af" hidden>
       <div class="view-head">
@@ -1921,9 +1998,9 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   showArch("ledger");
 
   /* ---------- Routing ---------- */
-  var VIEWS = ["overview", "customer", "contract", "assetfin", "trade", "treasury", "syndication", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
+  var VIEWS = ["overview", "builder", "customer", "contract", "assetfin", "trade", "treasury", "syndication", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
   var current = "overview";
-  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking", assetfin: "Fleet and floor plan", trade: "Trade finance", treasury: "Treasury", syndication: "Syndication" };
+  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking", assetfin: "Fleet and floor plan", trade: "Trade finance", treasury: "Treasury", syndication: "Syndication", builder: "Master Builder" };
   function applyRoute() {
     var h = (location.hash || "").replace("#", "");
     current = VIEWS.indexOf(h) >= 0 ? h : "overview";
@@ -2324,6 +2401,207 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   });
   renderSyn();
 
+  /* ---------- Master Builder ---------- */
+  var MB_FAM = { HP_NEW: "Hire purchase · new car", HP_USED: "Hire purchase · used car", HP_MOTO: "Hire purchase · motorcycle", LEASE: "Finance lease · equipment", PL: "Personal loan", HOME: "Home loan" };
+  var MB_TPL = {
+    HP_NEW: { code: "AUTO_HP_NEW", family: "HP_NEW", rateType: "FLAT", rate: 2.79, base: 0, minAmt: 100000, maxAmt: 5000000, terms: [12, 24, 36, 48, 60, 72, 84], sampleAmt: 840000, sampleTerm: 60, balloon: 0, grace: 0, method: "ANNUITY", feePct: 0, vat: true, lateRate: 15, nonAccrual: 90, writeOff: 360, prepay: true, prepayFee: 0, holidays: 1, waterfall: ["FEES_DUE", "PENALTY_DUE", "VAT_DUE", "INTEREST_DUE", "PRINCIPAL_DUE"], income: "EIR", gl: "hp_standard_th_v2" },
+    HP_USED: { code: "AUTO_HP_USED", family: "HP_USED", rateType: "FLAT", rate: 4.5, minAmt: 100000, maxAmt: 2000000, terms: [12, 24, 36, 48, 60, 72], sampleAmt: 450000, sampleTerm: 48 },
+    HP_MOTO: { code: "MOTO_HP", family: "HP_MOTO", rateType: "FLAT", rate: 9.5, minAmt: 20000, maxAmt: 150000, terms: [12, 24, 36, 48], sampleAmt: 65000, sampleTerm: 36 },
+    LEASE: { code: "EQUIP_FIN_LEASE", family: "LEASE", rateType: "EFFECTIVE", rate: 6.25, minAmt: 500000, maxAmt: 50000000, terms: [24, 36, 48, 60], sampleAmt: 3500000, sampleTerm: 48, balloon: 10, gl: "lease_tfrs16_v1" },
+    PL: { code: "PERSONAL_LOAN", family: "PL", rateType: "EFFECTIVE", rate: 18, minAmt: 20000, maxAmt: 1000000, terms: [12, 24, 36, 48, 60], sampleAmt: 200000, sampleTerm: 36, vat: false, feePct: 1, waterfall: ["FEES_DUE", "PENALTY_DUE", "INTEREST_DUE", "PRINCIPAL_DUE"], gl: "loan_standard_th_v1" },
+    HOME: { code: "HOME_LOAN_FLOAT", family: "HOME", rateType: "FLOATING", rate: -1.5, base: 6.95, minAmt: 500000, maxAmt: 20000000, terms: [120, 180, 240, 300, 360], sampleAmt: 3000000, sampleTerm: 360, vat: false, prepayFee: 3, holidays: 0, waterfall: ["FEES_DUE", "PENALTY_DUE", "INTEREST_DUE", "PRINCIPAL_DUE"], gl: "mortgage_th_v1" }
+  };
+  function mbFrom(key) { var b = JSON.parse(JSON.stringify(MB_TPL.HP_NEW)); var t = MB_TPL[key]; Object.keys(t).forEach(function (k) { b[k] = JSON.parse(JSON.stringify(t[k])); }); b.template = key; return b; }
+  var B = mbFrom("HP_NEW"), BASE = JSON.parse(JSON.stringify(B)), mbStep = 0;
+  var MB_STEPS = ["Basics", "Pricing", "Schedule", "Fees and tax", "Repayment and arrears", "Changes and early settlement", "Accounting", "Review and simulate"];
+  var ALL_TERMS = [6, 12, 18, 24, 36, 48, 60, 72, 84, 120, 180, 240, 300, 360];
+  function annualRate() { return (B.rateType === "FLOATING" ? B.base + B.rate : B.rate) / 100; }
+  function mbSchedule(P, n) {
+    var bal = Math.min(50, Math.max(0, B.balloon)) / 100;
+    if (B.method === "EQUAL_PRINCIPAL" && B.rateType !== "FLAT") {
+      var r = annualRate() / 12, pr = r2(P / n), rows = [], b = P, si = 0;
+      for (var k = 1; k <= n; k++) { var it = r2(b * r), pp = k === n ? b : pr; b = r2(b - pp); si += it; rows.push({ pay: r2(pp + it), interest: it, principal: pp, bal: b, vat: B.vat ? r2((pp + it) * VAT) : 0 }); }
+      return { rows: rows, inst: rows[0].pay, eir: annualRate(), totalInterest: r2(si), balloon: 0 };
+    }
+    var s = buildSchedule({ principal: P, rate: annualRate(), rateType: B.rateType === "FLAT" ? "FLAT" : "EFFECTIVE", n: n, balloonPct: bal, vat: B.vat, firstDue: addMonths(BUSINESS_DATE, 1) });
+    if (B.grace > 0 && B.rateType !== "FLAT") {
+      var gi = r2(P * annualRate() / 12), g = [];
+      for (var i = 0; i < B.grace; i++) g.push({ pay: gi, interest: gi, principal: 0, bal: P, vat: B.vat ? r2(gi * VAT) : 0 });
+      s.rows = g.concat(s.rows); s.totalInterest = r2(s.totalInterest + gi * B.grace);
+    }
+    return s;
+  }
+  function mbChecks() {
+    var c = [], cap = CAPS[B.family === "HOME" ? "PL" : B.family], P = B.sampleAmt, n = B.sampleTerm;
+    var s = mbSchedule(P, n), fee = r2(P * B.feePct / 100);
+    var eir = solveMonthlyRate(P - fee, s.rows.map(function (x) { return x.pay; })) * 12;
+    var add = function (step, lvl, msg) { c.push({ step: step, lvl: lvl, msg: msg }); };
+    if (!/^[A-Z][A-Z0-9_]{2,30}$/.test(B.code)) add(0, "crit", "Product code must be 3–31 capital letters, digits or underscores.");
+    if (B.minAmt <= 0 || B.minAmt >= B.maxAmt) add(1, "crit", "Minimum amount must be above zero and below the maximum.");
+    if (P < B.minAmt || P > B.maxAmt) add(1, "crit", "Example amount ฿" + fmt0(P) + " is outside ฿" + fmt0(B.minAmt) + "–" + fmt0(B.maxAmt) + ".");
+    if (B.family === "HOME") { if (B.rateType !== "FLOATING") add(1, "warn", "Home loans in this market are usually floating (MRR ± spread)."); }
+    else if (cap) add(1, eir <= cap + 1e-9 ? "good" : "crit", "Effective rate " + (eir * 100).toFixed(2) + "% against the " + (cap * 100).toFixed(0) + "% cap for " + MB_FAM[B.family].toLowerCase() + ".");
+    else add(1, "good", "No regulatory rate cap for equipment finance leases.");
+    if (B.rateType === "FLAT" && B.family.indexOf("HP") !== 0) add(1, "warn", "Flat rates are normally used only for hire purchase; disclose the effective rate.");
+    if (!B.terms.length) add(2, "crit", "Choose at least one term.");
+    else if (B.terms.indexOf(n) < 0) add(2, "crit", "Example term " + n + " months is not one of the allowed terms.");
+    if (B.balloon > 0 && ["HP_NEW", "HP_USED", "LEASE"].indexOf(B.family) < 0) add(2, "crit", "Balloon or residual value applies only to car hire purchase and leases.");
+    if (B.balloon > 40) add(2, "warn", "Balloon above 40% raises refinancing risk at maturity.");
+    if (B.grace > 0 && B.rateType === "FLAT") add(2, "crit", "Grace periods need an effective or floating rate; a flat rate cannot defer principal correctly.");
+    if (B.method === "EQUAL_PRINCIPAL" && B.rateType === "FLAT") add(2, "crit", "Equal principal needs an effective or floating rate.");
+    if ((B.family === "PL" || B.family === "HOME") && B.vat) add(3, "crit", "Loan interest is not subject to VAT; turn VAT off.");
+    if (B.family.indexOf("HP") === 0 && !B.vat) add(3, "warn", "Hire purchase installments normally carry VAT 7%.");
+    if (B.feePct > 3) add(3, "warn", "Upfront fee above 3% will draw conduct scrutiny.");
+    var wf = B.waterfall.join(",");
+    if (B.waterfall[B.waterfall.length - 1] !== "PRINCIPAL_DUE") add(4, "warn", "Most rule packs allocate principal last.");
+    if (B.lateRate > 15) add(4, "crit", "Late charge above 15% a year exceeds the default conduct limit in this rule pack.");
+    if (B.nonAccrual > 90) add(4, "crit", "Stop recognizing interest no later than 90 days past due (TFRS 9 stage 3).");
+    if (B.writeOff <= B.nonAccrual) add(4, "crit", "Write-off must come after the non-accrual point.");
+    if (B.family.indexOf("HP") === 0 && B.prepayFee > 0) add(5, "crit", "Hire purchase early settlement must give the interest rebate; an extra prepayment fee is not allowed in this rule pack.");
+    if (!B.prepay && B.family !== "LEASE") add(5, "warn", "Blocking early settlement is unusual for retail credit and may breach conduct rules.");
+    if (B.income !== "EIR") add(6, "crit", "TFRS 9 requires effective-interest income for amortized-cost loans.");
+    var sumP = s.rows.reduce(function (a, x) { return a + x.principal; }, 0) + (s.balloon || 0) * 0;
+    add(7, Math.abs(sumP - P) < 0.05 ? "good" : "crit", "Schedule repays the example principal exactly: ฿" + fmt(r2(sumP)) + ".");
+    return { c: c, s: s, eir: eir, fee: fee };
+  }
+  function mbYaml(r) {
+    return [
+      "product: " + B.code, "version: draft", "family: " + ({ LEASE: "LEASE", PL: "LOAN", HOME: "LOAN" }[B.family] || "ASSET_FINANCE"), "rule_pack: TH/" + B.family, "currency: THB", "",
+      "parameters:", "  principal: { min: " + B.minAmt + ", max: " + B.maxAmt + " }", "  term_months: { allowed: [" + B.terms.join(", ") + "] }", "  balloon_pct: { max: " + B.balloon + " }", "  grace_months: " + B.grace, "",
+      "pricing:", "  rate_type: " + B.rateType, B.rateType === "FLOATING" ? "  rate: MRR " + (B.rate >= 0 ? "+ " : "- ") + Math.abs(B.rate).toFixed(2) + "%   # MRR today " + B.base.toFixed(2) + "%" : "  rate: " + B.rate.toFixed(2) + "%", "  disclosed_rate: EFFECTIVE   # " + (r.eir * 100).toFixed(2) + "% on the example", "",
+      "schedule:", "  method: " + (B.rateType === "FLAT" ? "ANNUITY_FROM_FLAT" : B.method) + (B.balloon > 0 ? "_BALLOON" : ""), "  frequency: MONTHLY", "",
+      "fees:", B.feePct > 0 ? "  - { code: ORIGINATION_FEE, trigger: DISBURSEMENT, amount: \"principal * " + (B.feePct / 100).toFixed(4) + "\" }" : "  []",
+      "tax:", B.vat ? "  vat: { applies_to: [INSTALLMENT], rate: 0.07, point: DUE_DATE }" : "  vat: none", "",
+      "repayment_waterfall: [" + B.waterfall.join(", ") + "]",
+      "delinquency: { late_charge: \"overdue * " + (B.lateRate / 100).toFixed(2) + " / 365\", non_accrual_dpd: " + B.nonAccrual + ", write_off_dpd: " + B.writeOff + " }",
+      "early_settlement: { allowed: " + B.prepay + ", fee_pct: " + B.prepayFee + (B.family.indexOf("HP") === 0 ? ", rebate: TH_HP_EIR" : "") + " }",
+      "payment_holidays: { per_12_months: " + B.holidays + ", interest: DEFERRED }",
+      "income_recognition: { method: " + B.income + (B.feePct > 0 ? ", deferred_fees: [ORIGINATION_FEE]" : "") + " }",
+      "accounting: { gl_mapping: " + B.gl + " }"
+    ].join("\n");
+  }
+  function field(label, k, type, extra) {
+    var v = B[k], id = "mb-" + k;
+    if (type === "select") return "<div class='field'><label for='" + id + "'>" + label + "</label><select id='" + id + "' data-k='" + k + "'>" + extra.map(function (o) { return "<option value='" + o[0] + "'" + (String(v) === String(o[0]) ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></div>";
+    if (type === "check") return "<div class='field check'><input id='" + id + "' type='checkbox' data-k='" + k + "'" + (v ? " checked" : "") + "><label for='" + id + "'>" + label + "</label></div>";
+    return "<div class='field'><label for='" + id + "'>" + label + "</label><input id='" + id + "' type='" + type + "' data-k='" + k + "' value='" + esc(v) + "'" + (extra || "") + "></div>";
+  }
+  function stepHtml(i, r) {
+    var h = "<div class='panel-head'><h2>" + (i + 1) + ". " + MB_STEPS[i] + "</h2><span class='muted' style='font-size:12.5px'>Step " + (i + 1) + " of 8</span></div>";
+    if (i === 0) h += "<div class='form'>" + field("Product code", "code", "text") + field("Family and rule pack", "family", "select", Object.keys(MB_FAM).map(function (k) { return [k, MB_FAM[k]]; })) + "<div class='field'><label>Currency</label><input value='THB' disabled></div><div class='field'><label>Segment</label><input value='" + (B.family === "LEASE" ? "SME, corporate" : "Retail, SME") + "' disabled></div></div><p class='note'>Changing the family loads that rule pack's caps, tax and conduct rules into the checks.</p>";
+    if (i === 1) h += "<div class='form'>" + field("Rate type", "rateType", "select", [["FLAT", "Flat, on original principal"], ["EFFECTIVE", "Effective, on outstanding"], ["FLOATING", "Floating, MRR ± spread"]]) +
+      (B.rateType === "FLOATING" ? field("Spread over MRR, %", "rate", "number", " step='0.05'") + field("MRR today, %", "base", "number", " step='0.05'") : field("Rate, % per year", "rate", "number", " step='0.01' min='0'")) +
+      field("Minimum amount, THB", "minAmt", "number", " step='1000' min='0'") + field("Maximum amount, THB", "maxAmt", "number", " step='1000' min='0'") + "</div><p class='note'>Risk-based pricing tables by grade and term can be attached here; the example uses one rate.</p>";
+    if (i === 2) h += "<div class='field'><label>Allowed terms, months</label><div class='termset'>" + ALL_TERMS.map(function (t) { return "<label><input type='checkbox' data-term='" + t + "'" + (B.terms.indexOf(t) >= 0 ? " checked" : "") + ">" + t + "</label>"; }).join("") + "</div></div><div class='form'>" +
+      field("Installment method", "method", "select", [["ANNUITY", "Equal installments"], ["EQUAL_PRINCIPAL", "Equal principal"]]) + field("Balloon or residual, %", "balloon", "number", " step='5' min='0' max='50'") + field("Grace, interest-only months", "grace", "number", " step='1' min='0' max='12'") + "<div class='field'><label>Frequency</label><input value='Monthly' disabled></div></div>";
+    if (i === 3) h += "<div class='form'>" + field("Origination fee, % of amount", "feePct", "number", " step='0.25' min='0'") + field("VAT 7% on each installment", "vat", "check") + "</div><p class='note'>Fees are amortized into interest income with the effective rate. VAT is charged at each due date with an e-Tax invoice.</p>";
+    if (i === 4) h += "<div class='field'><label>Repayment waterfall: incoming money pays these in order</label><div class='order'>" + B.waterfall.map(function (w, j) { return "<div><span>" + (j + 1) + ". " + w + "</span><button type='button' data-up='" + j + "' aria-label='Move " + w + " up'>↑</button><button type='button' data-down='" + j + "' aria-label='Move " + w + " down'>↓</button></div>"; }).join("") + "</div></div><div class='form'>" +
+      field("Late charge, % per year on overdue", "lateRate", "number", " step='0.5' min='0'") + field("Stop accruing interest at, days past due", "nonAccrual", "number", " step='30' min='30'") + field("Write off at, days past due", "writeOff", "number", " step='30' min='90'") + "</div>";
+    if (i === 5) h += "<div class='form'>" + field("Allow early settlement", "prepay", "check") + field("Early settlement fee, % of outstanding", "prepayFee", "number", " step='0.5' min='0'") + field("Payment holidays per 12 months", "holidays", "number", " step='1' min='0' max='3'") + "</div><p class='note'>" + (B.family.indexOf("HP") === 0 ? "Hire purchase settlements use the rule pack's interest rebate (TH_HP_EIR): unearned interest is not charged." : "Partial prepayments reduce the term by default; the customer can choose to reduce the installment instead.") + "</p>";
+    if (i === 6) h += "<div class='form'>" + field("Income recognition", "income", "select", [["EIR", "Effective interest (TFRS 9)"], ["STRAIGHT", "Straight line"]]) + field("GL mapping", "gl", "select", [["hp_standard_th_v2", "Hire purchase · TH v2"], ["lease_tfrs16_v1", "Finance lease · TFRS 16"], ["loan_standard_th_v1", "Consumer loan · TH v1"], ["mortgage_th_v1", "Mortgage · TH v1"]]) + "</div><p class='note'>Every balance type maps to GL accounts per event; the mapping is versioned and needs maker-checker to change.</p>";
+    if (i === 7) {
+      var s = r.s, P = B.sampleAmt, n = B.sampleTerm, rows = s.rows, inst = rows[0].pay + rows[0].vat;
+      var totalPaid = rows.reduce(function (a, x) { return a + x.pay + x.vat; }, 0);
+      var late = r2((rows[5] ? rows[5].pay + rows[5].vat : inst) * B.lateRate / 100 / 365 * 90);
+      var m = Math.min(24, Math.floor(n / 2)), outM = rows[m - 1] ? rows[m - 1].bal : P, saved = rows.slice(m).reduce(function (a, x) { return a + x.interest; }, 0);
+      var floatTxt = "Not applicable: fixed or flat rate.";
+      if (B.rateType === "FLOATING") { var save = B.base; B.base += 1; var s2 = mbSchedule(P, n); B.base = save; floatTxt = "Installment ฿" + fmt(rows[0].pay) + " → ฿" + fmt(s2.rows[0].pay) + " (+" + fmt(r2(s2.rows[0].pay - rows[0].pay)) + ")"; }
+      h += "<p class='muted'>Example: ฿" + fmt0(P) + " over " + n + " months. Change the example in step 2 or 3.</p><div class='tbl-wrap'><table><thead><tr><th>Scenario</th><th>Outcome</th></tr></thead><tbody>" +
+        "<tr><td>Pays on time</td><td>Total paid ฿" + fmt(r2(totalPaid)) + " · interest ฿" + fmt(s.totalInterest) + (B.vat ? " · VAT ฿" + fmt(r2(rows.reduce(function (a, x) { return a + x.vat; }, 0))) : "") + "</td></tr>" +
+        "<tr><td>Misses months 6 and 7, catches up in month 8</td><td>Late charges about ฿" + fmt(late) + " at " + B.lateRate + "% a year; days past due peak at 60, stage 2</td></tr>" +
+        "<tr><td>Settles early after " + m + " months</td><td>" + (B.prepay ? "Pays ฿" + fmt(r2(outM * (1 + B.prepayFee / 100))) + "; saves ฿" + fmt(r2(saved)) + " of interest" + (B.prepayFee ? " (fee " + B.prepayFee + "%)" : "") : "Not allowed by this product") + "</td></tr>" +
+        "<tr><td>MRR rises 1%</td><td>" + floatTxt + "</td></tr>" +
+        "<tr><td>Takes a payment holiday</td><td>" + (B.holidays > 0 ? "Term " + n + " → " + (n + 1) + " months; deferred interest ฿" + fmt(rows[1] ? rows[1].interest : 0) : "Not offered") + "</td></tr>" +
+        "</tbody></table></div>";
+      var diffs = Object.keys(B).filter(function (k) { return k !== "template" && JSON.stringify(B[k]) !== JSON.stringify(BASE[k]); });
+      h += "<h3>Changes from the " + MB_FAM[BASE.family].toLowerCase() + " template</h3>" + (diffs.length ? "<div class='understood'>" + diffs.map(function (k) { return "<span class='chip acc'>" + k + ": " + esc(JSON.stringify(BASE[k])) + " → " + esc(JSON.stringify(B[k])) + "</span>"; }).join("") + "</div>" : "<p class='muted'>No changes from the template.</p>");
+    }
+    h += "<div class='row' style='justify-content:space-between;margin-top:6px'><button class='btn' type='button' id='mbPrev'" + (i === 0 ? " disabled" : "") + ">Back</button>" + (i < 7 ? "<button class='btn primary' type='button' id='mbNext'>Next: " + MB_STEPS[i + 1] + "</button>" : "") + "</div>";
+    return h;
+  }
+  function renderMbSide(r) {
+    var P = B.sampleAmt, n = B.sampleTerm, row = r.s.rows[Math.min(B.grace, r.s.rows.length - 1)] || r.s.rows[0];
+    $("#mbExample").textContent = "Example ฿" + fmt0(P) + " · " + n + "m";
+    $("#mbInst").textContent = "฿" + fmt(row.pay);
+    $("#mbInstD").textContent = (B.vat ? "฿" + fmt(r2(row.pay + row.vat)) + " with VAT" : "No VAT") + (B.grace ? " · after " + B.grace + " grace months" : "");
+    $("#mbEir").textContent = isFinite(r.eir) ? (r.eir * 100).toFixed(2) + "%" : "—";
+    var bad = r.c.filter(function (x) { return x.lvl === "crit"; }).length, warn = r.c.filter(function (x) { return x.lvl === "warn"; }).length;
+    $("#mbCheckSum").textContent = bad ? bad + " to fix" : warn ? warn + " to review" : "All pass";
+    $("#mbCheckSum").className = "chip " + (bad ? "crit" : warn ? "warn" : "good");
+    $("#mbChecks").innerHTML = r.c.map(function (x) { return "<div><span class='chip " + x.lvl + "'>" + (x.lvl === "good" ? "Pass" : x.lvl === "warn" ? "Check" : "Fix") + "</span><span><span class='muted'>Step " + (x.step + 1) + ":</span> " + esc(x.msg) + "</span></div>"; }).join("");
+    $("#mbYaml").textContent = mbYaml(r);
+    $("#mbPublish").disabled = bad > 0;
+    $("#mbSteps").innerHTML = MB_STEPS.map(function (t, i) {
+      var st = r.c.some(function (x) { return x.step === i && x.lvl === "crit"; }) ? "bad" : "ok";
+      return "<button type='button' class='" + st + "' data-step='" + i + "'" + (i === mbStep ? " aria-current='step'" : "") + "><span class='num'>" + (st === "bad" ? "!" : i + 1) + "</span>" + t + "</button>";
+    }).join("");
+    $$("#mbSteps [data-step]").forEach(function (b) { b.addEventListener("click", function () { mbStep = +b.getAttribute("data-step"); renderMb(); }); });
+  }
+  function renderMb() {
+    var r = mbChecks();
+    $("#mbStep").innerHTML = stepHtml(mbStep, r);
+    renderMbSide(r);
+    $("#mbTpl").innerHTML = Object.keys(MB_TPL).map(function (k) { var t = MB_TPL[k]; return "<button type='button' data-tpl='" + k + "' aria-pressed='" + (B.template === k) + "'><strong>" + MB_FAM[k] + "</strong><span>" + (t.rateType || "FLAT").toLowerCase() + " · " + fmt0(t.minAmt) + "–" + fmt0(t.maxAmt) + "</span></button>"; }).join("");
+    $$("#mbTpl [data-tpl]").forEach(function (b) { b.addEventListener("click", function () { B = mbFrom(b.getAttribute("data-tpl")); BASE = JSON.parse(JSON.stringify(B)); mbStep = 0; $("#mbUnderstood").hidden = true; renderMb(); }); });
+    var prev = $("#mbPrev"), next = $("#mbNext");
+    if (prev) prev.addEventListener("click", function () { mbStep = Math.max(0, mbStep - 1); renderMb(); });
+    if (next) next.addEventListener("click", function () { mbStep = Math.min(7, mbStep + 1); renderMb(); });
+    $$("#mbStep [data-term]").forEach(function (cb) { cb.addEventListener("change", function () { var t = +cb.getAttribute("data-term"); if (cb.checked) B.terms.push(t); else B.terms = B.terms.filter(function (x) { return x !== t; }); B.terms.sort(function (a, b) { return a - b; }); renderMbSide(mbChecks()); }); });
+    $$("#mbStep [data-up], #mbStep [data-down]").forEach(function (bt) { bt.addEventListener("click", function () { var up = bt.hasAttribute("data-up"), j = +(bt.getAttribute(up ? "data-up" : "data-down")), k = up ? j - 1 : j + 1; if (k < 0 || k >= B.waterfall.length) return; var t = B.waterfall[j]; B.waterfall[j] = B.waterfall[k]; B.waterfall[k] = t; renderMb(); }); });
+  }
+  $("#view-builder").addEventListener("input", onMbField); $("#view-builder").addEventListener("change", onMbField);
+  function onMbField(e) {
+    var el = e.target, k = el.getAttribute && el.getAttribute("data-k"); if (!k) return;
+    var v = el.type === "checkbox" ? el.checked : el.type === "number" ? (parseFloat(el.value) || 0) : el.value;
+    if (k === "code") v = String(v).toUpperCase();
+    B[k] = v;
+    if (k === "family" || k === "rateType") { if (k === "family" && v === "HOME" && B.rateType !== "FLOATING") { B.rateType = "FLOATING"; B.base = 6.95; B.rate = -1.5; } renderMb(); return; }
+    renderMbSide(mbChecks());
+  }
+  function parseBrief(t) {
+    var x = t.toLowerCase(), got = [], assume = [], b = null;
+    var fam = /motor ?(cycle|bike)/.test(x) ? "HP_MOTO" : /used car|second[- ]hand/.test(x) ? "HP_USED" : /home loan|mortgage|house|condo/.test(x) ? "HOME" : /lease|leasing|equipment|machinery/.test(x) ? "LEASE" : /personal loan|cash loan/.test(x) ? "PL" : /hire purchase|\bhp\b|car|pickup|vehicle/.test(x) ? "HP_NEW" : null;
+    b = mbFrom(fam || "PL"); if (fam) got.push("Family: " + MB_FAM[fam]); else assume.push("Family not stated; assumed personal loan");
+    var num = function (n, u) { var v = parseFloat(String(n).replace(/,/g, "")); u = (u || "").toLowerCase(); return u === "k" || u === "thousand" ? v * 1e3 : u === "m" || u === "million" || u === "mn" ? v * 1e6 : v; };
+    var am = x.match(/฿?\s*([\d.,]+)\s*(k|m|mn|million|thousand)?\s*(?:baht|thb|฿)?\s*(?:to|-|–)\s*฿?\s*([\d.,]+)\s*(k|m|mn|million|thousand)?/);
+    if (am && !/month|year/.test(x.slice(am.index, am.index + am[0].length + 8))) { b.minAmt = num(am[1], am[2] || am[4]); b.maxAmt = num(am[3], am[4]); got.push("Amount ฿" + fmt0(b.minAmt) + "–" + fmt0(b.maxAmt)); }
+    else assume.push("Amount range from the template");
+    var tm = x.match(/(\d+)\s*(?:to|-|–)\s*(\d+)\s*(months?|years?)/);
+    if (tm) { var mul = /year/.test(tm[3]) ? 12 : 1, lo = +tm[1] * mul, hi = +tm[2] * mul; b.terms = ALL_TERMS.filter(function (v) { return v >= lo && v <= hi; }); if (!b.terms.length) b.terms = [hi]; got.push("Terms " + lo + "–" + hi + " months"); }
+    else assume.push("Terms from the template");
+    var fl = x.match(/flat\s*(?:rate\s*(?:of\s*)?)?(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%\s*flat/), mrr = x.match(/mrr\s*([-−+])\s*(\d+(?:\.\d+)?)/), eff = x.match(/(\d+(?:\.\d+)?)\s*%\s*(?:a year|p\.?a\.?|per year|effective|interest)/);
+    if (fl) { b.rateType = "FLAT"; b.rate = +(fl[1] || fl[2]); got.push("Flat rate " + b.rate + "%"); }
+    else if (mrr) { b.rateType = "FLOATING"; b.base = 6.95; b.rate = (mrr[1] === "+" ? 1 : -1) * +mrr[2]; got.push("Floating MRR " + mrr[1] + " " + mrr[2] + "%"); }
+    else if (eff) { b.rateType = "EFFECTIVE"; b.rate = +eff[1]; got.push("Effective rate " + b.rate + "%"); }
+    else assume.push("Rate from the template");
+    var bl = x.match(/(\d+)\s*%\s*(?:balloon|residual)|(?:balloon|residual)\s*(?:of\s*)?(\d+)\s*%/); if (bl) { b.balloon = +(bl[1] || bl[2]); got.push("Balloon " + b.balloon + "%"); }
+    var gr = x.match(/(\d+)[- ]?months?\s*grace|grace\s*(?:period\s*)?(?:of\s*)?(\d+)/); if (gr) { b.grace = +(gr[1] || gr[2]); got.push("Grace " + b.grace + " months"); }
+    var fe = x.match(/(\d+(?:\.\d+)?)\s*%\s*(?:processing|origination|upfront|front[- ]end)?\s*fee|(?:processing|origination|upfront)\s*fee\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*%/); if (fe) { b.feePct = +(fe[1] || fe[2]); got.push("Fee " + b.feePct + "%"); }
+    if (/no (early|pre)[- ]?(settlement|payment)? ?fee|no prepayment (penalty|fee)/.test(x)) { b.prepayFee = 0; got.push("No early settlement fee"); }
+    if (/no vat|without vat/.test(x)) { b.vat = false; got.push("No VAT"); } else if (/\bvat\b/.test(x)) { b.vat = true; got.push("VAT 7%"); }
+    if (/equal principal/.test(x)) { b.method = "EQUAL_PRINCIPAL"; got.push("Equal principal"); }
+    b.code = (fam ? MB_TPL[fam].code : "NEW_LOAN") + "_V2";
+    b.sampleAmt = Math.round(Math.min(b.maxAmt, Math.max(b.minAmt, (b.minAmt + b.maxAmt) / 3)) / 1000) * 1000;
+    b.sampleTerm = b.terms[Math.floor(b.terms.length / 2)] || b.terms[0];
+    assume.push("Example contract ฿" + fmt0(b.sampleAmt) + " over " + b.sampleTerm + " months");
+    return { b: b, got: got, assume: assume };
+  }
+  $("#mbDraft").addEventListener("click", function () {
+    var r = parseBrief($("#mbBrief").value);
+    B = r.b; BASE = mbFrom(B.template); mbStep = 7;
+    var u = $("#mbUnderstood"); u.hidden = false;
+    u.innerHTML = "<div class='understood' style='margin-top:4px'>" + r.got.map(function (g) { return "<span class='chip good'>" + esc(g) + "</span>"; }).join("") + r.assume.map(function (g) { return "<span class='chip warn'>Assumed: " + esc(g) + "</span>"; }).join("") + "</div><p class='note' style='margin-top:8px'>Draft loaded into the builder and opened at Review. Every value stays editable; the copilot never publishes.</p>";
+    renderMb(); toast("Copilot drafted " + B.code);
+  });
+  $("#mbReset").addEventListener("click", function () { B = mbFrom("HP_NEW"); BASE = JSON.parse(JSON.stringify(B)); mbStep = 0; $("#mbUnderstood").hidden = true; renderMb(); });
+  $("#mbPublish").addEventListener("click", function () {
+    var r = mbChecks();
+    approvals.unshift({ id: "APR-" + (1100 + approvals.length), title: "Publish product " + B.code + " (Master Builder)", kind: "Product", maker: "You, in Master Builder", agent: null, detail: MB_FAM[B.family] + ". Effective rate " + (r.eir * 100).toFixed(2) + "% on the example; " + r.c.filter(function (x) { return x.lvl === "warn"; }).length + " items flagged for review. Golden tests generated from 5 scenarios.", status: "PENDING" });
+    renderApprovals(); toast(B.code + " sent to Approvals");
+  });
+  $("#mbCopy").addEventListener("click", function () { var t = $("#mbYaml").textContent; try { navigator.clipboard.writeText(t).then(function () { toast("Definition copied"); }, function () {}); } catch (e) {} });
+  renderMb();
+
 
 
   /* ---------- Interface style: Modern or Calm ---------- */
@@ -2344,7 +2622,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
-  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp", assetfin: "i-truck", trade: "i-globe", treasury: "i-fx", syndication: "i-synd" };
+  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp", assetfin: "i-truck", trade: "i-globe", treasury: "i-fx", syndication: "i-synd", builder: "i-wand" };
   var COMMANDS = VIEWS.map(function (v) { return { group: "Go to", label: TITLES[v], icon: ICON[v], run: function () { location.hash = v; } }; }).concat([
     { group: "Records", label: "HP-2025-004812 · Napat Srisuk", hint: "Hire purchase", icon: "i-contract", run: function () { location.hash = "contract"; } },
     { group: "Records", label: "Siam Freight Logistics Co., Ltd.", hint: "P-200118", icon: "i-customer", run: function () { location.hash = "customer"; } },
@@ -2356,6 +2634,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
     { group: "Switch bank", label: "Demo Virtual Bank", icon: "i-swap", run: function () { setTenant("virtual"); location.hash = "overview"; } },
     { group: "Switch bank", label: "Demo Retail Bank", icon: "i-swap", run: function () { setTenant("retail"); location.hash = "branch"; } },
     { group: "Switch bank", label: "Demo Commercial Bank", icon: "i-swap", run: function () { setTenant("commercial"); location.hash = "corporate"; } },
+    { group: "Actions", label: "Build a product with Master Builder", icon: "i-wand", run: function () { location.hash = "builder"; } },
     { group: "Actions", label: "New hire-purchase product", icon: "i-plus", run: function () { location.hash = "studio"; $("#pFamily").value = "HP_USED"; $("#pFamily").dispatchEvent(new Event("change")); } },
     { group: "Actions", label: "Replay AI servicing case", icon: "i-play", run: function () { location.hash = "agents"; } },
     { group: "Actions", label: "Use Calm style", icon: "i-gear", run: function () { setStyle("calm", true); } },

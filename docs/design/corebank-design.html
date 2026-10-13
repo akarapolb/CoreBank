@@ -218,7 +218,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <h3 id="s2-1"><span class="n">2.1</span>Capability map</h3>
   <div class="cards">
     <div class="card"><h4>Customer</h4><ul><li>Party master, relationships, groups</li><li>KYC status and periodic review</li><li>Consent (PDPA purpose)</li><li>Customer 360</li></ul></div>
-    <div class="card"><h4>Products</h4><ul><li>Product definition from building blocks</li><li>Simulation and golden tests</li><li>Pricing tables and risk-based pricing</li><li>Maker-checker publishing, versioning</li></ul></div>
+    <div class="card"><h4>Products</h4><ul><li>Product definition from building blocks</li><li>Simulation and golden tests</li><li>Pricing tables and risk-based pricing</li><li>Maker-checker publishing, versioning</li><li>Master Builder with templates and copilot</li></ul></div>
     <div class="card"><h4>Deposits</h4><ul><li>Savings, current, term, pockets</li><li>Tiered interest, withholding tax</li><li>Sweeps, overdraft, dormancy</li><li>Holds and available balance</li></ul></div>
     <div class="card"><h4>Lending</h4><ul><li>Origination and decisioning</li><li>Schedules: annuity, flat, balloon, stepped</li><li>Accrual, billing, allocation, aging</li><li>Restructuring, holidays, write-off</li></ul></div>
     <div class="card"><h4>Leasing and hire purchase</h4><ul><li>Retail, fleet and floor plan</li><li>Asset register and title</li><li>Residual value, VAT, tax invoices</li><li>Insurance, dealer subvention</li><li>Repossession and remarketing</li></ul></div>
@@ -254,6 +254,8 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">FR-PRD-01</td><td>Define a product from typed building blocks and CEL formulas, validated against a schema.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-PRD-02</td><td>Simulate a product version over generated scenarios and store results as golden tests.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-PRD-03</td><td>Publish a product version only after maker-checker approval; contracts pin their version.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-PRD-04</td><td>Provide Master Builder: templates per rule pack, eight guided steps, live rule checks, scenario simulation and a diff before approval.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-PRD-05</td><td>Draft a product definition from a plain-language brief, listing what was understood and assumed; never publish without approval.</td><td><span class="tag p1">Should</span></td><td>2</td></tr>
       <tr><td class="id">FR-DEP-01</td><td>Calculate tiered deposit interest daily and withhold tax at payment.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-LND-01</td><td>Generate annuity, equal-principal, bullet, balloon and stepped schedules with any day count.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-LND-02</td><td>Convert a flat rate to an effective rate for disclosure and split income on the effective basis.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>

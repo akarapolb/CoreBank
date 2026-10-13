@@ -110,6 +110,21 @@ Draft  →  Simulate  →  Review (maker-checker: product, risk, finance, compli
 - **Versioning**: arrangements pin the version they were opened on. Changes that must apply to existing contracts (e.g. a rate change on floating loans) are explicit **migrations** with their own approval, not silent edits.
 - **AI co-pilot**: product managers can describe a product in natural language; the AI drafts the definition, runs the simulator, and highlights regulatory issues. A human still approves publication (see [06](06-ai-native.md)).
 
+## Master Builder
+
+Master Builder is the guided way to create and change products on top of the product engine. It never bypasses the engine: everything it produces is an ordinary product definition, simulated and approved like any other.
+
+| Part | What it does |
+|---|---|
+| Template library | Starts from a maintained template per family and rule pack (new and used car HP, motorcycle HP, finance lease, personal loan, floating home loan, and more over time) |
+| Product copilot | Turns a plain-language brief ("used car HP, 200k to 1.5M, 24 to 72 months, flat 4.25%, 20% balloon…") into a draft definition, listing what it understood and what it assumed; it never publishes |
+| Eight guided steps | Basics, pricing, schedule, fees and tax, repayment and arrears, changes and early settlement, accounting, review |
+| Live rule checks | Each step is checked against the jurisdiction rule pack (rate caps, VAT applicability, rebate rules, non-accrual limits, method and rate compatibility) with the failing step highlighted |
+| Scenario simulation | Every draft is run through standard scenarios (on time, missed payments, early settlement, rate rise, payment holiday); results become the product's golden tests |
+| Diff and approval | Shows exactly what changed from the template or the live version, then sends the definition to maker-checker approval |
+
+Templates, rule packs and the copilot's evaluation suites are maintained per market and are part of the commercial jurisdiction packs.
+
 ## Why not code per product, and why not a full scripting language
 
 - Code per product (classic cores) makes every new product a release and every bug a production incident.
