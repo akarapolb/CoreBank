@@ -70,7 +70,7 @@ Scope is **treasury operations in the core**: what a bank needs to run its curre
 
 ### 4.1 Roles
 
-| Role | What CoreBank does |
+| Role | What Fabor OS does |
 |---|---|
 | **Lender (participant)** | Books the bank's share as its own loan; receives cash flows from the agent; tracks the full facility for reference |
 | **Agent** | Runs the whole facility: lender register, drawdowns, rate fixing, interest and fee calculation per lender, collection and distribution, notices, transfers, covenant monitoring; agency cash is client money (memo) |

@@ -1,4 +1,4 @@
-<title>CoreBank Console</title>
+<title>Fabor OS Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
@@ -504,7 +504,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
 <div class="shell">
   <aside class="side" aria-label="Modules">
-    <div class="brand"><span class="logo" aria-hidden="true">C</span><strong>CoreBank</strong></div>
+    <div class="brand"><span class="logo" aria-hidden="true">F</span><strong>Fabor OS</strong></div>
     <div class="ws-wrap">
       <button class="ws" type="button" id="wsBtn" aria-haspopup="true" aria-expanded="false" aria-controls="wsMenu"><span class="dot" aria-hidden="true"></span><div><strong id="wsName">Demo Virtual Bank</strong><span id="wsSub">TH01 · Digital only</span></div><svg class="ico" style="width:16px;height:16px;margin-left:auto"><use href="#i-swap"/></svg></button>
       <div class="ws-menu" id="wsMenu" hidden>
@@ -2035,10 +2035,10 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
     else document.documentElement.setAttribute("data-theme", mode);
     $$("[data-theme-set]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-set") === mode)); });
     var tr = $("#th-" + mode); if (tr) tr.checked = true;
-    if (save) { try { localStorage.setItem("corebank-theme", mode); } catch (e) {} }
+    if (save) { try { localStorage.setItem("fabor-theme", mode); } catch (e) {} }
   }
   $$("[data-theme-set]").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-set"), true); }); });
-  (function () { var m = null; try { m = localStorage.getItem("corebank-theme"); } catch (e) {} if (m === "light" || m === "dark") setTheme(m, false); else if (document.documentElement.getAttribute("data-theme")) setTheme(document.documentElement.getAttribute("data-theme"), false); })();
+  (function () { var m = null; try { m = localStorage.getItem("fabor-theme"); } catch (e) {} if (m === "light" || m === "dark") setTheme(m, false); else if (document.documentElement.getAttribute("data-theme")) setTheme(document.documentElement.getAttribute("data-theme"), false); })();
 
 
   /* ---------- Tenants: virtual, retail, commercial ---------- */
@@ -2612,13 +2612,13 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       var r = $("#st-" + mode); if (r) r.checked = true;
     };
     if (save && document.startViewTransition && !reduce) document.startViewTransition(apply); else apply();
-    if (save) { try { localStorage.setItem("corebank-style", mode); } catch (e) {} }
+    if (save) { try { localStorage.setItem("fabor-style", mode); } catch (e) {} }
   }
   $$("input[name='style']").forEach(function (r) { r.addEventListener("change", function () { setStyle(r.value, true); flashSaved(); }); });
   $$("input[name='theme']").forEach(function (r) { r.addEventListener("change", function () { setTheme(r.value, true); flashSaved(); }); });
   var savedTimer;
   function flashSaved() { var n = $("#savedNote"); n.hidden = false; clearTimeout(savedTimer); savedTimer = setTimeout(function () { n.hidden = true; }, 2000); }
-  (function () { var m = null; try { m = localStorage.getItem("corebank-style"); } catch (e) {} if (m === "calm") setStyle("calm", false); })();
+  (function () { var m = null; try { m = localStorage.getItem("fabor-style"); } catch (e) {} if (m === "calm") setStyle("calm", false); })();
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];

@@ -1,6 +1,6 @@
 # 13 — Business and revenue model
 
-How CoreBank makes money while the core is open source ([ADR-0009](adr/0009-open-core-model.md)). Prices are **hypotheses to validate with design partners**, not a price list.
+How Fabor OS makes money while the core is open source ([ADR-0009](adr/0009-open-core-model.md)). Prices are **hypotheses to validate with design partners**, not a price list.
 
 ## 1. Principles
 
@@ -14,7 +14,7 @@ How CoreBank makes money while the core is open source ([ADR-0009](adr/0009-open
 | Edition | For | What is included | How it is priced |
 |---|---|---|---|
 | **Community** | Developers, fintech pilots, universities, small lenders | All open code, generic reference rule pack, community support | Free (Apache 2.0) |
-| **Enterprise** (self-managed) | Banks that run CoreBank in their own data centre or cloud | Certified LTS releases, security patch SLAs, 24/7 support, indemnity, one jurisdiction pack, operations tooling | Annual subscription scaled by accounts and contracts under management |
+| **Enterprise** (self-managed) | Banks that run Fabor OS in their own data centre or cloud | Certified LTS releases, security patch SLAs, 24/7 support, indemnity, one jurisdiction pack, operations tooling | Annual subscription scaled by accounts and contracts under management |
 | **Cloud** (managed) | Virtual banks, fintechs, leasing companies, banks without a core team | Everything in Enterprise, operated by us in-country, with availability SLAs | Platform fee plus usage |
 
 Regulators generally expect critical systems to have accountable vendor support, so banks that start on Community move to Enterprise or Cloud before going live.

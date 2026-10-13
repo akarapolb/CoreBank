@@ -1,4 +1,4 @@
-<title>CoreBank Design Reference</title>
+<title>Fabor OS Design Reference</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
@@ -134,7 +134,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 
 <div class="wrap">
 <nav class="toc" aria-label="Contents">
-  <div class="brand"><span class="logo" aria-hidden="true">C</span><strong>CoreBank SDD</strong></div>
+  <div class="brand"><span class="logo" aria-hidden="true">F</span><strong>Fabor OS SDD</strong></div>
   <ol>
     <li><a href="#s1"><span class="n">1</span>Introduction</a></li>
     <li><a href="#s2"><span class="n">2</span>Functional design</a>
@@ -160,8 +160,8 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 
 <main>
 <header class="doc">
-  <span class="eyebrow">Software design document</span>
-  <h1>CoreBank: AI-native core banking platform</h1>
+  <span class="eyebrow">Software design document · Fabor OS, the Financial and Banking Operator</span>
+  <h1>Fabor OS: AI-native core banking platform</h1>
   <p class="lead">The reference design for a core banking platform serving retail, commercial and virtual banks, with any loan, lease or hire-purchase product built from configuration. It covers what the system does, how it is structured, where it runs, how it is protected and which rules it satisfies.</p>
   <div class="meta">
     <div><span>Version</span><strong>0.1 draft</strong></div>
@@ -174,7 +174,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 <!-- 1 -->
 <section class="part" id="s1">
   <h2><span class="n">1</span>Introduction</h2>
-  <p>This document is the single reference for design decisions on CoreBank. Detailed reasoning for individual decisions lives in the architecture decision records (ADRs) in the repository under <code>docs/adr/</code>; this document summarises them and shows how they fit together.</p>
+  <p>This document is the single reference for design decisions on Fabor OS. Detailed reasoning for individual decisions lives in the architecture decision records (ADRs) in the repository under <code>docs/adr/</code>; this document summarises them and shows how they fit together.</p>
   <h3>Scope</h3>
   <div class="cards">
     <div class="card"><h4>In scope</h4><ul><li>Customer (party) master and KYC status</li><li>Deposits, loans, credit lines, leases, hire purchase</li><li>Multi-currency double-entry ledger and GL</li><li>Product engine, pricing, fees, tax</li><li>Limits, collateral, covenants</li><li>Collections, TFRS 9 and TFRS 16 accounting</li><li>Trade finance, treasury operations, syndication</li><li>AI agent layer and AI decisioning</li></ul></div>
@@ -206,7 +206,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 <!-- 2 -->
 <section class="part" id="s2">
   <h2><span class="n">2</span>Functional design</h2>
-  <p>CoreBank serves four kinds of institution from one platform. Each tenant switches on the capabilities and products it needs.</p>
+  <p>Fabor OS serves four kinds of institution from one platform. Each tenant switches on the capabilities and products it needs.</p>
   <div class="tbl"><table>
     <thead><tr><th>Segment</th><th>Main needs from the core</th><th>Typical products</th></tr></thead>
     <tbody>
@@ -308,7 +308,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <h3 id="s2-4"><span class="n">2.4</span>Retail bank design</h3>
   <p>A retail bank runs the same core as a virtual bank, plus branches, cash, mortgages and the need to migrate from an existing core without a big-bang cut-over.</p>
   <div class="tbl"><table>
-    <thead><tr><th>Area</th><th>How CoreBank handles it</th><th>Phase</th></tr></thead>
+    <thead><tr><th>Area</th><th>How Fabor OS handles it</th><th>Phase</th></tr></thead>
     <tbody>
       <tr><td>Products</td><td>Savings, current, fixed and step-up term deposits, children's and senior accounts, personal loans, home loans, auto hire purchase, overdraft, credit cards through a processor</td><td>1–3</td></tr>
       <tr><td>Channels</td><td>Mobile and internet banking, branch counter, ATM and CDM through the switch, call centre, agent banking</td><td>1–3</td></tr>
@@ -326,7 +326,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <h3 id="s2-5"><span class="n">2.5</span>Commercial bank design</h3>
   <p>Commercial banking adds relationship structure: groups of companies, facility trees, credit committees, covenants and cash management for clients who run their own treasury.</p>
   <div class="tbl"><table>
-    <thead><tr><th>Area</th><th>How CoreBank handles it</th><th>Phase</th></tr></thead>
+    <thead><tr><th>Area</th><th>How Fabor OS handles it</th><th>Phase</th></tr></thead>
     <tbody>
       <tr><td>Clients</td><td>Business party with directors, beneficial owners and group hierarchy; KYB documents; group exposure computed over the relationship graph</td><td>1–3</td></tr>
       <tr><td>Credit process</td><td>Credit application with financial spreading, risk grade, RM copilot memo draft, authority matrix routing by amount and exception, conditions precedent before first drawdown</td><td>3</td></tr>
@@ -364,7 +364,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td>5 · months 30–42</td><td colspan="4"><span class="tag ok">Global bank ready</span> multi-region active-active, billion-account certification, more jurisdiction packs, Islamic banking, cross-border pooling</td></tr>
     </tbody>
   </table></div>
-  <div class="callout">An incumbent retail or commercial bank can adopt CoreBank one product at a time from Phase 3 (for example new digital savings or SME leasing first), with the remaining books migrated in Phase 4.</div>
+  <div class="callout">An incumbent retail or commercial bank can adopt Fabor OS one product at a time from Phase 3 (for example new digital savings or SME leasing first), with the remaining books migrated in Phase 4.</div>
 
   <h3 id="s2-7"><span class="n">2.7</span>Fleet and floor plan</h3>
   <p>Hire purchase covers three shapes of business. They share the schedule, VAT, title and accounting engines, and differ in how contracts are grouped and repaid.</p>
@@ -1003,9 +1003,9 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 <!-- 8 -->
 <section class="part" id="s8g">
   <h2><span class="n">8</span>Global benchmark</h2>
-  <p>How CoreBank measures up to what a global bank needs, and to the platforms it would replace. Full detail is in <code>docs/11-global-scale-and-benchmark.md</code>.</p>
+  <p>How Fabor OS measures up to what a global bank needs, and to the platforms it would replace. Full detail is in <code>docs/11-global-scale-and-benchmark.md</code>.</p>
   <h3 id="s8-1"><span class="n">8.1</span>Capability check</h3>
-  <p><span class="tag ok">Covered</span> in the plan, <span class="tag p1">Partial</span> partly covered, <span class="tag p0">Gap</span> not planned before this review. Phase is when CoreBank delivers it after this review.</p>
+  <p><span class="tag ok">Covered</span> in the plan, <span class="tag p1">Partial</span> partly covered, <span class="tag p0">Gap</span> not planned before this review. Phase is when Fabor OS delivers it after this review.</p>
   <div class="tbl"><table>
     <thead><tr><th>#</th><th>Capability</th><th>Status</th><th>Phase</th><th>Action</th></tr></thead>
     <tbody>
@@ -1034,7 +1034,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <h3 id="s8-2"><span class="n">8.2</span>Against leading platforms</h3>
   <div class="callout warn"><strong>Typical public positioning, not a vendor evaluation.</strong> Established global cores include Temenos Transact, Oracle FLEXCUBE, Infosys Finacle and TCS BaNCS. Cloud-native cores include Thought Machine Vault, Mambu and 10x SuperCore. Validate every point in due diligence.</div>
   <div class="tbl"><table>
-    <thead><tr><th>Dimension</th><th>Established global cores</th><th>Cloud-native cores</th><th>CoreBank</th></tr></thead>
+    <thead><tr><th>Dimension</th><th>Established global cores</th><th>Cloud-native cores</th><th>Fabor OS</th></tr></thead>
     <tbody>
       <tr><td>Functional breadth</td><td>Very broad, incl. trade and treasury</td><td>Retail and SME focus</td><td>Retail, SME, commercial, leasing, fleet, floor plan, trade finance, treasury operations, syndication, on one ledger</td></tr>
       <tr><td>Processing model</td><td>Often batch close of business</td><td>Real time</td><td>Real time with no end-of-day, designed for a billion accounts</td></tr>
@@ -1171,7 +1171,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td>TFRS</td><td>Thai Financial Reporting Standards, aligned with IFRS.</td></tr>
     </tbody>
   </table></div>
-  <p class="foot">CoreBank software design document, version 0.1 draft. Source: <code>docs/design/corebank-design.html</code> in the CoreBank repository. Update this document with every accepted ADR.</p>
+  <p class="foot">Fabor OS software design document, version 0.1 draft. Source: <code>docs/design/fabor-os-design.html</code> in the Fabor OS repository. Update this document with every accepted ADR.</p>
 </section>
 </main>
 </div>

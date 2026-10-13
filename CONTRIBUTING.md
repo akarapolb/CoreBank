@@ -1,6 +1,6 @@
-# Contributing to CoreBank
+# Contributing to Fabor OS
 
-Thank you for helping build CoreBank. This guide explains how to propose changes and what we expect from a contribution.
+Thank you for helping build Fabor OS. This guide explains how to propose changes and what we expect from a contribution.
 
 ## Before you start
 

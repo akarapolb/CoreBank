@@ -1,6 +1,6 @@
 # 11 — Global scale and competitive benchmark
 
-Two questions: can CoreBank run a global bank, and where does it stand against what global banks and the leading core banking platforms offer today?
+Two questions: can Fabor OS run a global bank, and where does it stand against what global banks and the leading core banking platforms offer today?
 
 ## 1. What "global bank" means in numbers
 
@@ -92,9 +92,9 @@ See [ADR-0008](adr/0008-global-multi-region-topology.md).
 
 ## 3. Global bank capability check
 
-Status: Covered = in the current plan · Partial = partly covered · Gap = not planned before this review. "Phase" is when CoreBank delivers it after the changes below.
+Status: Covered = in the current plan · Partial = partly covered · Gap = not planned before this review. "Phase" is when Fabor OS delivers it after the changes below.
 
-| # | Capability a global bank needs | CoreBank status | Phase | Action |
+| # | Capability a global bank needs | Fabor OS status | Phase | Action |
 |---|---|---|---|---|
 | 1 | Billion-account scale, 100k/s postings | Partial → covered | 0–3 | Section 2 design, scale-out and billion-account tests |
 | 2 | Multi-region active-active with data residency | Partial → covered | 3–4 | Home-region routing, paired DR regions (ADR-0008) |
@@ -119,12 +119,12 @@ Status: Covered = in the current plan · Partial = partly covered · Gap = not p
 
 ## 4. Against the leading platforms
 
-This compares CoreBank with the **typical public positioning** of two groups of platforms. It is a planning aid, not a vendor evaluation; each point must be validated in proper due diligence.
+This compares Fabor OS with the **typical public positioning** of two groups of platforms. It is a planning aid, not a vendor evaluation; each point must be validated in proper due diligence.
 
 - **Established global cores**, such as Temenos Transact, Oracle FLEXCUBE, Infosys Finacle and TCS BaNCS: very broad functionality and decades of tier-1 deployments, historically built around end-of-day batch processing and heavy customization.
 - **Cloud-native cores**, such as Thought Machine Vault, Mambu and 10x SuperCore: modern architectures, real-time processing and configurable products, with narrower coverage of commercial, trade and treasury functions.
 
-| Dimension | Established global cores | Cloud-native cores | CoreBank target | How we win |
+| Dimension | Established global cores | Cloud-native cores | Fabor OS target | How we win |
 |---|---|---|---|---|
 | Functional breadth | Very broad, incl. trade and treasury | Retail and SME focus | Retail, SME, commercial, leasing, fleet, floor plan, trade finance, treasury operations, syndication | Native on one ledger and limit tree, so trade, FX and syndicated exposure are real time and in one customer view |
 | Processing model | Often batch close of business | Real time | Real time, no end-of-day, at billion-account scale | Computed accrual and time-wheel scheduling (ADR-0007) |

@@ -227,7 +227,7 @@ flowchart TB
 ### Repository tree
 
 ```
-corebank/
+fabor-os/
   pom.xml                              # parent: versions, plugins, enforcer, licence gate
   platform/
     platform-money/  platform-time/  platform-tenancy/  platform-persistence/

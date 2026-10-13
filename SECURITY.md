@@ -1,10 +1,10 @@
 # Security policy
 
-CoreBank moves money. We take every report seriously and thank researchers who disclose responsibly.
+Fabor OS moves money. We take every report seriously and thank researchers who disclose responsibly.
 
 ## Reporting a vulnerability
 
-- Email **security@corebank.example** (placeholder: replace with the project's real security address before publishing).
+- Email **security@fabor.example** (placeholder: replace with the project's real security address before publishing).
 - Do not open a public issue, pull request or discussion for a suspected vulnerability.
 - Include the affected version or commit, steps to reproduce, and the impact you observed.
 

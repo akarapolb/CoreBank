@@ -4,7 +4,7 @@
 
 | Role | Who | Responsibilities |
 |---|---|---|
-| Users | Anyone running CoreBank | Report issues, request features, share experience |
+| Users | Anyone running Fabor OS | Report issues, request features, share experience |
 | Contributors | Anyone with a merged contribution | Code, documentation, tests, jurisdiction knowledge |
 | Maintainers | Named in `MAINTAINERS.md` | Review and merge, release, uphold the ADRs and quality bar |
 | Steering group | Company lead maintainers, plus elected representatives of adopting banks once there are three or more | Roadmap, ADR approval, maintainer appointments, licence and trademark policy |
@@ -21,4 +21,4 @@ The roadmap is public in [`docs/07-roadmap.md`](docs/07-roadmap.md). The open-co
 
 ## Path to a foundation
 
-When independent banks and integrators contribute regularly, the steering group will evaluate moving the project to a neutral foundation such as FINOS (the Fintech Open Source Foundation, part of the Linux Foundation). The CoreBank trademark would move with it under the foundation's trademark policy.
+When independent banks and integrators contribute regularly, the steering group will evaluate moving the project to a neutral foundation such as FINOS (the Fintech Open Source Foundation, part of the Linux Foundation). The Fabor trademark would move with it under the foundation's trademark policy.

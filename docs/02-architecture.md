@@ -123,7 +123,7 @@ Every infrastructure dependency sits behind a port so a bank's approved equivale
 ## Repository layout (proposed monorepo)
 
 ```
-corebank/
+fabor-os/
   platform/            # shared libs: money, calendars, day-count, idempotency, outbox, tenancy
   platform/persistence # dialect adapters, LedgerStore SPI + per-DB impls, conformance suite
   services/

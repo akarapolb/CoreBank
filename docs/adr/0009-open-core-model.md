@@ -11,7 +11,7 @@ Banks, regulators and auditors value being able to read and verify a core bankin
 
 - **Licence:** Apache License 2.0 for code; CC BY 4.0 for documentation. No copyleft (often blocked by bank legal teams) and no source-available licences (contrary to ADR-0006 and to community trust).
 - **Contributions:** Developer Certificate of Origin sign-off, no CLA.
-- **Trademark:** "CoreBank" and "CoreBank Certified" stay protected ([TRADEMARKS.md](../../TRADEMARKS.md)).
+- **Trademark:** "Fabor OS" and "Fabor Certified" stay protected ([TRADEMARKS.md](../../TRADEMARKS.md)).
 - **Open source from the end of Phase 0**, when the ledger and engines are stable and the 10,000/s benchmark is published with a reproducible harness.
 
 ### Open-core boundary

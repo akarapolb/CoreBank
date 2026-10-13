@@ -1,6 +1,6 @@
-# CoreBank
+# Fabor OS
 
-An AI-native core banking platform for **retail**, **commercial (SME and corporate)** and **virtual (digital-only) banks**.
+**The Financial and Banking Operator.** An AI-native core banking platform for **retail**, **commercial (SME and corporate)** and **virtual (digital-only) banks**.
 Any lending product, including **leasing and hire purchase**, is built from configuration, not code.
 
 > Status: **planning**. This repository holds the blueprint. Code arrives in Phase 0 (see the [roadmap](docs/07-roadmap.md)).
@@ -34,14 +34,14 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 11 | [Global scale and benchmark](docs/11-global-scale-and-benchmark.md) | Global sizing, high-performance design, capability check against global banks and leading platforms |
 | 12 | [Trade finance, treasury and syndication](docs/12-trade-treasury-syndication.md) | Native LCs and guarantees, treasury operations, syndicated lending as lender and agent |
 | 13 | [Business and revenue model](docs/13-business-model.md) | Editions, price metrics, add-ons, services, example customers, unit economics |
-| SDD | [Design reference (HTML)](docs/design/corebank-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
+| SDD | [Design reference (HTML)](docs/design/fabor-os-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Master Builder, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) the [open-source-only policy](docs/adr/0006-open-source-only.md) and the [open-core model](docs/adr/0009-open-core-model.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |
 
 ## Licence and contributing
 
-CoreBank is open core. Code is licensed under the [Apache License 2.0](LICENSE) and documentation under CC BY 4.0 (see [NOTICE](NOTICE)). Commercial editions add jurisdiction packs, AI packs, migration and multi-region tooling, certified releases and managed operations ([ADR-0009](docs/adr/0009-open-core-model.md)).
+Fabor OS is open core. Code is licensed under the [Apache License 2.0](LICENSE) and documentation under CC BY 4.0 (see [NOTICE](NOTICE)). Commercial editions add jurisdiction packs, AI packs, migration and multi-region tooling, certified releases and managed operations ([ADR-0009](docs/adr/0009-open-core-model.md)).
 
 - [Contributing](CONTRIBUTING.md) (DCO sign-off, no CLA)
 - [Security policy](SECURITY.md)
