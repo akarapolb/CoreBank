@@ -42,7 +42,8 @@ public final class LedgerGrpcService extends LedgerGrpc.LedgerImplBase {
             List<Entry> entries = new ArrayList<>();
             for (org.fabor.ledger.api.grpc.Entry e : req.getEntriesList()) {
                 entries.add(new Entry(new AccountId(e.getAccount()), BalanceType.valueOf(e.getBalanceType()),
-                        direction(e.getDirection()), Money.ofMinor(e.getMinor(), Currency.of(e.getCurrency()))));
+                        direction(e.getDirection()), Money.ofMinor(e.getMinor(), Currency.of(e.getCurrency())),
+                        e.getRequireFunds()));
             }
             Optional<BatchId> reverses = req.getReverses().isEmpty() ? Optional.empty()
                     : Optional.of(new BatchId(req.getReverses()));
@@ -82,7 +83,7 @@ public final class LedgerGrpcService extends LedgerGrpc.LedgerImplBase {
         if (e instanceof IdempotencyConflictException) {
             return Status.ALREADY_EXISTS.withDescription(e.getMessage());
         }
-        if (e instanceof InvalidReversalException) {
+        if (e instanceof InvalidReversalException || e instanceof org.fabor.ledger.application.InsufficientFundsException) {
             return Status.FAILED_PRECONDITION.withDescription(e.getMessage());
         }
         if (e instanceof UnbalancedBatchException || e instanceof IllegalArgumentException

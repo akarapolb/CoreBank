@@ -25,7 +25,7 @@ class PostgresLedgerStoreTest extends LedgerStoreConformance {
     @Override
     protected LedgerStore newStore() {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE ledger_entry, ledger_outbox, ledger_batch");
+            st.execute("TRUNCATE ledger_entry, ledger_outbox, ledger_balance, ledger_batch");
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }

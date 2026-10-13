@@ -183,4 +183,66 @@ public abstract class LedgerStoreConformance {
         assertThat(cust).isEqualTo(2000);
         assertThat(cust + cash).isZero();
     }
+
+    private static PostingBatch withdraw(String id, long minor) {
+        return PostingBatch.of(T, new BatchId(id), new IdempotencyKey("key-" + id), LocalDate.of(2026, 1, 1), List.of(
+                Entry.guardedDebit(CUSTOMER, BalanceType.SETTLED, Money.ofMinor(minor, Currency.THB)),
+                new Entry(CASH, BalanceType.SETTLED, Direction.CREDIT, Money.ofMinor(minor, Currency.THB))));
+    }
+
+    @Test
+    void guardedDebitCannotOverdraw() {
+        LedgerStore s = newStore();
+        s.append(deposit("b1", "k1", LocalDate.of(2026, 1, 1), 1000), T0);
+        s.append(withdraw("w1", 600), T1);
+        assertThatThrownBy(() -> s.append(withdraw("w2", 600), T1))
+                .isInstanceOf(org.fabor.ledger.application.InsufficientFundsException.class);
+        assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isEqualTo(400);
+        // the rejected batch left nothing behind and its id and key can be reused
+        assertThat(s.find(T, new BatchId("w2"))).isEmpty();
+        s.append(withdraw("w2", 400), T1);
+        assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isZero();
+    }
+
+    @Test
+    void currentBalanceCoversFutureDatedAndReversals() {
+        LedgerStore s = newStore();
+        PostingBatch b = deposit("b1", "k1", LocalDate.of(2026, 1, 1), 1000);
+        s.append(b, T0);
+        s.append(deposit("b2", "k2", LocalDate.of(2030, 1, 1), 50), T0);
+        assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isEqualTo(1050);
+        s.append(b.reversal(new BatchId("r1"), new IdempotencyKey("rk"), LocalDate.of(2026, 1, 2)), T1);
+        assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isEqualTo(50);
+    }
+
+    @Test
+    void concurrentGuardedWithdrawalsNeverOverdraw() throws Exception {
+        LedgerStore s = newStore();
+        s.append(deposit("b1", "k1", LocalDate.of(2026, 1, 1), 1000), T0);
+        ExecutorService pool = Executors.newFixedThreadPool(16);
+        long ok = 0;
+        try {
+            List<Future<Boolean>> fs = new ArrayList<>();
+            for (int i = 0; i < 50; i++) {
+                int n = i;
+                fs.add(pool.submit(() -> {
+                    try {
+                        s.append(withdraw("cw" + n, 100), T1);
+                        return true;
+                    } catch (org.fabor.ledger.application.InsufficientFundsException e) {
+                        return false;
+                    }
+                }));
+            }
+            for (Future<Boolean> f : fs) {
+                if (f.get(30, TimeUnit.SECONDS)) {
+                    ok++;
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        assertThat(ok).isEqualTo(10);
+        assertThat(s.currentBalance(T, CUSTOMER, BalanceType.SETTLED, Currency.THB).minor()).isZero();
+    }
 }

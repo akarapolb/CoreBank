@@ -38,4 +38,8 @@ public final class LedgerService {
                          LocalDate valueAsOf) {
         return store.balance(tenant, account, type, currency, valueAsOf, clock.instant());
     }
+
+    public Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
+        return store.currentBalance(tenant, account, type, currency);
+    }
 }

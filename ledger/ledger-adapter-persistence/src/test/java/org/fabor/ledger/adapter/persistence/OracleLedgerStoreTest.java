@@ -29,6 +29,7 @@ class OracleLedgerStoreTest extends LedgerStoreConformance {
     protected LedgerStore newStore() {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
             st.execute("DELETE FROM ledger_outbox");
+            st.execute("DELETE FROM ledger_balance");
             // rows are immutable by trigger; TRUNCATE is DDL, and a parent table needs its FK disabled first
             st.execute("ALTER TABLE ledger_entry DISABLE CONSTRAINT fk_ledger_entry_batch");
             st.execute("TRUNCATE TABLE ledger_entry");

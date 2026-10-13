@@ -95,4 +95,14 @@ class LedgerGrpcServiceTest {
         }
         throw new AssertionError("expected failure");
     }
+
+    @Test
+    void requireFundsRejectsOverdraft() {
+        stub.postBatch(req("b1", "k1", 1000).build());
+        PostBatchRequest.Builder w = PostBatchRequest.newBuilder().setTenant("bank-a").setBatchId("w1")
+                .setIdempotencyKey("wk1").setValueDate("2026-01-01")
+                .addEntries(e("cust", Direction.DEBIT, 1500).toBuilder().setRequireFunds(true))
+                .addEntries(e("cash", Direction.CREDIT, 1500));
+        assertThat(code(() -> stub.postBatch(w.build()))).isEqualTo(Status.Code.FAILED_PRECONDITION);
+    }
 }

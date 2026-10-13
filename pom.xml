@@ -28,6 +28,7 @@
     <module>ledger/ledger-testkit</module>
     <module>ledger/ledger-adapter-persistence</module>
     <module>ledger/ledger-adapter-web</module>
+    <module>ledger/ledger-perf</module>
   </modules>
 
   <properties>
@@ -49,6 +50,7 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>2.0.16</version></dependency>
       <dependency><groupId>com.google.protobuf</groupId><artifactId>protobuf-java</artifactId><version>3.25.5</version></dependency>
       <dependency><groupId>com.google.errorprone</groupId><artifactId>error_prone_annotations</artifactId><version>2.28.0</version></dependency>
       <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>33.2.1-android</version></dependency>

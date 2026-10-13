@@ -23,6 +23,7 @@ message Entry {
   Direction direction = 3;
   int64 minor = 4;
   string currency = 5;
+  bool require_funds = 6;    // debit only: reject the batch if it would overdraw the bucket
 }
 
 message PostBatchRequest {

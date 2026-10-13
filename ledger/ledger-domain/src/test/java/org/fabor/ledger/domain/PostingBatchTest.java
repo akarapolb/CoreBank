@@ -72,4 +72,13 @@ class PostingBatchTest {
     void anySymmetricBatchBalances(@ForAll @LongRange(min = 1, max = 1_000_000_000_000L) long amt) {
         assertThat(batch(amt)).isNotNull();
     }
+
+    @Test
+    void guardedDebitRules() {
+        Entry g = Entry.guardedDebit(new AccountId("a"), BalanceType.SETTLED, Money.ofMinor(5, Currency.THB));
+        assertThat(g.requireFunds()).isTrue();
+        assertThat(g.inverse().requireFunds()).isFalse();
+        assertThatThrownBy(() -> new Entry(new AccountId("a"), BalanceType.SETTLED, Direction.CREDIT,
+                Money.ofMinor(5, Currency.THB), true)).isInstanceOf(IllegalArgumentException.class);
+    }
 }

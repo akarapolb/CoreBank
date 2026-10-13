@@ -19,7 +19,8 @@ public interface LedgerStore {
 
     /**
      * Atomically stores the batch, or returns the earlier result when the idempotency key was seen.
-     * Same key with different content is a {@link IdempotencyConflictException}. A batch may be
+     * Same key with different content is a {@link IdempotencyConflictException}. A batch with a
+     * {@code requireFunds} entry that would overdraw is rejected with {@link InsufficientFundsException}. A batch may be
      * reversed at most once, and a reversal cannot itself be reversed.
      */
     PostResult append(PostingBatch batch, Instant recordedAt);
@@ -32,6 +33,12 @@ public interface LedgerStore {
      */
     Money balance(TenantId tenant, AccountId account, BalanceType type, Currency currency,
                   LocalDate valueAsOf, Instant recordedAsOf);
+
+    /**
+     * Balance of one bucket over everything committed so far, regardless of value date. This is the
+     * figure {@code requireFunds} entries are checked against; stores keep it in a maintained table.
+     */
+    Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency);
 
     record StoredBatch(PostingBatch batch, Instant recordedAt) { }
 

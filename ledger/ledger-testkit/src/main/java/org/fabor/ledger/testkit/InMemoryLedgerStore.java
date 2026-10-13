@@ -56,11 +56,37 @@ public final class InMemoryLedgerStore implements LedgerStore {
                 throw new InvalidReversalException("Batch already reversed: " + target.value());
             }
         }
+        checkFunds(batch);
         StoredBatch stored = new StoredBatch(batch, recordedAt);
         log.add(stored);
         byKey.put(keyRef, stored);
         byId.put(idRef, stored);
         return new PostResult(stored, false);
+    }
+
+    private void checkFunds(PostingBatch batch) {
+        for (Entry g : batch.entries()) {
+            if (!g.requireFunds()) {
+                continue;
+            }
+            long net = 0;
+            for (Entry e : batch.entries()) {
+                if (e.account().equals(g.account()) && e.type() == g.type()
+                        && e.amount().currency().equals(g.amount().currency())) {
+                    net = Math.addExact(net, e.signedMinor());
+                }
+            }
+            long after = Math.addExact(currentBalance(batch.tenant(), g.account(), g.type(), g.amount().currency()).minor(), net);
+            if (after < 0) {
+                throw new org.fabor.ledger.application.InsufficientFundsException(
+                        "Insufficient funds on " + g.account().value());
+            }
+        }
+    }
+
+    @Override
+    public synchronized Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
+        return balance(tenant, account, type, currency, LocalDate.of(9999, 12, 31), Instant.parse("9999-12-31T00:00:00Z"));
     }
 
     @Override

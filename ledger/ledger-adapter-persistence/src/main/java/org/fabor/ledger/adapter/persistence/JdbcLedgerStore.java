@@ -40,11 +40,31 @@ import org.fabor.platform.tenancy.TenantId;
  * the winner's committed row decides between replay and conflict.
  */
 public abstract class JdbcLedgerStore implements LedgerStore {
+    private static final int MAX_ATTEMPTS = 5;
+
     private final DataSource ds;
+    private final java.util.Set<String> hotAccounts;
+    private final int stripes;
 
     protected JdbcLedgerStore(DataSource ds) {
-        this.ds = ds;
+        this(ds, java.util.Set.of(), 1);
     }
+
+    /**
+     * @param hotAccounts account ids whose balances are striped over {@code stripes} rows; such accounts
+     *                    cannot carry {@code requireFunds} entries (the sum of stripes is not locked)
+     */
+    protected JdbcLedgerStore(DataSource ds, java.util.Set<String> hotAccounts, int stripes) {
+        this.ds = ds;
+        this.hotAccounts = java.util.Set.copyOf(hotAccounts);
+        this.stripes = Math.max(1, stripes);
+    }
+
+    /** SQL that adds a delta to a balance row, creating it if absent. Parameters: tenant, account, type, currency, stripe, delta. */
+    protected abstract String upsertBalanceSql();
+
+    /** True if the failure is a deadlock or serialization failure that is safe to retry. */
+    protected abstract boolean isRetryable(SQLException e);
 
     /** True if the exception is a unique/primary key violation; the message names the constraint. */
     protected abstract boolean isUniqueViolation(SQLException e);
@@ -54,28 +74,113 @@ public abstract class JdbcLedgerStore implements LedgerStore {
         if (batch.reverses().isPresent()) {
             checkReversible(batch);
         }
-        try (Connection c = ds.getConnection()) {
-            c.setAutoCommit(false);
-            try {
-                insert(c, batch, recordedAt);
-                c.commit();
-                return new PostResult(new StoredBatch(batch, recordedAt), false);
-            } catch (SQLException e) {
-                c.rollback();
-                if (isUniqueViolation(e)) {
-                    return resolveConflict(batch, e);
+        for (int attempt = 1; ; attempt++) {
+            try (Connection c = ds.getConnection()) {
+                c.setAutoCommit(false);
+                try {
+                    insert(c, batch, recordedAt);
+                    c.commit();
+                    return new PostResult(new StoredBatch(batch, recordedAt), false);
+                } catch (SQLException e) {
+                    c.rollback();
+                    if (isRetryable(e) && attempt < MAX_ATTEMPTS) {
+                        continue;
+                    }
+                    if (isUniqueViolation(e)) {
+                        Optional<PostResult> resolved = resolveConflict(batch, e);
+                        if (resolved.isPresent()) {
+                            return resolved.get();
+                        }
+                        if (attempt < MAX_ATTEMPTS) {
+                            continue; // lost a race creating a balance row; nothing was committed
+                        }
+                    }
+                    throw new IllegalStateException("Ledger append failed", e);
+                } catch (RuntimeException e) {
+                    c.rollback();
+                    throw e;
                 }
+            } catch (SQLException e) {
                 throw new IllegalStateException("Ledger append failed", e);
-            } catch (RuntimeException e) {
-                c.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Ledger append failed", e);
+        }
+    }
+
+    /**
+     * Appends many batches in one transaction (one commit, one log flush). Each batch gets its own
+     * savepoint so a duplicate key or id fails only that batch. Returns one entry per input: a
+     * {@link PostResult} or the exception that batch would have thrown from {@link #append}.
+     * Reversals are not allowed here: they must see their original already committed.
+     */
+    public List<Object> appendAll(List<PostingBatch> batches, List<Instant> recordedAt) {
+        for (int attempt = 1; ; attempt++) {
+            Object[] out = new Object[batches.size()];
+            SQLException[] deferred = new SQLException[batches.size()];
+            try (Connection c = ds.getConnection()) {
+                c.setAutoCommit(false);
+                try {
+                    java.util.TreeMap<BalanceKey, Long> net = new java.util.TreeMap<>();
+                    for (int i = 0; i < batches.size(); i++) {
+                        PostingBatch b = batches.get(i);
+                        if (b.entries().stream().anyMatch(Entry::requireFunds)) {
+                            throw new IllegalArgumentException("requireFunds batches must use append, not appendAll");
+                        }
+                        java.sql.Savepoint sp = c.setSavepoint();
+                        try {
+                            insertRows(c, b, recordedAt.get(i));
+                            addNet(net, b);
+                            out[i] = new PostResult(new StoredBatch(b, recordedAt.get(i)), false);
+                        } catch (SQLException e) {
+                            if (isRetryable(e)) {
+                                throw e;
+                            }
+                            c.rollback(sp);
+                            if (isUniqueViolation(e)) {
+                                deferred[i] = e;
+                            } else {
+                                out[i] = new IllegalStateException("Ledger append failed", e);
+                            }
+                        } catch (RuntimeException e) {
+                            c.rollback(sp);
+                            out[i] = e;
+                        }
+                    }
+                    // one pass over every balance the group touched, in global key order: a hot account
+                    // is updated once per group instead of once per batch
+                    applyNet(c, net, stripeFor(batches.get(0)));
+                    c.commit();
+                } catch (SQLException | RuntimeException e) {
+                    c.rollback();
+                    throw e;
+                }
+            } catch (SQLException e) {
+                if (isRetryable(e) && attempt < MAX_ATTEMPTS) {
+                    continue;
+                }
+                IllegalStateException failure = new IllegalStateException("Ledger group append failed", e);
+                return java.util.Collections.nCopies(batches.size(), failure);
+            }
+            for (int i = 0; i < out.length; i++) {
+                if (deferred[i] != null) {
+                    PostingBatch b = batches.get(i);
+                    try {
+                        Optional<PostResult> r = resolveConflict(b, deferred[i]);
+                        out[i] = r.isPresent() ? r.get() : append(b, recordedAt.get(i));
+                    } catch (RuntimeException e) {
+                        out[i] = e;
+                    }
+                }
+            }
+            return java.util.Arrays.asList(out);
         }
     }
 
     private void insert(Connection c, PostingBatch b, Instant recordedAt) throws SQLException {
+        insertRows(c, b, recordedAt);
+        applyBalances(c, b);
+    }
+
+    private void insertRows(Connection c, PostingBatch b, Instant recordedAt) throws SQLException {
         String tenant = b.tenant().value();
         OffsetDateTime at = recordedAt.atOffset(ZoneOffset.UTC);
         try (PreparedStatement ps = c.prepareStatement(
@@ -92,7 +197,7 @@ public abstract class JdbcLedgerStore implements LedgerStore {
         }
         try (PreparedStatement ps = c.prepareStatement(
                 "INSERT INTO ledger_entry (tenant, batch_id, seq, account, balance_type, direction, minor, currency, "
-                        + "minor_units, value_date, recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")) {
+                        + "minor_units, value_date, recorded_at, require_funds) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")) {
             int seq = 0;
             for (Entry e : b.entries()) {
                 ps.setString(1, tenant);
@@ -106,6 +211,7 @@ public abstract class JdbcLedgerStore implements LedgerStore {
                 ps.setInt(9, e.amount().currency().minorUnits());
                 ps.setObject(10, b.valueDate());
                 ps.setObject(11, at);
+                ps.setInt(12, e.requireFunds() ? 1 : 0);
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -121,6 +227,105 @@ public abstract class JdbcLedgerStore implements LedgerStore {
         }
     }
 
+    private record BalanceKey(String tenant, String account, String type, String currency)
+            implements Comparable<BalanceKey> {
+        @Override
+        public int compareTo(BalanceKey o) {
+            int c = tenant.compareTo(o.tenant);
+            if (c == 0) {
+                c = account.compareTo(o.account);
+            }
+            if (c == 0) {
+                c = type.compareTo(o.type);
+            }
+            return c == 0 ? currency.compareTo(o.currency) : c;
+        }
+    }
+
+    private static void addNet(java.util.TreeMap<BalanceKey, Long> net, PostingBatch b) {
+        for (Entry e : b.entries()) {
+            net.merge(new BalanceKey(b.tenant().value(), e.account().value(), e.type().name(),
+                    e.amount().currency().code()), e.signedMinor(), Math::addExact);
+        }
+    }
+
+    /**
+     * Applies net balance effects, locking rows in sorted key order so concurrent transactions cannot
+     * deadlock on each other (first-touch inserts can still collide; those are retried).
+     */
+    private void applyNet(Connection c, java.util.TreeMap<BalanceKey, Long> net, int stripe) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(upsertBalanceSql())) {
+            for (var en : net.entrySet()) {
+                BalanceKey k = en.getKey();
+                ps.setString(1, k.tenant());
+                ps.setString(2, k.account());
+                ps.setString(3, k.type());
+                ps.setString(4, k.currency());
+                ps.setInt(5, hotAccounts.contains(k.account()) ? stripe : 0);
+                ps.setLong(6, en.getValue());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private int stripeFor(PostingBatch b) {
+        return stripes > 1 ? Math.floorMod(b.id().value().hashCode(), stripes) : 0;
+    }
+
+    /** Single-batch path: apply the batch's balances, then check every requireFunds bucket. */
+    private void applyBalances(Connection c, PostingBatch b) throws SQLException {
+        java.util.TreeMap<BalanceKey, Long> net = new java.util.TreeMap<>();
+        addNet(net, b);
+        java.util.Set<BalanceKey> guarded = new java.util.TreeSet<>();
+        for (Entry e : b.entries()) {
+            if (e.requireFunds()) {
+                if (hotAccounts.contains(e.account().value())) {
+                    throw new IllegalArgumentException(
+                            "requireFunds is not supported on striped account " + e.account().value());
+                }
+                guarded.add(new BalanceKey(b.tenant().value(), e.account().value(), e.type().name(),
+                        e.amount().currency().code()));
+            }
+        }
+        applyNet(c, net, stripeFor(b));
+        for (BalanceKey k : guarded) {
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT COALESCE(SUM(minor), 0) FROM ledger_balance "
+                            + "WHERE tenant = ? AND account = ? AND balance_type = ? AND currency = ?")) {
+                ps.setString(1, k.tenant());
+                ps.setString(2, k.account());
+                ps.setString(3, k.type());
+                ps.setString(4, k.currency());
+                try (ResultSet rs = ps.executeQuery()) {
+                    rs.next();
+                    if (rs.getLong(1) < 0) {
+                        throw new org.fabor.ledger.application.InsufficientFundsException(
+                                "Insufficient funds on " + k.account());
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public Money currentBalance(TenantId tenant, AccountId account, BalanceType type, Currency currency) {
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT COALESCE(SUM(minor), 0) FROM ledger_balance "
+                             + "WHERE tenant = ? AND account = ? AND balance_type = ? AND currency = ?")) {
+            ps.setString(1, tenant.value());
+            ps.setString(2, account.value());
+            ps.setString(3, type.name());
+            ps.setString(4, currency.code());
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return Money.ofMinor(rs.getLong(1), currency);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Ledger balance failed", e);
+        }
+    }
+
     private void checkReversible(PostingBatch b) {
         BatchId target = b.reverses().orElseThrow();
         StoredBatch original = find(b.tenant(), target)
@@ -130,18 +335,22 @@ public abstract class JdbcLedgerStore implements LedgerStore {
         }
     }
 
-    private PostResult resolveConflict(PostingBatch b, SQLException cause) {
+    /** Empty means neither the key nor the id exists: the violation was a balance-row race, so retry. */
+    private Optional<PostResult> resolveConflict(PostingBatch b, SQLException cause) {
         Optional<StoredBatch> sameKey = findByKey(b.tenant(), b.key());
         if (sameKey.isPresent()) {
             if (!sameKey.get().batch().equals(b)) {
                 throw new IdempotencyConflictException("Key reused with different content: " + b.key().value());
             }
-            return new PostResult(sameKey.get(), true);
+            return Optional.of(new PostResult(sameKey.get(), true));
         }
         if (b.reverses().isPresent() && String.valueOf(cause.getMessage()).toLowerCase().contains("uq_ledger_batch_reverses")) {
             throw new InvalidReversalException("Batch already reversed: " + b.reverses().get().value());
         }
-        throw new IdempotencyConflictException("Batch id already used: " + b.id().value());
+        if (find(b.tenant(), b.id()).isPresent()) {
+            throw new IdempotencyConflictException("Batch id already used: " + b.id().value());
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -159,7 +368,7 @@ public abstract class JdbcLedgerStore implements LedgerStore {
                      "SELECT batch_id, idem_key, value_date, recorded_at, reverses_batch FROM ledger_batch "
                              + "WHERE tenant = ? AND " + column + " = ?");
              PreparedStatement lines = c.prepareStatement(
-                     "SELECT account, balance_type, direction, minor, currency, minor_units FROM ledger_entry "
+                     "SELECT account, balance_type, direction, minor, currency, minor_units, require_funds FROM ledger_entry "
                              + "WHERE tenant = ? AND batch_id = ? ORDER BY seq")) {
             head.setString(1, tenant.value());
             head.setString(2, value);
@@ -179,7 +388,8 @@ public abstract class JdbcLedgerStore implements LedgerStore {
                     while (er.next()) {
                         Currency cur = new Currency(er.getString(5).trim(), er.getInt(6));
                         entries.add(new Entry(new AccountId(er.getString(1)), BalanceType.valueOf(er.getString(2)),
-                                Direction.valueOf(er.getString(3)), Money.ofMinor(er.getLong(4), cur)));
+                                Direction.valueOf(er.getString(3)), Money.ofMinor(er.getLong(4), cur),
+                                er.getInt(7) == 1));
                     }
                 }
                 return Optional.of(new StoredBatch(new PostingBatch(tenant, id, key, valueDate, entries, reverses),
@@ -227,7 +437,7 @@ public abstract class JdbcLedgerStore implements LedgerStore {
         for (Entry e : b.entries()) {
             sb.append('|').append(e.account().value()).append(',').append(e.type()).append(',')
                     .append(e.direction()).append(',').append(e.amount().minor()).append(',')
-                    .append(e.amount().currency().code());
+                    .append(e.amount().currency().code()).append(',').append(e.requireFunds());
         }
         try {
             return HexFormat.of().formatHex(
