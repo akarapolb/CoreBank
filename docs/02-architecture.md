@@ -72,21 +72,23 @@ Idempotency keys are retained so any retry returns the original result. Every po
 
 ## Technology stack (recommended)
 
+Open source only; full bill of materials and licence policy in [ADR-0006](adr/0006-open-source-only.md).
+
 | Concern | Choice | Why |
 |---|---|---|
 | Domain services | **Java 21 + Spring Boot 3**, virtual threads | On every bank's approved list, exact decimals (`BigDecimal`), largest banking talent pool ([ADR-0001](adr/0001-language-and-runtime.md)) |
 | Ledger core | Java first; evaluate a **Rust** hot path or **TigerBeetle** only if benchmarks demand it | Avoid premature exotic tech; keep the option open ([ADR-0002](adr/0002-ledger-storage.md)) |
 | Product rules | Typed product DSL (YAML/JSON schema) + **CEL** expressions for bounded logic | Safe, sandboxed, non-Turing-complete, auditable ([ADR-0003](adr/0003-product-definition.md)) |
-| Database | **PostgreSQL 16+ by default** (EDB, Aurora, AlloyDB, Azure, or self-managed with Patroni); **Oracle 19c/23ai certified**; SQL Server and Db2 on demand. jOOQ + a per-database `LedgerStore`, Liquibase migrations, app-level sharding | Portable without losing hot-path tuning ([ADR-0005](adr/0005-multi-database-support.md)) |
-| Events | **Kafka** (or Redpanda) with schema registry (Avro/Protobuf) | Durable ordered log, replay, ecosystem |
-| Workflows | **Temporal** (Camunda 8 if the bank requires) | Durable sagas and per-account timers replace batch jobs |
+| Database | **PostgreSQL 16+ by default** (EDB, Aurora, AlloyDB, Azure, or self-managed with Patroni); **Oracle 19c/23ai certified**; SQL Server and Db2 on demand. MyBatis + a per-database `LedgerStore` on plain JDBC, Flyway migrations, app-level sharding | Portable without losing hot-path tuning ([ADR-0005](adr/0005-multi-database-support.md)) |
+| Events | **Apache Kafka** on Strimzi, Apicurio schema registry (Avro/Protobuf) | Durable ordered log, replay, ecosystem |
+| Workflows | **Temporal**, self-hosted (Flowable/Operaton if the bank requires) | Durable sagas and per-account timers replace batch jobs |
 | APIs | gRPC internally, REST/JSON with OpenAPI externally, ISO 20022 for payments | |
 | AI tools | **MCP** (Model Context Protocol) servers generated from OpenAPI, behind the agent gateway | One contract for humans, apps and agents |
-| LLMs | Model-agnostic gateway; latest Claude models as default for agentic work | Swap per use case, per data-residency rule |
+| LLMs | Open-source gateway (LiteLLM) + vLLM serving open-weight, OSI-licensed models by default; commercial model APIs optional where the bank allows | Open-source policy, data residency, swap per use case |
 | Analytics | Lakehouse (Iceberg on object storage) + dbt; ClickHouse for operational analytics | |
-| Feature store | Feast or equivalent, online (Redis) + offline (Iceberg) | Same features in training and serving |
-| Platform | Kubernetes / Red Hat OpenShift, Terraform, Argo CD (GitOps), service mesh (mTLS), OpenTelemetry | |
-| Secrets/keys | Cloud KMS/HSM, Vault | |
+| Feature store | Feast or equivalent, online (Valkey) + offline (Iceberg) | Same features in training and serving |
+| Platform | Kubernetes / Red Hat OpenShift, OpenTofu, Argo CD (GitOps), Istio/Cilium (mTLS), OpenTelemetry | |
+| Secrets/keys | OpenBao + bank HSM via PKCS#11 | |
 
 ## Deployment
 
@@ -124,6 +126,6 @@ corebank/
   products/            # product definitions (DSL) + golden test cases per product
   contracts/           # OpenAPI, Protobuf, Avro event schemas, MCP tool manifests
   simulator/           # product simulation and what-if engine
-  infra/               # Terraform, Helm, Argo CD
+  infra/               # OpenTofu, Helm, Argo CD
   docs/
 ```

@@ -6,9 +6,9 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 
 **Goal:** a correct, fast ledger and the engineering platform everything else stands on.
 
-- Monorepo, CI/CD, GitOps, environments (dev, test, staging, perf), observability, secrets
+- Monorepo, CI/CD with SBOM + open-source licence gate, GitOps, environments (dev, test, staging, perf), observability, secrets
 - Platform libraries: money, currency, calendars, day counts, rounding, idempotency, outbox, tenancy
-- Persistence layer: jOOQ dialects, Liquibase, `LedgerStore` SPI with PostgreSQL and Oracle implementations, conformance suite, Testcontainers CI matrix
+- Persistence layer: MyBatis, Flyway, `LedgerStore` SPI with PostgreSQL and Oracle implementations, conformance suite, Testcontainers CI matrix
 - Ledger service: posting batches, balance types, holds, reversals, bitemporal balances, multi-currency
 - Party service (basic) and product catalog skeleton with schema validation
 - Contract-first APIs (OpenAPI/Protobuf) and event schemas

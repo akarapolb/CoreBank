@@ -5,7 +5,7 @@
 
 ## Context
 
-Banks often mandate a specific database (commonly Oracle, sometimes Db2 or SQL Server) through their technology standards, DBA teams and support contracts. We want PostgreSQL as the default for cost and ecosystem, but must be able to run a bank's mandated database without forking the code or losing ledger performance.
+Banks often mandate a specific database (commonly Oracle, sometimes Db2 or SQL Server) through their technology standards, DBA teams and support contracts. Our own stack is open source only ([ADR-0006](0006-open-source-only.md)), so PostgreSQL is the default, but must be able to run a bank's mandated database without forking the code or losing ledger performance.
 
 ## Decision
 
@@ -13,9 +13,11 @@ Banks often mandate a specific database (commonly Oracle, sometimes Db2 or SQL S
 
 | Tier | Databases | Meaning |
 |---|---|---|
-| **Default** | PostgreSQL 16+ (community, **EDB Postgres Advanced**, Aurora PostgreSQL, AlloyDB, Azure Database for PostgreSQL) | Every PR tested, performance baseline, reference deployment |
-| **Certified** | **Oracle Database 19c and 23ai** | Full functional suite on every merge to main, performance benchmark each release |
-| **On demand** | Microsoft SQL Server 2022, IBM Db2 LUW 11.5+ | Enabled when a signed customer needs it; the code is kept portable so this is a certification effort, not a rewrite |
+| **Default (open source)** | PostgreSQL 16+, plus managed or supported distributions a bank may already run (EDB, Aurora PostgreSQL, AlloyDB, Azure Database for PostgreSQL) | Every PR tested, performance baseline, reference deployment |
+| **Bank-provided, certified** | **Oracle Database 19c and 23ai** | For banks that mandate and license Oracle themselves. Full functional suite on every merge to main, performance benchmark each release |
+| **Bank-provided, on demand** | Microsoft SQL Server 2022, IBM Db2 LUW 11.5+ | Enabled when a signed customer needs it; the code is kept portable so this is a certification effort, not a rewrite |
+
+Proprietary databases are **customer-provided infrastructure**, never part of our default build. Their adapters live in optional modules (`persistence-oracle`, …) and are the only modules that pull in the vendor's JDBC driver (e.g. Oracle's ojdbc under the Oracle Free Use Terms). The default build and distribution contain only open-source components. SQL Server's JDBC driver is MIT-licensed; Db2's is proprietary.
 
 MySQL/MariaDB are not supported for the ledger.
 
@@ -26,17 +28,19 @@ MySQL/MariaDB are not supported for the ledger.
      │  repository interfaces (ports)
      ▼
  Persistence adapters
-  ├─ Portable SQL via jOOQ (dialect-aware SQL generation) ── most services
-  └─ LedgerStore SPI with hand-tuned implementation per DB ── ledger hot path
+  ├─ MyBatis mappers: shared SQL + per-vendor variants (databaseId) ── most services
+  └─ LedgerStore SPI on plain JDBC, hand-tuned per DB ─────────────── ledger hot path
        ├─ PostgresLedgerStore   (multi-row INSERT/unnest, RETURNING, ON CONFLICT)
        ├─ OracleLedgerStore     (array binding, MERGE, RETURNING INTO)
        └─ SqlServer / Db2       (on demand)
      │
- Schema migrations: Liquibase changelogs (vendor-neutral; per-vendor changesets only where unavoidable)
+ Schema migrations: Flyway Community, shared SQL + per-vendor folders (db/migration/{common,postgresql,oracle})
  Outbox relay: Debezium CDC (PostgreSQL, Oracle, SQL Server, Db2) with a polling publisher fallback
 ```
 
-- **Most services** use **jOOQ** for type-safe SQL that renders to each dialect. jOOQ's commercial edition is required for Oracle, SQL Server and Db2; budget for it.
+- **Most services** use **MyBatis 3** (Apache-2.0). SQL is written explicitly in mapper files; where engines differ, a statement gets a per-vendor variant selected by MyBatis's `databaseId`. Bank developers already know MyBatis, and explicit SQL keeps performance predictable.
+- Without jOOQ's compile-time checked SQL, correctness comes from tests: every mapper runs against every supported engine in the CI matrix, and SQL is linted with SQLFluff (MIT) per dialect.
+- **Flyway Community** runs migrations. Confirm in Phase 0 that the Community edition covers the Oracle versions we certify; if it does not, pin the last Apache-licensed Liquibase 4.x release for the Oracle adapter only.
 - **The ledger** gets a small `LedgerStore` interface (post batch, lock balances, read balances as of a date, find by idempotency key) with a tuned implementation per database. That keeps the hot path fast on each engine and keeps the vendor-specific code to a few hundred lines.
 - No JPA/Hibernate on the posting path. Its generated SQL is hard to tune and to keep identical across vendors.
 
@@ -68,11 +72,14 @@ MySQL/MariaDB are not supported for the ledger.
 ## Alternatives
 
 - **PostgreSQL only**: simplest and fastest to build, but blocks banks that mandate Oracle or Db2.
-- **JPA/Hibernate for portability**: easy to start, poor control over hot-path SQL and locking, subtle cross-vendor differences.
+- **JPA/Hibernate for portability**: open source (Apache-2.0) and easy to start, but poor control over hot-path SQL and locking, and subtle cross-vendor differences.
+- **jOOQ**: excellent type-safe SQL, but its open-source edition supports only open-source databases; Oracle, SQL Server and Db2 need a commercial licence. Rejected under [ADR-0006](0006-open-source-only.md).
+- **Jdbi** (Apache-2.0): a good lightweight alternative to MyBatis; MyBatis chosen for its built-in per-vendor statements and familiarity in banks.
 - **Database-specific forks**: fastest per engine, unmaintainable.
 
 ## Consequences
 
 - The portability discipline costs about 10–15% more persistence work, mostly in Phase 0. Running Oracle in CI from the first ledger commit is what keeps the code portable; adding a second database later would cost far more.
-- Commercial costs: jOOQ commercial licence; Oracle licences for customer deployments (customer-provided).
+- No licence costs on our side. Proprietary database licences are the bank's, only when it chooses that database.
+- The Oracle lane in CI uses the free Oracle Database Free container image. It is a test tool, not shipped; if the policy must also exclude non-open-source test tooling, Oracle testing moves to a bank-provided environment.
 - Ledger performance is tuned per engine, so each certified database has its own benchmark baseline.
