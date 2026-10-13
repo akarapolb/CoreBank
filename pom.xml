@@ -22,6 +22,7 @@
     <module>platform/platform-money</module>
     <module>platform/platform-time</module>
     <module>platform/platform-tenancy</module>
+    <module>platform/platform-security</module>
     <module>engines/engine-interest</module>
     <module>engines/engine-schedule</module>
     <module>engines/engine-product</module>
