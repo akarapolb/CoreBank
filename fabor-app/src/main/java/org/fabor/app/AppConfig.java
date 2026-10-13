@@ -101,7 +101,10 @@ class AppConfig {
 
     // ---- security
     @Bean
-    KeyProvider keyProvider(FaborProperties p) {
+    KeyProvider keyProvider(FaborProperties p, Clock clock) {
+        if (p.keyProvider().equals("openbao")) {
+            return new OpenBaoKeyProvider(p.openbaoUrl(), p.openbaoToken(), p.openbaoMount(), java.time.Duration.ofMinutes(5), clock);
+        }
         return new ConfigKeyProvider(p.masterKey(), "k1");
     }
 

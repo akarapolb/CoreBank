@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fabor OS Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233156F5'/%3E%3Cpath d='M10 8h13v4h-8v3h7v4h-7v5h-5z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="console.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark" aria-hidden="true">F</span> Fabor OS <small>Console</small></div>
+  <form id="auth" class="auth" autocomplete="off">
+    <label>Actor <input id="actor" placeholder="your name" aria-label="Actor name (development token mode only)"></label>
+    <label>Token <input id="token" type="password" placeholder="bearer token" aria-label="Bearer token"></label>
+    <button type="submit">Use</button>
+  </form>
+</header>
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="products">Products</button>
+  <button role="tab" aria-selected="false" data-tab="customers">Customers</button>
+  <button role="tab" aria-selected="false" data-tab="accounts">Accounts</button>
+  <button role="tab" aria-selected="false" data-tab="loans">Loans</button>
+  <button role="tab" aria-selected="false" data-tab="ops">Operations</button>
+</nav>
+<main>
+  <div id="status" role="status" aria-live="polite" class="status" hidden></div>
+
+  <section id="products" class="panel">
+    <h2>Master Builder</h2>
+    <p class="hint">Paste a product definition (YAML). It is checked, submitted, approved by each required role and then published as an immutable version.</p>
+    <textarea id="yaml" rows="14" spellcheck="false" aria-label="Product definition YAML"></textarea>
+    <div class="row">
+      <button id="createDraft">Create draft</button>
+      <label>Draft id <input id="draftId" size="38"></label>
+      <button id="check">Check</button>
+      <button id="submit">Submit for review</button>
+    </div>
+    <div class="row">
+      <label>Approve as role
+        <select id="role"><option>PRODUCT</option><option>RISK</option><option>FINANCE</option><option>COMPLIANCE</option></select>
+      </label>
+      <button id="approve">Approve</button>
+      <button id="publish" class="primary">Publish</button>
+    </div>
+    <div id="report"></div>
+    <h3>Published versions</h3>
+    <div class="row"><label>Product code <input id="versionsCode" placeholder="PERSONAL_LOAN_STD"></label><button id="listVersions">List</button></div>
+    <table id="versions"><thead><tr><th>Product</th><th>Version</th><th>Published by</th><th>Golden hash</th><th>Retired</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section id="customers" class="panel" hidden>
+    <h2>Register customer</h2>
+    <form id="registerForm" class="grid">
+      <label>Party id <input name="partyId" required></label>
+      <label>Full name <input name="fullName" required></label>
+      <label>National id <input name="nationalId" required inputmode="numeric"></label>
+      <label>Phone <input name="phone" required inputmode="tel"></label>
+      <label>Date of birth <input name="dateOfBirth" type="date" required></label>
+      <label>Document reference <input name="documentRef" value="doc-1"></label>
+      <label class="check"><input type="checkbox" name="kyc" checked> Consent: KYC processing</label>
+      <label class="check"><input type="checkbox" name="bureau" checked> Consent: credit bureau</label>
+      <button type="submit" class="primary">Register</button>
+    </form>
+    <pre id="registerOut" class="out" aria-live="polite"></pre>
+  </section>
+
+  <section id="accounts" class="panel" hidden>
+    <h2>Accounts</h2>
+    <form id="moveForm" class="grid">
+      <label>Account <input name="account" placeholder="SAV-P1" required></label>
+      <label>Reference <input name="reference" required></label>
+      <label>Amount (satang) <input name="amount" type="number" min="1" required></label>
+      <label>Value date <input name="valueDate" type="date" required></label>
+      <button type="button" id="doDeposit">Deposit</button>
+      <button type="button" id="doWithdraw">Withdraw</button>
+      <button type="button" id="doBalance">Balance</button>
+    </form>
+    <pre id="moveOut" class="out" aria-live="polite"></pre>
+  </section>
+
+  <section id="loans" class="panel" hidden>
+    <h2>Loan application</h2>
+    <form id="loanForm" class="grid">
+      <label>Application id <input name="applicationId" required></label>
+      <label>Party id <input name="partyId" required></label>
+      <label>Product <input name="productCode" value="PERSONAL_LOAN_STD" required></label>
+      <label>Version <input name="productVersion" type="number" value="1" required></label>
+      <label>Amount (satang) <input name="amountMinor" type="number" required></label>
+      <label>Term (months) <input name="termMonths" type="number" value="12" required></label>
+      <label>Monthly instalment (satang) <input name="monthlyInstalmentMinor" type="number" required></label>
+      <label>Monthly income (satang) <input name="monthlyIncomeMinor" type="number" required></label>
+      <label>Existing monthly debt (satang) <input name="existingDebtMinor" type="number" value="0" required></label>
+      <label>Months at employer <input name="monthsAtEmployer" type="number" value="24" required></label>
+      <label>As of <input name="asOf" type="date" required></label>
+      <button type="submit" class="primary">Decide</button>
+    </form>
+    <pre id="loanOut" class="out" aria-live="polite"></pre>
+    <h3>Loan servicing</h3>
+    <form id="servicingForm" class="grid">
+      <label>Loan id <input name="loanId" placeholder="LN-APP1" required></label>
+      <label>Reference <input name="reference" required></label>
+      <label>Amount (satang) <input name="amount" type="number" min="1"></label>
+      <label>Date <input name="date" type="date" required></label>
+      <button type="button" id="doLoan">View</button>
+      <button type="button" id="doRepay">Repay</button>
+      <button type="button" id="doSettle">Settle</button>
+    </form>
+    <pre id="servicingOut" class="out" aria-live="polite"></pre>
+  </section>
+
+  <section id="ops" class="panel" hidden>
+    <h2>Operations</h2>
+    <p class="hint">Queues any missing due work for active loans and accounts. Safe to run at any time.</p>
+    <button id="backfill">Backfill scheduler</button>
+    <pre id="opsOut" class="out" aria-live="polite"></pre>
+  </section>
+</main>
+<script src="console.js"></script>
+</body>
+</html>

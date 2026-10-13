@@ -34,6 +34,10 @@ fabor:
   auth-mode: ${FABOR_AUTH_MODE:oidc}
   api-token: ${FABOR_API_TOKEN:}
   master-key: ${FABOR_MASTER_KEY:}
+  key-provider: ${FABOR_KEY_PROVIDER:config}
+  openbao-url: ${FABOR_OPENBAO_URL:}
+  openbao-token: ${FABOR_OPENBAO_TOKEN:}
+  openbao-mount: ${FABOR_OPENBAO_MOUNT:secret}
   grpc-port: ${FABOR_GRPC_PORT:9090}
   group-commit: ${FABOR_GROUP_COMMIT:true}
   scheduler-enabled: ${FABOR_SCHEDULER:true}

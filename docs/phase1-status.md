@@ -25,16 +25,27 @@ Measured against the Phase 1 plan items ([07](07-roadmap.md), `plan/plan.json`).
 |---|---|
 | Real eKYC provider, credit bureau (NCB), PromptPay rails | Ports exist; the app wires "no provider" defaults (eKYC fails closed, bureau returns nothing). Needs provider contracts and credentials. |
 | Credit decisioning model, document intelligence, fraud ML, customer assistant | Rule-based decisioning only. Models need data and model-risk governance; the assistant needs an LLM deployment. |
-| Back-office console v1, reference mobile app | Only the HTML prototype exists. The REST API is the base for them. |
+| Reference mobile app | Not built. The REST API is the base for it. |
 | Scale-out test (100k/s across 10 cells) | Needs a performance environment. Sharding and cross-shard transfers are built and tested in memory only. |
 | Penetration test, IT risk assessment, regulator sandbox, design partner, Series A, staff pilot | External or business work, not code. |
-| OIDC authentication | The app uses a shared bearer token with an `X-Actor` header. It is a pilot placeholder behind a gateway, not production authentication. |
 | Oracle for scheduler and services repositories | PostgreSQL only; the ledger has an Oracle store that has never been run. |
 | Container image | Dockerfile written, never built (no Docker here). |
 
+## Gaps closed after the first status report
+
+| Gap | What was done |
+|---|---|
+| Shared-token authentication | OIDC is the default: JWTs verified against the identity provider's keys (signature, issuer, expiry), roles from `realm_access.roles` enforced per operation (`product-maker`, `approver-<role>`, `product-publisher`, `ops`, `compliance-analyst`, `ops-admin`, gRPC `ledger-client`), actor taken from the token. The shared token remains only as an explicit development mode. Tested with forged, expired and wrong-issuer tokens. |
+| Keys derived from one master secret | `OpenBaoKeyProvider` reads per-tenant keys from OpenBao KV v2 with a short cache, supports rotation, and fails closed. Tested against a stub speaking the KV v2 read API, not against a real OpenBao. |
+| Back-office console | A browser console at `/console/` (products and maker-checker, customers, accounts, loans, operations). Driven end to end in headless Chromium by `scripts/console-smoke.js`; no horizontal scroll at phone width; CSP set. It takes a pasted token: browser login (authorization code with PKCE) is not built. |
+| Partial prepayment, payment holidays | Prepayment (reduce term or reduce instalment) and holidays with interest capitalised, on fixed-rate annuity products; ledger balances equal the rebuilt schedule; retries safe. |
+| VAT on fees, tax invoices | VAT on the origination fee when the product says so, posted to VAT payable, with a tax invoice handed to a sink. |
+| Odd-day first-period interest | The schedule engine charges a first period of irregular length for its actual days. |
+| Loans created before the scheduler existed | `backfill` queues missing billing, accrual and interest work for active loans and accounts; runs at startup and from an admin endpoint; the billing task now follows schedule changes. |
+
 ## Known gaps in what is built
 
-- Loan servicing does not yet handle partial prepayment, VAT on fees, payment holidays or restructuring, and odd-day first-period interest is not modelled.
-- The scheduler runs inside the app; billing for a loan is enqueued when it is disbursed, so loans created before the scheduler existed would not be picked up.
-- `ConfigKeyProvider` derives keys from one master secret in the process. Production needs the OpenBao-backed provider.
+- Loan servicing still lacks restructuring (modification gain or loss, debt consolidation) and write-off and recovery.
+- Prepayment and holidays do not apply to flat-rate (hire purchase) products; those need the rebate rules of Phase 2.
+- Browser sign-in for the console (authorization code with PKCE) is not built; OIDC is exercised through API tokens only, against a locally generated key, not a real Keycloak.
 - Rule-pack values (rate cap, retention, thresholds) are configuration to confirm with counsel and the regulator, not legal advice.

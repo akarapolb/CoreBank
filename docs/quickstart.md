@@ -32,3 +32,17 @@ java -cp "$CP" org.fabor.ledger.perf.LedgerBench jdbc:postgresql://localhost:543
 ```
 
 Layout: `platform/` shared kernel · `ledger/` ledger (domain, application, api, adapters, perf) · `agent-gateway/` MCP tools · `deploy/` stack, Debezium and observability configs · `docs/` design and runbooks.
+
+## Running the app and the console
+
+```bash
+mvn -pl fabor-app -am package -DskipTests
+export FABOR_DB_URL=jdbc:postgresql://localhost:5432/fabor FABOR_DB_USER=postgres FABOR_DB_PASSWORD=postgres
+export FABOR_MASTER_KEY=$(head -c 40 /dev/urandom | base64)       # development key provider
+# production: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://idp.example/realms/fabor  (OIDC is the default)
+# local development only, with every role granted:
+export FABOR_AUTH_MODE=token FABOR_API_TOKEN=a-long-development-token
+java -jar fabor-app/target/fabor-app-0.1.0-SNAPSHOT.jar         # API :8080, metrics/health :8081, gRPC :9090
+```
+
+Open `http://localhost:8080/console/`, enter an actor name and the token, and use the Products tab to publish a product through the four approvals. `scripts/console-smoke.js` drives the same flow in headless Chromium.
