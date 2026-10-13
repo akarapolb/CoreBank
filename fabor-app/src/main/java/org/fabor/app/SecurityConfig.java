@@ -46,7 +46,7 @@ class SecurityConfig implements WebMvcConfigurer {
             http.authorizeHttpRequests(a -> a.anyRequest().permitAll());
         } else {
             http.authorizeHttpRequests(a -> a.requestMatchers(HttpMethod.OPTIONS, "/**").denyAll()
-                    .requestMatchers("/console/**").permitAll().anyRequest().authenticated())
+                    .requestMatchers("/console/**", "/app/**").permitAll().anyRequest().authenticated())
                     .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()));
         }
         return http.build();

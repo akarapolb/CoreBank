@@ -253,4 +253,24 @@ public abstract class LedgerStoreConformance {
         assertThat(s.accounts(T)).extracting(AccountId::value).containsExactlyInAnyOrder("cust-1", "gl-cash");
         assertThat(s.accounts(new TenantId("other"))).isEmpty();
     }
+
+    @Test
+    void entriesListNewestFirstWithLimitAndAsOf() {
+        LedgerStore s = newStore();
+        s.append(deposit("b1", "k1", LocalDate.of(2026, 1, 1), 100), T0);
+        s.append(deposit("b2", "k2", LocalDate.of(2026, 1, 5), 200), T1);
+        s.append(deposit("b3", "k3", LocalDate.of(2026, 2, 1), 300), T2);
+        var all = s.entries(T, CUSTOMER, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 12, 31), 10);
+        assertThat(all).extracting(e -> e.batchId().value()).containsExactly("b3", "b2", "b1");
+        assertThat(all.get(0).direction()).isEqualTo(Direction.CREDIT);
+        assertThat(all.get(0).amount().minor()).isEqualTo(300);
+        assertThat(s.entries(T, CUSTOMER, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 12, 31), 2)).hasSize(2);
+        assertThat(s.entries(T, CUSTOMER, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 1, 10), 10))
+                .extracting(e -> e.batchId().value()).containsExactly("b2", "b1");
+        assertThat(s.entries(T, CASH, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 12, 31), 1).get(0).direction())
+                .isEqualTo(Direction.DEBIT);
+        assertThat(s.entries(new TenantId("other"), CUSTOMER, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 12, 31), 10)).isEmpty();
+        assertThatThrownBy(() -> s.entries(T, CUSTOMER, BalanceType.SETTLED, Currency.THB, LocalDate.of(2026, 12, 31), 0))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

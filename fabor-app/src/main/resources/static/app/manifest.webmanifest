@@ -1,0 +1,3 @@
+{ "name": "Fabor", "short_name": "Fabor", "start_url": "/app/index.html", "scope": "/app/", "display": "standalone",
+  "background_color": "#f4f6fb", "theme_color": "#3156f5",
+  "icons": [ { "src": "/app/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" } ] }

@@ -43,7 +43,7 @@ final class ApiTokenFilter extends OncePerRequestFilter {
             res.getWriter().write("{\"error\":\"X-Actor header is required\"}");
             return;
         }
-        req.setAttribute(ActorResolver.ATTRIBUTE, new Actor(actor, java.util.Set.of(Actor.ANY)));
+        req.setAttribute(ActorResolver.ATTRIBUTE, new Actor(actor, java.util.Set.of(Actor.ANY), req.getHeader("X-Party")));
         chain.doFilter(req, res);
     }
 }

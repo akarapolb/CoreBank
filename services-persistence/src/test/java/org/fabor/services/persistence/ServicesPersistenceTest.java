@@ -204,6 +204,8 @@ class ServicesPersistenceTest {
         assertThat(back.generation()).isEqualTo(1);
         assertThat(back.tag()).isEqualTo("g1-");
         assertThat(loans.find("zz")).isEmpty();
+        assertThat(loans.idsByParty("P1")).containsExactly("L1");
+        assertThat(loans.idsByParty("nobody")).isEmpty();
         assertThat(loans.activeIds()).containsExactly("L1");
         loans.save(restructured.withStatus(Loan.Status.WRITTEN_OFF));
         assertThat(loans.activeIds()).isEmpty();

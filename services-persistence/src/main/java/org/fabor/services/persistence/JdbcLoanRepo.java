@@ -102,4 +102,18 @@ public final class JdbcLoanRepo implements LoanRepo {
             return out;
         });
     }
+
+    @Override
+    public List<String> idsByParty(String party) {
+        return Jdbc.tx(ds, c -> {
+            List<String> out = new ArrayList<>();
+            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id FROM loan WHERE tenant = ? AND party = ? ORDER BY disbursed_on DESC, id DESC",
+                    tenant.value(), party); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        });
+    }
 }

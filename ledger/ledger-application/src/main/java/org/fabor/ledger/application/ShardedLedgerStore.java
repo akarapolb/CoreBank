@@ -73,6 +73,12 @@ public final class ShardedLedgerStore implements LedgerStore {
     }
 
     @Override
+    public List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency, LocalDate asOf,
+                                     int limit) {
+        return shards.get(directory.shardOf(tenant, account)).entries(tenant, account, type, currency, asOf, limit);
+    }
+
+    @Override
     public List<AccountId> accounts(TenantId tenant) {
         java.util.Set<AccountId> out = new java.util.TreeSet<>(java.util.Comparator.comparing(AccountId::value));
         for (LedgerStore s : shards) {

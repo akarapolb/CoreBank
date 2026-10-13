@@ -9,6 +9,9 @@ public interface LoanRepo {
 
     Optional<Loan> find(String id);
 
+    /** Ids of all loans of one party, newest first. */
+    java.util.List<String> idsByParty(String party);
+
     /** Ids of loans that still need servicing (neither closed nor written off). */
     java.util.List<String> activeIds();
 
@@ -23,6 +26,11 @@ public interface LoanRepo {
         @Override
         public synchronized Optional<Loan> find(String id) {
             return Optional.ofNullable(loans.get(id));
+        }
+
+        @Override
+        public synchronized java.util.List<String> idsByParty(String party) {
+            return loans.values().stream().filter(l -> l.party().equals(party)).map(Loan::id).sorted(java.util.Comparator.reverseOrder()).toList();
         }
 
         @Override

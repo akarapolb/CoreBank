@@ -43,5 +43,6 @@ fabor:
   scheduler-enabled: ${FABOR_SCHEDULER:true}
   console:
     client-id: ${FABOR_CONSOLE_CLIENT_ID:}
+    app-client-id: ${FABOR_APP_CLIENT_ID:fabor-app}
     authorization-endpoint: ${FABOR_CONSOLE_AUTHORIZE_URL:}
     token-endpoint: ${FABOR_CONSOLE_TOKEN_URL:}

@@ -7,8 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Leave empty in token mode. The endpoints come from the identity provider's discovery document.
  */
 @ConfigurationProperties(prefix = "fabor.console")
-public record ConsoleProperties(String clientId, String authorizationEndpoint, String tokenEndpoint, String scope) {
+public record ConsoleProperties(String clientId, String appClientId, String authorizationEndpoint, String tokenEndpoint, String scope) {
     public ConsoleProperties {
+        if (appClientId == null || appClientId.isBlank()) {
+            appClientId = "fabor-app";
+        }
         if (scope == null || scope.isBlank()) {
             scope = "openid profile";
         }

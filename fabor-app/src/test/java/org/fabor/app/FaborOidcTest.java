@@ -103,7 +103,12 @@ class FaborOidcTest {
     @Autowired DataSource ds;
 
     static String jwt(KeyPair key, String issuer, String user, List<String> roles, Instant expires) throws Exception {
+        return jwt(key, issuer, user, roles, expires, null);
+    }
+
+    static String jwt(KeyPair key, String issuer, String user, List<String> roles, Instant expires, String party) throws Exception {
         JWTClaimsSet claims = new JWTClaimsSet.Builder().issuer(issuer).subject("sub-" + user).claim("preferred_username", user)
+                .claim("party_id", party)
                 .claim("realm_access", Map.of("roles", roles)).issueTime(Date.from(Instant.now().minusSeconds(5)))
                 .expirationTime(Date.from(expires)).build();
         SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
@@ -181,6 +186,23 @@ class FaborOidcTest {
         pub.setBearerAuth(good("ops-lead", "ops"));
         assertThat(http.exchange(url + "/" + id + "/publish", HttpMethod.POST, new HttpEntity<>(pub), Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);
+
+        // customers: the party comes from the token's claim, a staff token is not a customer, an unlinked customer sees nothing
+        String staffOnly = good("olivia", "ops");
+        HttpHeaders staff = new HttpHeaders();
+        staff.setBearerAuth(staffOnly);
+        assertThat(http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(staff), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        HttpHeaders unlinked = new HttpHeaders();
+        unlinked.setBearerAuth(jwt(KEYS, ISSUER, "cust", List.of("customer"), Instant.now().plusSeconds(300), null));
+        assertThat(http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(unlinked), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        HttpHeaders linked = new HttpHeaders();
+        linked.setBearerAuth(jwt(KEYS, ISSUER, "cust", List.of("customer"), Instant.now().plusSeconds(300), "P-NOBODY"));
+        assertThat(http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(linked), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);                                                             // a customer with no loans: empty list
+        assertThat(http.exchange("/api/v1/me", HttpMethod.GET, new HttpEntity<>(linked), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);                                                      // but no profile row
 
         // gRPC: a user token is not enough, the ledger-client role is
         ManagedChannel ch = NettyChannelBuilder.forAddress("localhost", 19091).usePlaintext().build();

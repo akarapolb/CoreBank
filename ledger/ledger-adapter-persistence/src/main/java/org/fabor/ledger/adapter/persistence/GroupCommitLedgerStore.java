@@ -131,6 +131,12 @@ public final class GroupCommitLedgerStore implements LedgerStore, AutoCloseable 
     }
 
     @Override
+    public java.util.List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency,
+                                               LocalDate asOf, int limit) {
+        return delegate.entries(tenant, account, type, currency, asOf, limit);
+    }
+
+    @Override
     public java.util.List<AccountId> accounts(TenantId tenant) {
         return delegate.accounts(tenant);
     }

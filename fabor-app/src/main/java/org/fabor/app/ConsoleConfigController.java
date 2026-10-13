@@ -18,13 +18,23 @@ class ConsoleConfigController {
 
     @GetMapping("/console/config.json")
     Map<String, Object> config() {
+        return build(console.clientId());
+    }
+
+    /** Same endpoints, the customer app's own client id (a separate public client at the identity provider). */
+    @GetMapping("/app/config.json")
+    Map<String, Object> appConfig() {
+        return build(console.appClientId());
+    }
+
+    private Map<String, Object> build(String clientId) {
         Map<String, Object> m = new LinkedHashMap<>();
         if (props.tokenMode() || !console.configured()) {
             m.put("mode", "token");
             return m;
         }
         m.put("mode", "oidc");
-        m.put("clientId", console.clientId());
+        m.put("clientId", clientId);
         m.put("authorizationEndpoint", console.authorizationEndpoint());
         m.put("tokenEndpoint", console.tokenEndpoint());
         m.put("scope", console.scope());

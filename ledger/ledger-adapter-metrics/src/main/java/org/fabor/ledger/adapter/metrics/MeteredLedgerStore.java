@@ -79,6 +79,12 @@ public final class MeteredLedgerStore implements LedgerStore {
     }
 
     @Override
+    public java.util.List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency,
+                                               LocalDate asOf, int limit) {
+        return timed("entries", () -> delegate.entries(tenant, account, type, currency, asOf, limit));
+    }
+
+    @Override
     public java.util.List<AccountId> accounts(TenantId tenant) {
         return timed("accounts", () -> delegate.accounts(tenant));
     }

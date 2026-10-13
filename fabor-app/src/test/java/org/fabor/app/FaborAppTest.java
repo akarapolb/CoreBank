@@ -191,6 +191,29 @@ class FaborAppTest {
         Map<String, Object> again2 = call(HttpMethod.POST, "/api/v1/admin/scheduler/backfill", "ops", null, MediaType.APPLICATION_JSON);
         assertThat(((Number) again2.get("queued")).intValue()).isZero();
 
+        // the customer's own view (dev token mode takes the party from X-Party); another customer cannot reach it
+        HttpHeaders me = headers("P1", MediaType.APPLICATION_JSON);
+        me.set("X-Party", "P1");
+        Map profile = http.exchange("/api/v1/me", HttpMethod.GET, new HttpEntity<>(me), Map.class).getBody();
+        assertThat(profile.get("depositAccountId")).isEqualTo("SAV-P1");
+        Map bal = http.exchange("/api/v1/me/balance", HttpMethod.GET, new HttpEntity<>(me), Map.class).getBody();
+        assertThat(((Number) bal.get("minor")).longValue()).isEqualTo(9_893_000);
+        List activity = http.exchange("/api/v1/me/activity", HttpMethod.GET, new HttpEntity<>(me), List.class).getBody();
+        assertThat(activity).hasSize(1);
+        assertThat(((Map) activity.get(0)).get("label")).isEqualTo("Loan paid out");
+        List myLoans = http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(me), List.class).getBody();
+        assertThat(myLoans).hasSize(1);
+        assertThat(((Map) myLoans.get(0)).get("id")).isEqualTo("LN-APP1");
+        HttpHeaders other = headers("P2", MediaType.APPLICATION_JSON);
+        other.set("X-Party", "P2");
+        assertThat(http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(other), List.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);                                                  // no such customer profile
+        HttpHeaders none = headers("x", MediaType.APPLICATION_JSON);
+        assertThat(http.exchange("/api/v1/me", HttpMethod.GET, new HttpEntity<>(none), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);                                                  // login not linked to a customer
+        assertThat(http.exchange("/api/v1/me/loans/LN-APP1/repayments", HttpMethod.POST, new HttpEntity<>(
+                Map.of("reference", "r1", "amountMinor", 1), other), Map.class).getStatusCode()).isIn(HttpStatus.FORBIDDEN, HttpStatus.BAD_REQUEST);
+
         // gRPC endpoint: needs the token, serves the same ledger
         ManagedChannel ch = NettyChannelBuilder.forAddress("localhost", 19090).usePlaintext().build();
         try {

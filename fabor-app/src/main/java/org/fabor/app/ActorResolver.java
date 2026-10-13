@@ -43,7 +43,7 @@ final class ActorResolver implements HandlerMethodArgumentResolver {
         if (name == null || name.isBlank()) {
             name = jwt.getSubject();
         }
-        return new Actor(name, rolesOf(jwt));
+        return new Actor(name, rolesOf(jwt), jwt.getClaimAsString("party_id"));
     }
 
     @SuppressWarnings("unchecked")

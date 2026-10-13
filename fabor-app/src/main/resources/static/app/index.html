@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3156f5">
+<title>Fabor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="login" class="screen" hidden>
+  <div class="hero"><span class="mark" aria-hidden="true">F</span><h1>Fabor</h1><p>Your accounts and loans in one place.</p></div>
+  <button id="signin" class="primary wide" type="button" hidden>Sign in</button>
+  <form id="devForm" class="card" hidden autocomplete="off">
+    <p class="note">Development sign-in</p>
+    <label>Token <input id="devToken" type="password" required></label>
+    <label>Customer id <input id="devParty" required></label>
+    <button class="primary wide" type="submit">Continue</button>
+  </form>
+  <p id="loginMsg" class="msg" role="status"></p>
+</div>
+
+<div id="shell" hidden>
+  <header class="bar"><span class="mark small" aria-hidden="true">F</span><strong id="hello">Hello</strong><button id="signout" class="ghost" type="button">Sign out</button></header>
+  <p id="msg" class="msg" role="status" aria-live="polite" hidden></p>
+  <main>
+    <section id="home" class="view">
+      <div class="card balance"><span class="label">Savings balance</span><span id="balance" class="big">–</span><span id="asOf" class="note"></span></div>
+      <div class="card" id="nextCard" hidden><span class="label">Next loan payment</span><span id="nextAmount" class="mid"></span><span id="nextDue" class="note"></span></div>
+    </section>
+    <section id="activity" class="view" hidden>
+      <h2>Activity</h2>
+      <ul id="activityList" class="list"></ul>
+      <p id="activityEmpty" class="note" hidden>No activity yet.</p>
+    </section>
+    <section id="loans" class="view" hidden>
+      <h2>Loans</h2>
+      <div id="loanList"></div>
+      <p id="loansEmpty" class="note" hidden>You have no loans.</p>
+    </section>
+  </main>
+  <nav class="tabbar" aria-label="Main">
+    <button data-view="home" aria-current="page">Home</button>
+    <button data-view="activity">Activity</button>
+    <button data-view="loans">Loans</button>
+  </nav>
+</div>
+
+<dialog id="confirm">
+  <form method="dialog">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmText"></p>
+    <div class="row"><button value="cancel" class="ghost">Cancel</button><button value="ok" id="confirmOk" class="primary">Pay</button></div>
+  </form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>

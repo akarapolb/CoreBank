@@ -308,6 +308,36 @@ public abstract class JdbcLedgerStore implements LedgerStore {
     }
 
     @Override
+    public List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency, LocalDate asOf,
+                                     int limit) {
+        if (limit < 1 || limit > 500) {
+            throw new IllegalArgumentException("limit must be 1..500");
+        }
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT batch_id, value_date, recorded_at, direction, minor FROM ledger_entry "
+                             + "WHERE tenant = ? AND account = ? AND balance_type = ? AND currency = ? AND value_date <= ? "
+                             + "ORDER BY value_date DESC, recorded_at DESC, batch_id DESC, seq DESC FETCH FIRST " + limit + " ROWS ONLY")) {
+            ps.setString(1, tenant.value());
+            ps.setString(2, account.value());
+            ps.setString(3, type.name());
+            ps.setString(4, currency.code());
+            ps.setObject(5, asOf);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<EntryRecord> out = new ArrayList<>();
+                while (rs.next()) {
+                    out.add(new EntryRecord(new BatchId(rs.getString(1)), rs.getObject(2, LocalDate.class),
+                            rs.getObject(3, OffsetDateTime.class).toInstant(), Direction.valueOf(rs.getString(4)),
+                            Money.ofMinor(rs.getLong(5), currency)));
+                }
+                return out;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Ledger entries failed", e);
+        }
+    }
+
+    @Override
     public List<AccountId> accounts(TenantId tenant) {
         try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(

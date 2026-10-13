@@ -43,6 +43,17 @@ public interface LedgerStore {
     /** Every account that has at least one entry. Used by reconciliation, not on the posting path. */
     java.util.List<AccountId> accounts(TenantId tenant);
 
+    /**
+     * Newest-first entries of one account bucket, for statements and activity lists. Entries with value date after
+     * {@code asOf} are not included. At most {@code limit} rows (1 to 500).
+     */
+    java.util.List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency,
+                                        LocalDate asOf, int limit);
+
+    /** One entry as seen from its account: direction relative to that account and the batch it belongs to. */
+    record EntryRecord(BatchId batchId, LocalDate valueDate, Instant recordedAt, org.fabor.ledger.domain.Direction direction,
+                       Money amount) { }
+
     record StoredBatch(PostingBatch batch, Instant recordedAt) { }
 
     record PostResult(StoredBatch stored, boolean replayed) { }

@@ -90,6 +90,28 @@ public final class InMemoryLedgerStore implements LedgerStore {
     }
 
     @Override
+    public synchronized java.util.List<EntryRecord> entries(TenantId tenant, AccountId account, BalanceType type, Currency currency,
+                                                            LocalDate asOf, int limit) {
+        if (limit < 1 || limit > 500) {
+            throw new IllegalArgumentException("limit must be 1..500");
+        }
+        java.util.List<EntryRecord> out = new java.util.ArrayList<>();
+        for (StoredBatch s : log) {
+            PostingBatch b = s.batch();
+            if (!b.tenant().equals(tenant) || b.valueDate().isAfter(asOf)) {
+                continue;
+            }
+            for (Entry e : b.entries()) {
+                if (e.account().equals(account) && e.type() == type && e.amount().currency().equals(currency)) {
+                    out.add(new EntryRecord(b.id(), b.valueDate(), s.recordedAt(), e.direction(), e.amount()));
+                }
+            }
+        }
+        out.sort(java.util.Comparator.comparing(EntryRecord::valueDate).thenComparing(EntryRecord::recordedAt).reversed());
+        return java.util.List.copyOf(out.subList(0, Math.min(limit, out.size())));
+    }
+
+    @Override
     public synchronized java.util.List<AccountId> accounts(TenantId tenant) {
         java.util.Set<AccountId> out = new java.util.TreeSet<>(java.util.Comparator.comparing(AccountId::value));
         for (StoredBatch s : log) {
