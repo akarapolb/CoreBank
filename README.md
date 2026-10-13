@@ -31,6 +31,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 07 | [Roadmap](docs/07-roadmap.md) | Phases, milestones, exit criteria, team |
 | 08 | [Security, risk and compliance](docs/08-security-and-compliance.md) | Security architecture, regulatory mapping, audit |
 | 10 | [Application architecture and modules](docs/10-application-architecture.md) | Layers, communication rules, request flow, Maven modules, dependency rules |
+| SDD | [Design reference (HTML)](docs/design/corebank-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Customer 360, HP contract, Product Studio, ledger, approvals, AI agents, architecture and module diagrams |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) and the [open-source-only policy](docs/adr/0006-open-source-only.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |

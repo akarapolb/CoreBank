@@ -1,0 +1,874 @@
+<title>CoreBank Design Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
+<style>
+/* Layout: engineering reference. Sticky numbered contents on the left, one readable column, wide tables and diagrams scroll inside their own frames. */
+:root {
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F0F2F5;
+  --line: #E3E6EB;
+  --fg: #111827;
+  --muted: #5B6576;
+  --faint: #8C96A6;
+  --accent: #3156F5;
+  --accent-soft: #EBEFFF;
+  --money: #0C9A80;
+  --money-soft: #E2F5F0;
+  --agent: #DD5E26;
+  --agent-soft: #FDEDE4;
+  --good: #11994A;
+  --good-soft: #E3F5EA;
+  --warn: #B87503;
+  --warn-soft: #FDF2DC;
+  --crit: #DC3C41;
+  --crit-soft: #FDE7E8;
+  --font-ui: "Geist", "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0D12; --surface: #12151C; --surface-2: #181C25; --line: #262B36; --fg: #E7EAF0; --muted: #959EB0; --faint: #6B7487;
+    --accent: #7E98FF; --accent-soft: #1A2140; --money: #3AD0B2; --money-soft: #0E2A25; --agent: #FF8B58; --agent-soft: #2E1B11;
+    --good: #43D68E; --good-soft: #0F2A1B; --warn: #F2B544; --warn-soft: #2D230C; --crit: #FF6E72; --crit-soft: #331416; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0D12; --surface: #12151C; --surface-2: #181C25; --line: #262B36; --fg: #E7EAF0; --muted: #959EB0; --faint: #6B7487;
+  --accent: #7E98FF; --accent-soft: #1A2140; --money: #3AD0B2; --money-soft: #0E2A25; --agent: #FF8B58; --agent-soft: #2E1B11;
+  --good: #43D68E; --good-soft: #0F2A1B; --warn: #F2B544; --warn-soft: #2D230C; --crit: #FF6E72; --crit-soft: #331416; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 24px; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+.wrap { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 48px; max-width: 1360px; margin: 0 auto; padding-inline: 32px; padding-block: 40px 96px; }
+nav.toc { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 13.5px; padding-right: 8px; }
+nav.toc .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+nav.toc .logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--money)); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+nav.toc .brand strong { font-size: 15px; letter-spacing: -0.01em; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+nav.toc ol ol { padding-left: 26px; margin: 2px 0 6px; }
+nav.toc a { display: flex; gap: 8px; padding: 4px 8px; border-radius: 7px; color: var(--muted); text-decoration: none; }
+nav.toc a:hover { background: var(--surface-2); color: var(--fg); }
+nav.toc a.on { background: var(--accent-soft); color: var(--accent); }
+nav.toc a .n { font-family: var(--font-data); font-size: 12px; min-width: 18px; color: var(--faint); padding-top: 1px; }
+nav.toc a.on .n { color: inherit; }
+main { min-width: 0; max-width: 940px; }
+header.doc { display: flex; flex-direction: column; gap: 14px; padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+header.doc .eyebrow { font-size: 13px; color: var(--accent); font-weight: 500; }
+h1 { font-size: 38px; line-height: 1.12; letter-spacing: -0.035em; font-weight: 650; margin: 0; text-wrap: balance; }
+header.doc p.lead { font-size: 17px; color: var(--muted); max-width: 66ch; margin: 0; }
+.meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 8px; }
+.meta div { background: var(--surface); padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.meta span { font-size: 12px; color: var(--muted); }
+.meta strong { font-size: 14px; font-weight: 500; }
+section.part { padding-top: 56px; display: flex; flex-direction: column; gap: 16px; }
+h2 { font-size: 27px; letter-spacing: -0.025em; font-weight: 650; margin: 0; line-height: 1.2; display: flex; gap: 14px; align-items: baseline; text-wrap: balance; }
+h2 .n, h3 .n { font-family: var(--font-data); color: var(--accent); font-weight: 500; font-size: 0.68em; letter-spacing: 0; }
+h3 { font-size: 18px; letter-spacing: -0.012em; font-weight: 600; margin: 20px 0 0; display: flex; gap: 10px; align-items: baseline; text-wrap: balance; }
+h4 { font-size: 15px; font-weight: 600; margin: 8px 0 0; }
+p { margin: 0; max-width: 72ch; }
+ul, ol.list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 72ch; }
+code, .mono { font-family: var(--font-data); font-size: 0.88em; }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+a { color: var(--accent); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.5; }
+th { text-align: left; font-weight: 500; font-size: 12.5px; color: var(--muted); background: var(--surface-2); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.id { font-family: var(--font-data); font-size: 12.5px; white-space: nowrap; color: var(--muted); }
+td.num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tag { display: inline-block; font-size: 11.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.tag.p0 { background: var(--crit-soft); color: var(--crit); }
+.tag.p1 { background: var(--warn-soft); color: var(--warn); }
+.tag.p2 { background: var(--surface-2); color: var(--muted); }
+.tag.ok { background: var(--good-soft); color: var(--good); }
+.tag.ai { background: var(--agent-soft); color: var(--agent); }
+.tag.money { background: var(--money-soft); color: var(--money); }
+.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 10px; padding: 12px 16px; max-width: 80ch; }
+.callout.warn { border-left-color: var(--warn); }
+.callout strong { font-weight: 600; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card h4 { margin: 0; }
+.card p, .card li { font-size: 13.5px; color: var(--muted); }
+.card ul { padding-left: 18px; gap: 3px; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.flow span { padding: 5px 11px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; }
+.flow span.alt { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.flow i { color: var(--faint); font-style: normal; }
+figure.dia { margin: 4px 0; display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.dia-scroll { overflow-x: auto; }
+.dia-scroll svg { display: block; width: 100%; min-width: 760px; height: auto; color: var(--fg); }
+figure.dia figcaption { color: var(--muted); font-size: 13.5px; max-width: 80ch; }
+figure.dia figcaption b { color: var(--fg); font-weight: 600; }
+svg .box { fill: var(--surface); stroke: var(--line); rx: 10px; }
+svg .box.acc { fill: var(--money-soft); stroke: var(--money); }
+svg .box.agent { fill: var(--agent-soft); stroke: var(--agent); }
+svg .box.grp { fill: var(--surface-2); stroke: var(--line); stroke-dasharray: 4 4; rx: 14px; }
+svg .box.zone { fill: none; stroke: var(--faint); stroke-dasharray: 5 4; rx: 12px; }
+svg .box.bus { fill: var(--accent-soft); stroke: var(--accent); }
+svg text { fill: currentColor; font-family: var(--font-ui); font-size: 12.5px; }
+svg text.t { font-weight: 600; }
+svg text.s { font-size: 11px; fill: var(--muted); }
+svg text.lyr { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; fill: var(--faint); }
+svg text.edge { font-size: 11px; fill: var(--muted); }
+svg .ln { stroke: currentColor; stroke-width: 1.3; fill: none; opacity: 0.55; }
+svg .ln.dash { stroke-dasharray: 4 3; }
+svg .ln.agent { stroke: var(--agent); opacity: 1; }
+svg .ln.money { stroke: var(--money); stroke-width: 2; opacity: 1; }
+svg .life { stroke: var(--faint); stroke-dasharray: 3 4; }
+svg .act { fill: var(--accent-soft); stroke: var(--accent); }
+.foot { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+@media (max-width: 1000px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-inline: 16px; padding-block: 24px 64px; }
+  nav.toc { position: static; max-height: none; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface); }
+  nav.toc ol ol { display: none; }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  h1 { font-size: 30px; }
+}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <div class="brand"><span class="logo" aria-hidden="true">C</span><strong>CoreBank SDD</strong></div>
+  <ol>
+    <li><a href="#s1"><span class="n">1</span>Introduction</a></li>
+    <li><a href="#s2"><span class="n">2</span>Functional design</a>
+      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li></ol></li>
+    <li><a href="#s3"><span class="n">3</span>Module design</a>
+      <ol><li><a href="#s3-1">Services</a></li><li><a href="#s3-2">Modules and rules</a></li><li><a href="#s3-3">APIs and events</a></li></ol></li>
+    <li><a href="#s4"><span class="n">4</span>Architecture</a>
+      <ol><li><a href="#s4-1">Logical view</a></li><li><a href="#s4-2">Posting path</a></li><li><a href="#s4-3">Data</a></li><li><a href="#s4-4">Integration and AI</a></li><li><a href="#s4-5">Quality targets</a></li><li><a href="#s4-6">Decisions</a></li></ol></li>
+    <li><a href="#s5"><span class="n">5</span>Infrastructure</a>
+      <ol><li><a href="#s5-1">Deployment</a></li><li><a href="#s5-2">Environments</a></li><li><a href="#s5-3">Delivery pipeline</a></li><li><a href="#s5-4">Resilience</a></li><li><a href="#s5-5">Software stack</a></li></ol></li>
+    <li><a href="#s6"><span class="n">6</span>Security</a>
+      <ol><li><a href="#s6-1">Identity and access</a></li><li><a href="#s6-2">Data protection</a></li><li><a href="#s6-3">AI security</a></li><li><a href="#s6-4">Threat model</a></li><li><a href="#s6-5">Detection and response</a></li></ol></li>
+    <li><a href="#s7"><span class="n">7</span>Compliance</a>
+      <ol><li><a href="#s7-1">Regulatory map</a></li><li><a href="#s7-2">Control matrix</a></li><li><a href="#s7-3">Model risk</a></li><li><a href="#s7-4">Retention</a></li></ol></li>
+    <li><a href="#s8"><span class="n">8</span>Open items</a></li>
+    <li><a href="#s9"><span class="n">9</span>Glossary</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <span class="eyebrow">Software design document</span>
+  <h1>CoreBank: AI-native core banking platform</h1>
+  <p class="lead">The reference design for a core banking platform serving retail, commercial and virtual banks, with any loan, lease or hire-purchase product built from configuration. It covers what the system does, how it is structured, where it runs, how it is protected and which rules it satisfies.</p>
+  <div class="meta">
+    <div><span>Version</span><strong>0.1 draft</strong></div>
+    <div><span>Date</span><strong>13 Oct 2026</strong></div>
+    <div><span>Status</span><strong>For review</strong></div>
+    <div><span>Launch market</span><strong>Thailand (assumed)</strong></div>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="part" id="s1">
+  <h2><span class="n">1</span>Introduction</h2>
+  <p>This document is the single reference for design decisions on CoreBank. Detailed reasoning for individual decisions lives in the architecture decision records (ADRs) in the repository under <code>docs/adr/</code>; this document summarises them and shows how they fit together.</p>
+  <h3>Scope</h3>
+  <div class="cards">
+    <div class="card"><h4>In scope</h4><ul><li>Customer (party) master and KYC status</li><li>Deposits, loans, credit lines, leases, hire purchase</li><li>Multi-currency double-entry ledger and GL</li><li>Product engine, pricing, fees, tax</li><li>Limits, collateral, covenants</li><li>Collections, TFRS 9 and TFRS 16 accounting</li><li>AI agent layer and AI decisioning</li></ul></div>
+    <div class="card"><h4>Integrated, not built</h4><ul><li>Card processing and card switch</li><li>Payment scheme connectivity</li><li>Identity verification vendors</li><li>CRM and marketing automation</li><li>Treasury front office</li></ul></div>
+    <div class="card"><h4>Audience</h4><ul><li>Engineering and architecture</li><li>Product and operations</li><li>Risk, compliance and audit</li><li>Bank IT governance and the regulator, as supporting material</li></ul></div>
+  </div>
+  <h3>Design principles</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Principle</th><th>What it means in practice</th></tr></thead>
+    <tbody>
+      <tr><td class="id">P1</td><td>The ledger is sacred</td><td>Every movement of value is a balanced, immutable posting. Corrections are reversals. Balances can always be rebuilt from postings.</td></tr>
+      <tr><td class="id">P2</td><td>Products are data</td><td>A product is a versioned definition, simulated and approved before use. New products do not need a release.</td></tr>
+      <tr><td class="id">P3</td><td>Bitemporal by default</td><td>Every fact has a value date and a booking time. Back-valued events are replayed and adjusted, never rewritten.</td></tr>
+      <tr><td class="id">P4</td><td>No batch window</td><td>Accrual, billing and aging run per account on durable timers. End of day is a reporting cut, not an outage.</td></tr>
+      <tr><td class="id">P5</td><td>API-first, agent-first</td><td>Every capability is an API; the same contracts are AI tools. No back doors.</td></tr>
+      <tr><td class="id">P6</td><td>AI proposes, policy disposes</td><td>Agents act through the same entitlement, limit and approval checks as people, and every action is logged.</td></tr>
+      <tr><td class="id">P7</td><td>Open source, bank-compatible</td><td>Only OSI-licensed components; every infrastructure dependency can be swapped for the bank's approved equivalent.</td></tr>
+      <tr><td class="id">P8</td><td>Deterministic and replayable</td><td>Same events and product version give the same balances to the satang. This underpins simulation, reconciliation and audit.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Related documents</h3>
+  <ul>
+    <li>Planning set: <code>docs/01</code> to <code>docs/10</code> (vision, architecture, domain model, product engine, lending and leasing, AI, roadmap, security, open decisions, application architecture)</li>
+    <li>Decisions: ADR-0001 Java and Spring Boot · ADR-0002 ledger storage · ADR-0003 product definition · ADR-0004 bank stack compatibility · ADR-0005 multi-database · ADR-0006 open source only</li>
+    <li>Clickable prototype of the operations console: <code>prototype/index.html</code></li>
+  </ul>
+</section>
+
+<!-- 2 -->
+<section class="part" id="s2">
+  <h2><span class="n">2</span>Functional design</h2>
+  <p>CoreBank serves four kinds of institution from one platform. Each tenant switches on the capabilities and products it needs.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Segment</th><th>Main needs from the core</th><th>Typical products</th></tr></thead>
+    <tbody>
+      <tr><td>Virtual bank</td><td>Fast launch, low cost per account, real-time processing, thin-file credit</td><td>Savings, pockets, nano loans, BNPL, personal loans</td></tr>
+      <tr><td>Retail bank</td><td>High volume, branch and digital channels, migration product by product</td><td>Current and term deposits, mortgages, personal loans, auto hire purchase</td></tr>
+      <tr><td>Commercial bank</td><td>Facility hierarchies, collateral, covenants, multi-currency, relationship pricing</td><td>Term loans, revolving credit, overdraft, invoice finance, equipment leasing</td></tr>
+      <tr><td>Leasing and hire-purchase company</td><td>Asset-backed contracts, VAT per installment, insurance, repossession</td><td>Car and motorcycle hire purchase, finance and operating leases</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s2-1"><span class="n">2.1</span>Capability map</h3>
+  <div class="cards">
+    <div class="card"><h4>Customer</h4><ul><li>Party master, relationships, groups</li><li>KYC status and periodic review</li><li>Consent (PDPA purpose)</li><li>Customer 360</li></ul></div>
+    <div class="card"><h4>Products</h4><ul><li>Product definition from building blocks</li><li>Simulation and golden tests</li><li>Pricing tables and risk-based pricing</li><li>Maker-checker publishing, versioning</li></ul></div>
+    <div class="card"><h4>Deposits</h4><ul><li>Savings, current, term, pockets</li><li>Tiered interest, withholding tax</li><li>Sweeps, overdraft, dormancy</li><li>Holds and available balance</li></ul></div>
+    <div class="card"><h4>Lending</h4><ul><li>Origination and decisioning</li><li>Schedules: annuity, flat, balloon, stepped</li><li>Accrual, billing, allocation, aging</li><li>Restructuring, holidays, write-off</li></ul></div>
+    <div class="card"><h4>Leasing and hire purchase</h4><ul><li>Asset register and title</li><li>Residual value, VAT, tax invoices</li><li>Insurance, dealer subvention</li><li>Repossession and remarketing</li></ul></div>
+    <div class="card"><h4>Commercial</h4><ul><li>Facility trees and group exposure</li><li>Collateral valuation and LTV</li><li>Covenant tests and breaches</li><li>Multi-currency and FX</li></ul></div>
+    <div class="card"><h4>Ledger and accounting</h4><ul><li>Double-entry posting engine</li><li>Sub-ledger to GL, daily reconciliation</li><li>TFRS 9 EIR and ECL</li><li>TFRS 16 lessor accounting</li></ul></div>
+    <div class="card"><h4>Collections</h4><ul><li>Delinquency buckets and strategies</li><li>Promises to pay</li><li>Field and agent assignment</li><li>Recoveries</li></ul></div>
+    <div class="card"><h4>AI</h4><ul><li>Credit, fraud and AML models</li><li>Document intelligence</li><li>Customer assistant, ops and RM copilots</li><li>Product copilot</li></ul></div>
+  </div>
+
+  <h3 id="s2-2"><span class="n">2.2</span>Key processes</h3>
+  <h4>Hire purchase, end to end</h4>
+  <div class="flow"><span>Quote</span><i>→</i><span>Credit decision</span><i>→</i><span>Contract and e-sign</span><i>→</i><span>Asset delivered and registered</span><i>→</i><span>Disburse to dealer</span><i>→</i><span>Billing, VAT, insurance</span><i>→</i><span>Paid off, title transfer</span></div>
+  <div class="flow"><span class="alt">Early settlement</span><span class="alt">Restructure or payment holiday</span><span class="alt">Default → repossession → remarketing → shortfall</span></div>
+  <h4>Digital account opening (virtual bank)</h4>
+  <div class="flow"><span>App sign-up</span><i>→</i><span>eKYC and liveness</span><i>→</i><span>Sanctions and PEP screening</span><i>→</i><span>Consents</span><i>→</i><span>Open savings account</span><i>→</i><span>Link PromptPay</span></div>
+  <h4>Commercial drawdown</h4>
+  <div class="flow"><span>Request</span><i>→</i><span>Covenant and limit check (atomic)</span><i>→</i><span>Collateral cover check</span><i>→</i><span>Approval per authority</span><i>→</i><span>Post drawdown</span><i>→</i><span>Pay out</span></div>
+  <h4>Daily cycle, without a batch window</h4>
+  <div class="flow"><span>Per-account timer fires</span><i>→</i><span>Accrue interest</span><i>→</i><span>Bill if due</span><i>→</i><span>Age if unpaid</span><i>→</i><span>Emit events</span><i>→</i><span>GL, ECL, collections react</span></div>
+
+  <h3 id="s2-3"><span class="n">2.3</span>Functional requirements</h3>
+  <p>Priorities: <span class="tag p0">Must</span> needed for the phase's exit criteria, <span class="tag p1">Should</span> expected in the phase, <span class="tag p2">Could</span> if capacity allows. Phases follow the roadmap in <code>docs/07</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td class="id">FR-LED-01</td><td>Accept only posting batches that balance per currency; reject the whole batch otherwise.</td><td><span class="tag p0">Must</span></td><td>0</td></tr>
+      <tr><td class="id">FR-LED-02</td><td>Return the original result for a repeated idempotency key, for at least 30 days.</td><td><span class="tag p0">Must</span></td><td>0</td></tr>
+      <tr><td class="id">FR-LED-03</td><td>Report balances as of any value date and as known at any booking time.</td><td><span class="tag p0">Must</span></td><td>0</td></tr>
+      <tr><td class="id">FR-LED-04</td><td>Support holds that reduce available balance without posting.</td><td><span class="tag p0">Must</span></td><td>0</td></tr>
+      <tr><td class="id">FR-PRD-01</td><td>Define a product from typed building blocks and CEL formulas, validated against a schema.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-PRD-02</td><td>Simulate a product version over generated scenarios and store results as golden tests.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-PRD-03</td><td>Publish a product version only after maker-checker approval; contracts pin their version.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-DEP-01</td><td>Calculate tiered deposit interest daily and withhold tax at payment.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-LND-01</td><td>Generate annuity, equal-principal, bullet, balloon and stepped schedules with any day count.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-LND-02</td><td>Convert a flat rate to an effective rate for disclosure and split income on the effective basis.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LND-03</td><td>Allocate payments by the product's waterfall and track days past due per contract.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-LND-04</td><td>Replay a contract from a back-valued event and post only the adjustment.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-LND-05</td><td>Restructure, extend, or grant a payment holiday through an approved workflow.</td><td><span class="tag p1">Should</span></td><td>1</td></tr>
+      <tr><td class="id">FR-LSE-01</td><td>Charge VAT on each installment at the due date and issue an e-Tax invoice.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-02</td><td>Keep an asset register with title status, insurance and residual value.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-03</td><td>Quote early settlement using the jurisdiction's rebate rule.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-04</td><td>Run repossession and remarketing with jurisdiction notice timelines.</td><td><span class="tag p1">Should</span></td><td>2</td></tr>
+      <tr><td class="id">FR-COM-01</td><td>Check facility limits atomically at drawdown across the facility tree.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-COM-02</td><td>Test covenants on schedule and open a breach workflow on failure.</td><td><span class="tag p1">Should</span></td><td>3</td></tr>
+      <tr><td class="id">FR-ACC-01</td><td>Map every posting to the GL and reconcile sub-ledger to GL to zero daily.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-ACC-02</td><td>Stage contracts and calculate expected credit loss monthly under TFRS 9.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-AI-01</td><td>Return a credit decision with reason codes for every adverse outcome.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-AI-02</td><td>Score fraud on the posting path within 30 ms, with a rule-based fallback.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-AI-03</td><td>Let agents act only through tools, within delegated authority, with every call audited.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-UX-01</td><td>Offer Modern and Calm interface styles and light, dark or system theme per user.</td><td><span class="tag p2">Could</span></td><td>1</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 3 -->
+<section class="part" id="s3">
+  <h2><span class="n">3</span>Module design</h2>
+  <h3 id="s3-1"><span class="n">3.1</span>Services and data ownership</h3>
+  <p>Each service owns its schema. No service reads or writes another service's tables. Only the ledger moves value.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Service</th><th>Owns</th><th>Key state</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">party</td><td>Customers, relationships, KYC status, consents</td><td>Party, Relationship, KycProfile, Consent</td></tr>
+      <tr><td class="mono">product-catalog</td><td>Product definitions, pricing tables, fee schedules</td><td>Product, ProductVersion, RateTable</td></tr>
+      <tr><td class="mono">deposit</td><td>Deposit arrangements and their lifecycle</td><td>DepositArrangement, InterestTier</td></tr>
+      <tr><td class="mono">lending</td><td>Loan and credit-line contracts, schedules</td><td>LoanArrangement, Schedule, Delinquency</td></tr>
+      <tr><td class="mono">leasing</td><td>Lease and hire-purchase contracts, assets</td><td>LeaseArrangement, Asset, InsurancePolicy</td></tr>
+      <tr><td class="mono">limits-collateral</td><td>Facilities, exposure, collateral, covenants</td><td>Facility, Collateral, Valuation, Covenant</td></tr>
+      <tr><td class="mono">ledger</td><td>Accounts, postings, balances, holds</td><td>LedgerAccount, PostingBatch, Balance, Hold</td></tr>
+      <tr><td class="mono">accounting</td><td>GL mapping, reconciliation, ECL, period close</td><td>GlMapping, GlEntry, EclRun</td></tr>
+      <tr><td class="mono">collections</td><td>Strategies, cases, promises to pay</td><td>CollectionCase, Promise, Assignment</td></tr>
+      <tr><td class="mono">payments-hub</td><td>Payment instructions and rail adapters</td><td>PaymentOrder, Settlement</td></tr>
+      <tr><td class="mono">agent-gateway</td><td>Tool registry, delegated authority, AI audit</td><td>Agent, ToolGrant, AgentAction</td></tr>
+      <tr><td class="mono">ai-decisioning</td><td>Model registry links, decisions, explanations</td><td>Decision, ReasonCode, ModelVersion</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s3-2"><span class="n">3.2</span>Modules and dependency rules</h3>
+  <figure class="dia">
+    <div class="dia-scroll"><svg class="wide" viewBox="0 0 1040 510" role="img" aria-label="Product services depend on the calculation engines; every service depends on the platform kernel and publishes contracts; the ledger depends on the platform only; engines depend only on platform money and time.">
+            <defs><marker id="mh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="mhm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--money)"/></marker></defs>
+            <text class="lyr" x="20" y="18">SERVICES · DEPLOYABLE</text>
+            <!-- edges -->
+            <line class="ln money" x1="45" y1="80" x2="45" y2="388" marker-end="url(#mhm)"/><text class="edge" x="52" y="140">platform</text><text class="edge" x="52" y="154">only</text>
+            <line class="ln" x1="270" y1="80" x2="270" y2="198" marker-end="url(#mh)"/><text class="edge" x="278" y="146">uses</text>
+            <line class="ln" x1="430" y1="80" x2="430" y2="198" marker-end="url(#mh)"/><text class="edge" x="438" y="146">uses</text>
+            <line class="ln" x1="590" y1="80" x2="590" y2="198" marker-end="url(#mh)"/><text class="edge" x="598" y="146">uses</text>
+            <line class="ln" x1="850" y1="80" x2="850" y2="198" marker-end="url(#mh)"/><text class="edge" x="858" y="146">publishes *-api</text>
+            <line class="ln" x1="690" y1="80" x2="690" y2="388" marker-end="url(#mh)"/><text class="edge" x="697" y="352">every service</text>
+            <line class="ln" x1="430" y1="310" x2="430" y2="388" marker-end="url(#mh)"/><text class="edge" x="438" y="352">money · time only</text>
+            <line class="ln" x1="180" y1="268" x2="198" y2="268" marker-end="url(#mh)"/>
+
+            <rect class="box acc" x="20" y="30" width="150" height="50" rx="5"/><text class="t" x="95" y="52" text-anchor="middle">ledger</text><text class="s" x="95" y="68" text-anchor="middle">no product knowledge</text>
+            <rect class="box" x="200" y="30" width="140" height="50" rx="5"/><text class="t" x="270" y="60" text-anchor="middle">lending</text>
+            <rect class="box" x="360" y="30" width="140" height="50" rx="5"/><text class="t" x="430" y="60" text-anchor="middle">leasing</text>
+            <rect class="box" x="520" y="30" width="140" height="50" rx="5"/><text class="t" x="590" y="60" text-anchor="middle">deposit</text>
+            <rect class="box" x="680" y="30" width="340" height="50" rx="5"/><text class="t" x="850" y="52" text-anchor="middle">party · catalog · limits · collections</text><text class="s" x="850" y="68" text-anchor="middle">accounting · payments-hub · agent-gateway · ai-decisioning</text>
+
+            <rect class="box" x="70" y="245" width="110" height="46" rx="5"/><text class="t" x="125" y="265" text-anchor="middle">simulator</text><text class="s" x="125" y="281" text-anchor="middle">replays engines</text>
+
+            <rect class="box grp" x="200" y="200" width="460" height="110" rx="6"/>
+            <text class="lyr" x="215" y="222">ENGINES · PURE FUNCTIONS, NO I/O</text>
+            <rect class="box" x="215" y="245" width="100" height="46" rx="5"/><text class="t" x="265" y="265" text-anchor="middle">schedule</text><text class="s" x="265" y="281" text-anchor="middle">annuity · flat · EIR</text>
+            <rect class="box" x="325" y="245" width="100" height="46" rx="5"/><text class="t" x="375" y="265" text-anchor="middle">interest</text><text class="s" x="375" y="281" text-anchor="middle">accrual · day count</text>
+            <rect class="box" x="435" y="245" width="100" height="46" rx="5"/><text class="t" x="485" y="265" text-anchor="middle">product</text><text class="s" x="485" y="281" text-anchor="middle">DSL · CEL</text>
+            <rect class="box" x="545" y="245" width="100" height="46" rx="5"/><text class="t" x="595" y="265" text-anchor="middle">tax</text><text class="s" x="595" y="281" text-anchor="middle">VAT · WHT</text>
+
+            <rect class="box grp" x="710" y="200" width="310" height="110" rx="6"/>
+            <text class="lyr" x="725" y="222">CONTRACTS</text>
+            <rect class="box" x="722" y="245" width="65" height="46" rx="5"/><text class="t" x="754" y="273" text-anchor="middle">OpenAPI</text>
+            <rect class="box" x="797" y="245" width="65" height="46" rx="5"/><text class="t" x="829" y="273" text-anchor="middle">Proto</text>
+            <rect class="box" x="872" y="245" width="65" height="46" rx="5"/><text class="t" x="904" y="273" text-anchor="middle">Avro</text>
+            <rect class="box agent" x="947" y="245" width="65" height="46" rx="5"/><text class="t" x="979" y="273" text-anchor="middle">MCP</text>
+
+            <rect class="box grp" x="20" y="390" width="1000" height="100" rx="6"/>
+            <text class="lyr" x="35" y="412">PLATFORM · SHARED KERNEL</text>
+            <rect class="box" x="35" y="430" width="128" height="44" rx="5"/><text class="t" x="99" y="450" text-anchor="middle">money</text><text class="s" x="99" y="465" text-anchor="middle">no float, ever</text>
+            <rect class="box" x="173" y="430" width="128" height="44" rx="5"/><text class="t" x="237" y="450" text-anchor="middle">time</text><text class="s" x="237" y="465" text-anchor="middle">calendars · clock</text>
+            <rect class="box" x="311" y="430" width="128" height="44" rx="5"/><text class="t" x="375" y="450" text-anchor="middle">tenancy</text><text class="s" x="375" y="465" text-anchor="middle">tenant · entity</text>
+            <rect class="box" x="449" y="430" width="128" height="44" rx="5"/><text class="t" x="513" y="450" text-anchor="middle">persistence</text><text class="s" x="513" y="465" text-anchor="middle">MyBatis · Flyway</text>
+            <rect class="box" x="587" y="430" width="128" height="44" rx="5"/><text class="t" x="651" y="450" text-anchor="middle">events</text><text class="s" x="651" y="465" text-anchor="middle">outbox · Kafka</text>
+            <rect class="box" x="725" y="430" width="128" height="44" rx="5"/><text class="t" x="789" y="450" text-anchor="middle">security</text><text class="s" x="789" y="465" text-anchor="middle">authz · audit</text>
+            <rect class="box" x="863" y="430" width="128" height="44" rx="5"/><text class="t" x="927" y="450" text-anchor="middle">observability</text><text class="s" x="927" y="465" text-anchor="middle">OpenTelemetry</text>
+          </svg></div>
+    <figcaption><b>Repository modules.</b> Product services depend on the pure calculation engines; the ledger depends on the platform only. Arrows mean "depends on", and the build fails on any dependency outside these rules.</figcaption>
+  </figure>
+  <figure class="dia">
+    <div class="dia-scroll"><svg class="wide" viewBox="0 0 1040 380" role="img" aria-label="Hexagonal service: inbound adapters call the application's ports, the application calls the pure domain, and outbound adapters implement the ports for the database, Kafka and other services.">
+              <defs><marker id="hh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect class="box grp" x="20" y="20" width="1000" height="340" rx="8"/>
+              <text class="lyr" x="36" y="42">LEASING-APP · SPRING BOOT WIRING</text>
+              <text class="lyr" x="40" y="80">INBOUND</text>
+              <text class="lyr" x="800" y="80">OUTBOUND</text>
+              <line class="ln" x1="240" y1="125" x2="318" y2="150" marker-end="url(#hh)"/><text class="edge" x="246" y="124">calls port</text>
+              <line class="ln" x1="240" y1="255" x2="318" y2="230" marker-end="url(#hh)"/><text class="edge" x="246" y="270">calls port</text>
+              <line class="ln dash" x1="798" y1="115" x2="722" y2="140" marker-end="url(#hh)"/><text class="edge" x="732" y="112">implements</text>
+              <line class="ln dash" x1="798" y1="190" x2="722" y2="190" marker-end="url(#hh)"/>
+              <line class="ln dash" x1="798" y1="265" x2="722" y2="240" marker-end="url(#hh)"/>
+              <line class="ln" x1="520" y1="250" x2="520" y2="300" marker-end="url(#hh)"/><text class="edge" x="528" y="282">pure calls</text>
+
+              <rect class="box" x="40" y="95" width="200" height="56" rx="5"/><text class="t" x="140" y="118" text-anchor="middle">adapter-web</text><text class="s" x="140" y="135" text-anchor="middle">REST · gRPC · leasing-api DTOs</text>
+              <rect class="box" x="40" y="225" width="200" height="56" rx="5"/><text class="t" x="140" y="248" text-anchor="middle">adapter-messaging (in)</text><text class="s" x="140" y="265" text-anchor="middle">Kafka consumers · timers</text>
+
+              <rect class="box" x="320" y="70" width="400" height="180" rx="6"/>
+              <text class="t" x="520" y="92" text-anchor="middle">leasing-application</text>
+              <text class="s" x="520" y="108" text-anchor="middle">use cases · ports · transaction boundaries</text>
+              <rect class="box acc" x="390" y="125" width="260" height="105" rx="5"/>
+              <text class="t" x="520" y="152" text-anchor="middle">leasing-domain</text>
+              <text class="s" x="520" y="172" text-anchor="middle">contract · asset · residual value</text>
+              <text class="s" x="520" y="188" text-anchor="middle">VAT lines · state machine · rules</text>
+              <text class="s" x="520" y="210" text-anchor="middle">plain Java, no framework imports</text>
+
+              <rect class="box grp" x="420" y="302" width="200" height="40" rx="5"/><text class="t" x="520" y="327" text-anchor="middle">engines/*</text>
+
+              <rect class="box" x="800" y="88" width="200" height="56" rx="5"/><text class="t" x="900" y="111" text-anchor="middle">adapter-persistence</text><text class="s" x="900" y="128" text-anchor="middle">MyBatis · postgresql/ · oracle/</text>
+              <rect class="box" x="800" y="163" width="200" height="56" rx="5"/><text class="t" x="900" y="186" text-anchor="middle">adapter-messaging (out)</text><text class="s" x="900" y="203" text-anchor="middle">outbox writer</text>
+              <rect class="box" x="800" y="238" width="200" height="56" rx="5"/><text class="t" x="900" y="261" text-anchor="middle">adapter-clients</text><text class="s" x="900" y="278" text-anchor="middle">ledger · limits · payments</text>
+            </svg></div>
+    <figcaption><b>Inside one service.</b> Adapters call or implement the application's ports; the domain is plain Java, so business rules are unit-tested without a database, and changing the database touches only the persistence adapter.</figcaption>
+  </figure>
+  <ol class="list">
+    <li><code>*-domain</code> imports no Spring, MyBatis, Kafka or JDBC.</li>
+    <li>Dependencies point inward: adapters → application → domain.</li>
+    <li>A service reaches another only through its <code>*-api</code> module.</li>
+    <li><code>engines/*</code> are pure: no clock, no I/O.</li>
+    <li><code>ledger</code> imports no engine and no product service.</li>
+    <li><code>platform-money</code> bans <code>float</code> and <code>double</code>.</li>
+    <li>Database-vendor SQL lives only under <code>postgresql/</code> and <code>oracle/</code> in persistence adapters.</li>
+  </ol>
+
+  <h3 id="s3-3"><span class="n">3.3</span>Main APIs and events</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Service</th><th>Commands and queries (API)</th><th>Events published</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ledger</td><td class="mono">PostBatch · ReverseBatch · PlaceHold · ReleaseHold · GetBalances(asOf)</td><td class="mono">PostingBatchCommitted · HoldPlaced</td></tr>
+      <tr><td class="mono">lending</td><td class="mono">CreateLoan · Disburse · Repay · Restructure · QuoteSettlement</td><td class="mono">LoanActivated · InstallmentBilled · DelinquencyChanged · LoanClosed</td></tr>
+      <tr><td class="mono">leasing</td><td class="mono">CreateLease · RegisterAsset · Activate · Terminate · Repossess</td><td class="mono">HpContractActivated · VatInvoiceIssued · AssetRepossessed</td></tr>
+      <tr><td class="mono">product-catalog</td><td class="mono">DraftProduct · Simulate · SubmitForApproval · Publish</td><td class="mono">ProductVersionPublished</td></tr>
+      <tr><td class="mono">limits-collateral</td><td class="mono">Reserve · Utilize · Release · Revalue · TestCovenant</td><td class="mono">LimitBreached · CovenantBreached</td></tr>
+      <tr><td class="mono">party</td><td class="mono">Onboard · UpdateKyc · RecordConsent</td><td class="mono">PartyOnboarded · KycExpired · ConsentChanged</td></tr>
+      <tr><td class="mono">agent-gateway</td><td class="mono">MCP tools generated from the APIs above</td><td class="mono">AgentActionRecorded · AgentEscalated</td></tr>
+    </tbody>
+  </table></div>
+  <p>External APIs are REST with OpenAPI; internal calls are gRPC; events are Avro or Protobuf with schemas in Apicurio. Every write takes an <code>Idempotency-Key</code>.</p>
+</section>
+
+<!-- 4 -->
+<section class="part" id="s4">
+  <h2><span class="n">4</span>Architecture</h2>
+  <h3 id="s4-1"><span class="n">4.1</span>Logical view</h3>
+  <figure class="dia">
+    <div class="dia-scroll"><svg class="wide" viewBox="0 0 1040 720" role="img" aria-label="Layered architecture: channels call the API gateway; agents call the same gateway through the agent gateway; workflows and the scheduler drive domain services; only the ledger moves money; the ledger and services publish events to Kafka for accounting, reporting, the feature store and notifications.">
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+                <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--money)"/></marker>
+                <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--agent)"/></marker>
+              </defs>
+              <g class="layers">
+                <text class="lyr" x="20" y="46">CHANNELS</text>
+                <text class="lyr" x="20" y="139">EDGE</text>
+                <text class="lyr" x="20" y="232">ORCHESTRATION</text>
+                <text class="lyr" x="20" y="329">DOMAIN</text>
+                <text class="lyr" x="20" y="437">CORE</text>
+                <text class="lyr" x="20" y="527">EVENTS</text>
+                <text class="lyr" x="20" y="617">DOWNSTREAM</text>
+                <text class="lyr" x="20" y="687">PLATFORM</text>
+              </g>
+              <!-- edges first so boxes sit on top -->
+              <line class="ln" x1="410" y1="64" x2="410" y2="108" marker-end="url(#ah)"/><text class="edge" x="418" y="91">REST · OAuth2</text>
+              <line class="ln agent" x1="941" y1="64" x2="941" y2="108" marker-end="url(#aha)"/><text class="edge" x="949" y="91">chat · voice</text>
+              <line class="ln agent" x1="700" y1="146" x2="672" y2="146" marker-end="url(#aha)"/><text class="edge" x="672" y="182">calls the same APIs</text>
+              <line class="ln" x1="360" y1="160" x2="360" y2="203" marker-end="url(#ah)"/><text class="edge" x="368" y="186">commands</text>
+              <line class="ln" x1="360" y1="251" x2="360" y2="298" marker-end="url(#ah)"/><text class="edge" x="368" y="279">saga steps</text>
+              <line class="ln" x1="810" y1="251" x2="810" y2="298" marker-end="url(#ah)"/><text class="edge" x="818" y="279">accrue · bill · age</text>
+              <line class="ln money" x1="580" y1="350" x2="580" y2="403" marker-end="url(#ahm)"/><text class="edge" x="588" y="382">PostBatch</text>
+              <line class="ln money" x1="350" y1="433" x2="398" y2="433" marker-end="url(#ahm)"/>
+              <line class="ln" x1="963" y1="350" x2="963" y2="403" marker-end="url(#ah)"/><text class="edge" x="971" y="382">score</text>
+              <line class="ln" x1="580" y1="461" x2="580" y2="503" marker-end="url(#ah)"/><text class="edge" x="588" y="487">outbox → Debezium</text>
+              <line class="ln" x1="251" y1="541" x2="251" y2="588" marker-end="url(#ah)"/><text class="edge" x="259" y="569">events</text>
+              <line class="ln" x1="473" y1="541" x2="473" y2="588" marker-end="url(#ah)"/>
+              <line class="ln" x1="640" y1="541" x2="640" y2="588" marker-end="url(#ah)"/>
+              <line class="ln" x1="917" y1="541" x2="917" y2="588" marker-end="url(#ah)"/>
+              <polyline class="ln dash" points="760,590 760,476 900,476 900,463" marker-end="url(#ah)"/><text class="edge" x="768" y="572">features</text>
+
+              <g class="clk" data-id="channels"><rect class="box" x="150" y="20" width="158" height="44" rx="5"/><text class="t" x="229" y="47" text-anchor="middle">Mobile app</text></g>
+              <g class="clk" data-id="channels"><rect class="box" x="328" y="20" width="158" height="44" rx="5"/><text class="t" x="407" y="47" text-anchor="middle">Internet banking</text></g>
+              <g class="clk" data-id="channels"><rect class="box" x="506" y="20" width="158" height="44" rx="5"/><text class="t" x="585" y="47" text-anchor="middle">Back-office console</text></g>
+              <g class="clk" data-id="channels"><rect class="box" x="684" y="20" width="158" height="44" rx="5"/><text class="t" x="763" y="47" text-anchor="middle">RM workstation</text></g>
+              <g class="clk" data-id="channels"><rect class="box" x="862" y="20" width="158" height="44" rx="5"/><text class="t" x="941" y="47" text-anchor="middle">Dealers, partners</text></g>
+
+              <g class="clk" data-id="apigw"><rect class="box" x="150" y="110" width="520" height="50" rx="5"/><text class="t" x="410" y="132" text-anchor="middle">API gateway</text><text class="s" x="410" y="149" text-anchor="middle">APISIX · OAuth2 · rate limits · idempotency keys</text></g>
+              <g class="clk" data-id="agentgw"><rect class="box agent" x="700" y="110" width="320" height="50" rx="5"/><text class="t" x="860" y="132" text-anchor="middle">Agent gateway</text><text class="s" x="860" y="149" text-anchor="middle">MCP tools · authority · policy · audit</text></g>
+
+              <g class="clk" data-id="workflow"><rect class="box" x="150" y="205" width="420" height="46" rx="5"/><text class="t" x="360" y="226" text-anchor="middle">Workflow workers</text><text class="s" x="360" y="242" text-anchor="middle">Temporal sagas · onboarding · origination · repossession</text></g>
+              <g class="clk" data-id="scheduler"><rect class="box" x="600" y="205" width="420" height="46" rx="5"/><text class="t" x="810" y="226" text-anchor="middle">Scheduler</text><text class="s" x="810" y="242" text-anchor="middle">durable per-account timers · no batch window</text></g>
+
+              <g class="clk" data-id="party"><rect class="box" x="150" y="300" width="114" height="50" rx="5"/><text class="t" x="207" y="330" text-anchor="middle">party</text></g>
+              <g class="clk" data-id="catalog"><rect class="box" x="276" y="300" width="114" height="50" rx="5"/><text class="t" x="333" y="322" text-anchor="middle">product</text><text class="t" x="333" y="338" text-anchor="middle">catalog</text></g>
+              <g class="clk" data-id="deposit"><rect class="box" x="402" y="300" width="114" height="50" rx="5"/><text class="t" x="459" y="330" text-anchor="middle">deposit</text></g>
+              <g class="clk" data-id="lending"><rect class="box" x="528" y="300" width="114" height="50" rx="5"/><text class="t" x="585" y="330" text-anchor="middle">lending</text></g>
+              <g class="clk" data-id="leasing"><rect class="box" x="654" y="300" width="114" height="50" rx="5"/><text class="t" x="711" y="330" text-anchor="middle">leasing</text></g>
+              <g class="clk" data-id="limits"><rect class="box" x="780" y="300" width="114" height="50" rx="5"/><text class="t" x="837" y="322" text-anchor="middle">limits &amp;</text><text class="t" x="837" y="338" text-anchor="middle">collateral</text></g>
+              <g class="clk" data-id="collections"><rect class="box" x="906" y="300" width="114" height="50" rx="5"/><text class="t" x="963" y="330" text-anchor="middle">collections</text></g>
+
+              <g class="clk" data-id="payments"><rect class="box" x="150" y="405" width="200" height="56" rx="5"/><text class="t" x="250" y="429" text-anchor="middle">payments-hub</text><text class="s" x="250" y="446" text-anchor="middle">PromptPay · ISO 20022 · SWIFT</text></g>
+              <g class="clk" data-id="ledger"><rect class="box acc" x="400" y="405" width="360" height="56" rx="5"/><text class="t" x="580" y="429" text-anchor="middle">ledger</text><text class="s" x="580" y="446" text-anchor="middle">postings · balances · holds · FX · bitemporal</text></g>
+              <g class="clk" data-id="ai"><rect class="box agent" x="810" y="405" width="210" height="56" rx="5"/><text class="t" x="915" y="429" text-anchor="middle">ai-decisioning</text><text class="s" x="915" y="446" text-anchor="middle">credit · fraud · AML · LLM gateway</text></g>
+
+              <g class="clk" data-id="kafka"><rect class="box bus" x="150" y="505" width="870" height="36" rx="5"/><text class="t" x="585" y="528" text-anchor="middle">Kafka event backbone · Apicurio schemas · replayable</text></g>
+
+              <g class="clk" data-id="accounting"><rect class="box" x="150" y="590" width="202" height="46" rx="5"/><text class="t" x="251" y="611" text-anchor="middle">accounting</text><text class="s" x="251" y="627" text-anchor="middle">GL · TFRS 9 · TFRS 16</text></g>
+              <g class="clk" data-id="reporting"><rect class="box" x="372" y="590" width="202" height="46" rx="5"/><text class="t" x="473" y="611" text-anchor="middle">reporting</text><text class="s" x="473" y="627" text-anchor="middle">BOT returns · Iceberg · Trino</text></g>
+              <g class="clk" data-id="features"><rect class="box" x="594" y="590" width="202" height="46" rx="5"/><text class="t" x="695" y="611" text-anchor="middle">feature store</text><text class="s" x="695" y="627" text-anchor="middle">Feast · Valkey online</text></g>
+              <g class="clk" data-id="notify"><rect class="box" x="816" y="590" width="204" height="46" rx="5"/><text class="t" x="918" y="611" text-anchor="middle">notifications</text><text class="s" x="918" y="627" text-anchor="middle">statements · e-Tax invoices</text></g>
+
+              <g class="clk" data-id="platform"><rect class="box grp" x="150" y="665" width="870" height="36" rx="5"/><text class="s" x="585" y="688" text-anchor="middle">Kubernetes · Istio mTLS · Keycloak · OPA · OpenBao + HSM · OpenTelemetry · PostgreSQL (default) / Oracle (bank-provided)</text></g>
+            </svg></div>
+    <figcaption><b>Layered architecture.</b> Two arrows carry money, both into the ledger. Downstream systems read events and never call back into the posting path. AI agents enter only through the API gateway, as constrained principals.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>From → to</th><th>Mechanism</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Channel → service</td><td>REST through the API gateway</td><td>One public contract</td></tr>
+      <tr><td>Service → service, read</td><td>gRPC, read-only</td><td>No distributed writes</td></tr>
+      <tr><td>Service → ledger</td><td>gRPC PostBatch</td><td>The single synchronous money call</td></tr>
+      <tr><td>Write across services</td><td>Temporal saga with compensations</td><td>No two-phase commit</td></tr>
+      <tr><td>State change → others</td><td>Transactional outbox → Kafka</td><td>Idempotent consumers, safe retries</td></tr>
+      <tr><td>Agent → anything</td><td>MCP tool → agent gateway → API gateway</td><td>Same limits and audit as people</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s4-2"><span class="n">4.2</span>The posting path</h3>
+  <figure class="dia">
+    <div class="dia-scroll">
+    <svg viewBox="0 0 1040 400" role="img" aria-label="Posting sequence: the lending service calls PostBatch; the ledger locks balances in account order, validates, writes postings, balances and the outbox row in one transaction and returns the batch id; Debezium reads the outbox and publishes to Kafka for downstream consumers.">
+      <defs><marker id="sq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:currentColor"/></marker>
+      <marker id="sqm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--money)"/></marker></defs>
+      <rect class="box" x="40" y="16" width="120" height="40"/><text class="t" x="100" y="41" text-anchor="middle">lending</text>
+      <rect class="box acc" x="230" y="16" width="120" height="40"/><text class="t" x="290" y="41" text-anchor="middle">ledger</text>
+      <rect class="box" x="420" y="16" width="120" height="40"/><text class="t" x="480" y="41" text-anchor="middle">shard database</text>
+      <rect class="box" x="610" y="16" width="120" height="40"/><text class="t" x="670" y="41" text-anchor="middle">Debezium</text>
+      <rect class="box bus" x="780" y="16" width="120" height="40"/><text class="t" x="840" y="41" text-anchor="middle">Kafka</text>
+      <rect class="box" x="930" y="16" width="100" height="40"/><text class="t" x="980" y="41" text-anchor="middle">consumers</text>
+      <line class="life" x1="100" y1="56" x2="100" y2="390"/><line class="life" x1="290" y1="56" x2="290" y2="390"/><line class="life" x1="480" y1="56" x2="480" y2="390"/><line class="life" x1="670" y1="56" x2="670" y2="390"/><line class="life" x1="840" y1="56" x2="840" y2="390"/><line class="life" x1="980" y1="56" x2="980" y2="390"/>
+      <rect class="act" x="284" y="84" width="12" height="190"/>
+      <rect class="act" x="474" y="120" width="12" height="134"/>
+      <line class="ln money" x1="100" y1="88" x2="282" y2="88" marker-end="url(#sqm)"/><text class="edge" x="108" y="81">1 PostBatch(key, legs)</text>
+      <line class="ln" x1="296" y1="124" x2="472" y2="124" marker-end="url(#sq)"/><text class="edge" x="304" y="117">2 find key · lock balances</text>
+      <text class="s" x="304" y="146">3 validate: balanced per</text><text class="s" x="304" y="160">currency, funds available</text>
+      <line class="ln" x1="296" y1="190" x2="472" y2="190" marker-end="url(#sq)"/><text class="edge" x="304" y="183">4 write postings, balances</text><text class="s" x="304" y="206">and the outbox row</text>
+      <line class="ln" x1="296" y1="240" x2="472" y2="240" marker-end="url(#sq)"/><text class="edge" x="304" y="233">5 COMMIT (one transaction)</text>
+      <line class="ln money" x1="282" y1="270" x2="102" y2="270" marker-end="url(#sqm)"/><text class="edge" x="108" y="263">6 batch id</text>
+      <line class="ln dash" x1="486" y1="304" x2="668" y2="304" marker-end="url(#sq)"/><text class="edge" x="494" y="297">7 reads outbox via log (CDC)</text>
+      <line class="ln" x1="670" y1="334" x2="838" y2="334" marker-end="url(#sq)"/><text class="edge" x="678" y="327">8 PostingBatchCommitted</text>
+      <line class="ln" x1="840" y1="364" x2="978" y2="364" marker-end="url(#sq)"/><text class="edge" x="848" y="357">9 GL · ECL · features</text>
+    </svg>
+    </div>
+    <figcaption><b>Steps 1 to 6 are synchronous and fit in a 50 ms p99 budget.</b> Locks are taken in ascending account-id order, so concurrent batches cannot deadlock, and the same logic runs on PostgreSQL and Oracle. Everything from step 7 happens after the caller already has its answer.</figcaption>
+  </figure>
+
+  <h3 id="s4-3"><span class="n">4.3</span>Data architecture</h3>
+  <div class="cards">
+    <div class="card"><h4>Ledger model</h4><p>One ledger account per arrangement holds many balance types (principal, interest due, VAT due, penalty, suspense). Amounts are integer minor units; no floating point anywhere.</p></div>
+    <div class="card"><h4>Bitemporal</h4><p>Postings carry value date and booking time. Balances are queryable as of either. Back-valuation replays the contract and posts today's adjustment.</p></div>
+    <div class="card"><h4>Events</h4><p>Every state change is an event with a versioned schema, landed in an Iceberg lakehouse for reporting, features and audit.</p></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Store</th><th>Holds</th><th>Technology</th><th>Consistency</th></tr></thead>
+    <tbody>
+      <tr><td>Ledger shards</td><td>Postings, balances, holds</td><td>PostgreSQL (default) or Oracle, sharded by account</td><td>Strong, synchronous replicas across zones</td></tr>
+      <tr><td>Service databases</td><td>Contracts, products, parties, limits</td><td>PostgreSQL or Oracle, one schema per service</td><td>Strong within a service</td></tr>
+      <tr><td>Event log</td><td>Domain events</td><td>Kafka, 3 zones, replication factor 3</td><td>Ordered per key, replayable</td></tr>
+      <tr><td>Cache and online features</td><td>Reference data, model features</td><td>Valkey</td><td>Rebuildable; never holds money</td></tr>
+      <tr><td>Lakehouse</td><td>History, reporting, training data</td><td>Iceberg on object storage, Trino, dbt Core</td><td>Eventual, point-in-time correct</td></tr>
+      <tr><td>PII vault</td><td>National IDs, contact details</td><td>Tokenization service backed by OpenBao</td><td>Strong; tokens elsewhere</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s4-4"><span class="n">4.4</span>Integration and AI</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Counterparty</th><th>Purpose</th><th>Pattern</th></tr></thead>
+    <tbody>
+      <tr><td>PromptPay and ITMX</td><td>Instant payments and QR</td><td>payments-hub adapter, ISO 20022 where available, settlement reconciliation</td></tr>
+      <tr><td>SWIFT</td><td>Cross-border payments</td><td>ISO 20022 MX messages via the bank's gateway</td></tr>
+      <tr><td>Card processor</td><td>Card authorization and clearing</td><td>Holds on authorization, postings on clearing</td></tr>
+      <tr><td>Credit bureau</td><td>Credit reports</td><td>Synchronous call in origination workflow, consent-gated</td></tr>
+      <tr><td>eKYC vendors</td><td>Identity and liveness</td><td>Orchestrated in onboarding workflow</td></tr>
+      <tr><td>Revenue Department</td><td>e-Tax invoices</td><td>Event-driven invoice issuance</td></tr>
+      <tr><td>Vehicle registration</td><td>Title and transfer</td><td>Workflow step at activation and payoff</td></tr>
+      <tr><td>Legacy core, mainframe</td><td>Migration and coexistence</td><td>IBM MQ or file adapters, parallel run</td></tr>
+    </tbody>
+  </table></div>
+  <p>AI runs in two forms. <strong>Decisioning models</strong> (credit, fraud, AML, collections propensity) are served from a model registry with monitored drift and a rule-based fallback. <strong>Agents</strong> (customer assistant, ops copilot, RM copilot, product copilot) call MCP tools through the agent gateway, which checks delegated authority and policy before every write and records the prompt, tools, model version and outcome. Models are self-hosted open-weight models by default, so customer data stays inside the bank.</p>
+
+  <h3 id="s4-5"><span class="n">4.5</span>Quality targets</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Attribute</th><th>Target</th><th>How it is verified</th></tr></thead>
+    <tbody>
+      <tr><td>Posting throughput</td><td>≥ 10,000 batches/s per cell</td><td>Gatling load test in the performance environment on every ledger change</td></tr>
+      <tr><td>Posting latency</td><td>p99 &lt; 50 ms, p50 &lt; 10 ms</td><td>CI gate fails on p99 regression</td></tr>
+      <tr><td>Balance inquiry</td><td>p99 &lt; 20 ms</td><td>Load test</td></tr>
+      <tr><td>Availability, posting path</td><td>99.99% monthly</td><td>SLO burn-rate alerts</td></tr>
+      <tr><td>Zone failure</td><td>RPO 0, RTO &lt; 15 min</td><td>Quarterly zone failover drill</td></tr>
+      <tr><td>Region failure</td><td>RPO ≤ 5 min, RTO ≤ 4 h</td><td>Twice-yearly region failover drill</td></tr>
+      <tr><td>Correctness</td><td>Zero unbalanced batches; daily GL difference 0.00</td><td>Database constraints, property-based tests, daily rebuild sampling</td></tr>
+      <tr><td>Product time to market</td><td>New product variant in days</td><td>Measured from draft to publish</td></tr>
+      <tr><td>Audit retention</td><td>≥ 10 years, tamper-evident</td><td>Hash-chained log on WORM storage</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s4-6"><span class="n">4.6</span>Decisions</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="id">0001</td><td>Java 21 and Spring Boot 3 for all services</td><td><span class="tag">Proposed</span></td></tr>
+      <tr><td class="id">0002</td><td>Relational ledger, sharded by account, explicit row locks; TigerBeetle only if benchmarks demand it</td><td><span class="tag">Proposed</span></td></tr>
+      <tr><td class="id">0003</td><td>Products as typed building blocks plus CEL expressions</td><td><span class="tag">Proposed</span></td></tr>
+      <tr><td class="id">0004</td><td>Mainstream components behind ports, swappable for the bank's approved stack</td><td><span class="tag">Proposed</span></td></tr>
+      <tr><td class="id">0005</td><td>Multi-database: PostgreSQL default, Oracle certified; MyBatis and plain JDBC, no ORM</td><td><span class="tag ok">Accepted</span></td></tr>
+      <tr><td class="id">0006</td><td>Open source only, OSI licences, enforced in CI</td><td><span class="tag ok">Accepted</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 5 -->
+<section class="part" id="s5">
+  <h2><span class="n">5</span>Infrastructure</h2>
+  <h3 id="s5-1"><span class="n">5.1</span>Deployment topology</h3>
+  <figure class="dia">
+    <div class="dia-scroll">
+    <svg viewBox="0 0 1040 600" role="img" aria-label="Deployment: users reach a WAF and the API gateway in the DMZ; requests go over mTLS to cells in the application zone; each cell has its own services, ledger and database shards in the data zone, spread across three zones; a management zone holds keys, identity and observability; data replicates asynchronously to a warm standby region.">
+      <defs><marker id="dp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:currentColor"/></marker></defs>
+      <rect class="box" x="20" y="14" width="1000" height="40"/><text class="t" x="520" y="39" text-anchor="middle">Customers · staff over zero-trust access · partners and dealers · payment rails</text>
+      <rect class="box zone" x="20" y="80" width="740" height="505"/><text class="lyr" x="36" y="102">PRIMARY REGION · IN-COUNTRY · 3 AVAILABILITY ZONES</text>
+      <rect class="box zone" x="790" y="80" width="230" height="505"/><text class="lyr" x="806" y="102">DR REGION · WARM STANDBY</text>
+
+      <text class="lyr" x="40" y="132">DMZ</text>
+      <rect class="box" x="110" y="116" width="170" height="42"/><text class="t" x="195" y="142" text-anchor="middle">WAF · DDoS</text>
+      <rect class="box" x="320" y="116" width="200" height="42"/><text class="t" x="420" y="142" text-anchor="middle">API gateway (APISIX)</text>
+      <rect class="box agent" x="560" y="116" width="180" height="42"/><text class="t" x="650" y="142" text-anchor="middle">Agent gateway</text>
+      <line class="ln" x1="280" y1="137" x2="318" y2="137" marker-end="url(#dp)"/>
+      <line class="ln" x1="420" y1="54" x2="420" y2="114" marker-end="url(#dp)"/><text class="edge" x="428" y="70">HTTPS</text>
+
+      <text class="lyr" x="40" y="200">APP</text>
+      <rect class="box grp" x="110" y="184" width="300" height="140"/><text class="t" x="126" y="206">Cell 1 · tenants A–F</text>
+      <rect class="box" x="126" y="218" width="130" height="40"/><text class="s" x="191" y="242" text-anchor="middle">domain services</text>
+      <rect class="box acc" x="266" y="218" width="130" height="40"/><text class="s" x="331" y="242" text-anchor="middle">ledger</text>
+      <rect class="box" x="126" y="268" width="130" height="40"/><text class="s" x="191" y="292" text-anchor="middle">Temporal workers</text>
+      <rect class="box" x="266" y="268" width="130" height="40"/><text class="s" x="331" y="292" text-anchor="middle">agent tools · AI</text>
+      <rect class="box grp" x="440" y="184" width="300" height="140"/><text class="t" x="456" y="206">Cell 2 · tenants G–M</text>
+      <rect class="box" x="456" y="218" width="130" height="40"/><text class="s" x="521" y="242" text-anchor="middle">domain services</text>
+      <rect class="box acc" x="596" y="218" width="130" height="40"/><text class="s" x="661" y="242" text-anchor="middle">ledger</text>
+      <rect class="box" x="456" y="268" width="130" height="40"/><text class="s" x="521" y="292" text-anchor="middle">Temporal workers</text>
+      <rect class="box" x="596" y="268" width="130" height="40"/><text class="s" x="661" y="292" text-anchor="middle">agent tools · AI</text>
+      <line class="ln" x1="420" y1="158" x2="420" y2="182" marker-end="url(#dp)"/><text class="edge" x="428" y="175">mTLS</text>
+
+      <text class="lyr" x="40" y="366">DATA</text>
+      <rect class="box" x="110" y="350" width="300" height="56"/><text class="t" x="260" y="374" text-anchor="middle">Cell 1 databases</text><text class="s" x="260" y="392" text-anchor="middle">primary + sync replica per zone</text>
+      <rect class="box" x="440" y="350" width="300" height="56"/><text class="t" x="590" y="374" text-anchor="middle">Cell 2 databases</text><text class="s" x="590" y="392" text-anchor="middle">primary + sync replica per zone</text>
+      <rect class="box bus" x="110" y="418" width="400" height="40"/><text class="t" x="310" y="443" text-anchor="middle">Kafka (Strimzi) · 3 zones · RF 3</text>
+      <rect class="box" x="530" y="418" width="210" height="40"/><text class="t" x="635" y="443" text-anchor="middle">Valkey · object storage</text>
+      <line class="ln" x1="260" y1="324" x2="260" y2="348" marker-end="url(#dp)"/>
+      <line class="ln" x1="590" y1="324" x2="590" y2="348" marker-end="url(#dp)"/>
+
+      <text class="lyr" x="40" y="500">MGMT</text>
+      <rect class="box" x="110" y="484" width="150" height="40"/><text class="s" x="185" y="508" text-anchor="middle">OpenBao + HSM</text>
+      <rect class="box" x="270" y="484" width="150" height="40"/><text class="s" x="345" y="508" text-anchor="middle">Keycloak · OPA</text>
+      <rect class="box" x="430" y="484" width="150" height="40"/><text class="s" x="505" y="508" text-anchor="middle">OpenTelemetry · SIEM</text>
+      <rect class="box" x="590" y="484" width="150" height="40"/><text class="s" x="665" y="508" text-anchor="middle">Argo CD · registry</text>
+      <text class="s" x="110" y="560">Each cell is a full stack for a set of tenants: the unit of scaling, blast radius and data residency.</text>
+
+      <rect class="box" x="810" y="184" width="190" height="56"/><text class="t" x="905" y="208" text-anchor="middle">Cells, scaled down</text><text class="s" x="905" y="226" text-anchor="middle">scale up on failover</text>
+      <rect class="box" x="810" y="350" width="190" height="56"/><text class="t" x="905" y="374" text-anchor="middle">Async DB replicas</text><text class="s" x="905" y="392" text-anchor="middle">lag alert at 60 s</text>
+      <rect class="box bus" x="810" y="418" width="190" height="40"/><text class="t" x="905" y="443" text-anchor="middle">MirrorMaker 2</text>
+      <rect class="box" x="810" y="484" width="190" height="40"/><text class="s" x="905" y="508" text-anchor="middle">Backups · immutable copies</text>
+      <line class="ln dash" x1="740" y1="378" x2="808" y2="378" marker-end="url(#dp)"/><text class="edge" x="746" y="370">async</text>
+      <line class="ln dash" x1="740" y1="438" x2="808" y2="438" marker-end="url(#dp)"/>
+    </svg>
+    </div>
+    <figcaption><b>Cells inside zones inside regions.</b> Within the primary region, databases replicate synchronously across zones (RPO 0). The DR region receives asynchronous copies, which is why a full region loss allows up to 5 minutes of data loss and a longer recovery.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>Zone</th><th>Contains</th><th>Allowed inbound</th></tr></thead>
+    <tbody>
+      <tr><td>DMZ</td><td>WAF, API gateway, agent gateway</td><td>Internet over HTTPS, partner mTLS</td></tr>
+      <tr><td>Application</td><td>Cells: services, ledger, workers, AI serving</td><td>DMZ only, over mesh mTLS</td></tr>
+      <tr><td>Data</td><td>Databases, Kafka, Valkey, object storage</td><td>Application zone only, named service identities</td></tr>
+      <tr><td>Management</td><td>Keys, identity, observability, GitOps</td><td>Privileged access via bastion with session recording</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s5-2"><span class="n">5.2</span>Environments</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Environment</th><th>Purpose</th><th>Data</th><th>Promotion gate</th></tr></thead>
+    <tbody>
+      <tr><td>Dev</td><td>Per-team and per-branch</td><td>Synthetic</td><td>Unit and module tests</td></tr>
+      <tr><td>SIT</td><td>Service integration</td><td>Synthetic</td><td>Contract tests, database matrix</td></tr>
+      <tr><td>Performance</td><td>Load and soak</td><td>Synthetic at production volume</td><td>p99 latency and throughput gates</td></tr>
+      <tr><td>UAT</td><td>Business acceptance</td><td>Masked copies</td><td>Business sign-off</td></tr>
+      <tr><td>Pre-production</td><td>Release rehearsal, production-like</td><td>Masked copies</td><td>Change approval</td></tr>
+      <tr><td>Production</td><td>Live</td><td>Real</td><td>Progressive rollout with automatic rollback</td></tr>
+      <tr><td>DR</td><td>Warm standby</td><td>Replicated</td><td>Failover drills</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s5-3"><span class="n">5.3</span>Delivery pipeline</h3>
+  <div class="flow"><span>Commit</span><i>→</i><span>Build and unit tests</span><i>→</i><span>ArchUnit rules</span><i>→</i><span>SAST · secrets · SQL lint</span><i>→</i><span>SBOM and licence gate</span><i>→</i><span>PostgreSQL + Oracle tests</span><i>→</i><span>Signed image</span><i>→</i><span>SIT</span><i>→</i><span>Performance gate</span><i>→</i><span>UAT</span><i>→</i><span>Canary to production</span></div>
+  <p>Infrastructure is code (OpenTofu, Helm). Argo CD applies every change from Git, so production state is always reviewable and reversible. Images are signed and carry provenance; clusters admit only signed images.</p>
+
+  <h3 id="s5-4"><span class="n">5.4</span>Resilience and recovery</h3>
+  <ul>
+    <li>Three availability zones; services spread across them with pod disruption budgets.</li>
+    <li>Ledger databases: synchronous replica in another zone, automatic failover, fencing of the old primary.</li>
+    <li>Backups: continuous WAL archiving plus daily full backups, immutable copies in the DR region, monthly restore tests.</li>
+    <li>Chaos tests on the posting path every release: kill a primary, partition a zone, slow Kafka.</li>
+    <li>Graceful degradation: if fraud scoring times out, the rule-based fallback decides; if Kafka is unavailable, the outbox buffers and postings continue.</li>
+  </ul>
+
+  <h3 id="s5-5"><span class="n">5.5</span>Software stack</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Layer</th><th>Default (open source)</th><th>Bank-provided alternative</th></tr></thead>
+    <tbody>
+      <tr><td>Runtime</td><td>Eclipse Temurin 21, Spring Boot 3</td><td>Red Hat OpenJDK, IBM Semeru</td></tr>
+      <tr><td>Data access</td><td>MyBatis, plain JDBC, Flyway</td><td>—</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16+</td><td>Oracle 19c / 23ai; SQL Server, Db2 on demand</td></tr>
+      <tr><td>Events</td><td>Apache Kafka on Strimzi, Apicurio, Debezium</td><td>Existing Kafka; IBM MQ adapter</td></tr>
+      <tr><td>Workflow</td><td>Temporal</td><td>Flowable or Operaton</td></tr>
+      <tr><td>Platform</td><td>Kubernetes, Istio or Cilium, Argo CD, OpenTofu</td><td>OpenShift</td></tr>
+      <tr><td>Identity and policy</td><td>Keycloak, OPA</td><td>Bank IAM via OIDC or SAML</td></tr>
+      <tr><td>Secrets and keys</td><td>OpenBao, PKCS#11 to HSM</td><td>CyberArk, Thales or Entrust HSM</td></tr>
+      <tr><td>Observability</td><td>OpenTelemetry, Prometheus, Grafana, Loki, Tempo</td><td>Dynatrace, Splunk, Elastic via OTLP</td></tr>
+      <tr><td>Analytics and ML</td><td>Iceberg, Trino, dbt Core, ClickHouse, Feast, MLflow, vLLM</td><td>Bank data platform</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 6 -->
+<section class="part" id="s6">
+  <h2><span class="n">6</span>Security</h2>
+  <p>Security follows zero trust: every call is authenticated and authorized, every link is encrypted, and no network location is trusted by default.</p>
+  <h3 id="s6-1"><span class="n">6.1</span>Identity and access</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Principal</th><th>Authentication</th><th>Authorization</th></tr></thead>
+    <tbody>
+      <tr><td>Customer</td><td>OIDC with device binding; step-up biometric or OTP for payments and changes</td><td>Owns their arrangements only; consent scopes</td></tr>
+      <tr><td>Staff</td><td>Bank SSO with MFA, zero-trust network access</td><td>Roles plus attributes (branch, segment, amount); maker-checker on sensitive actions</td></tr>
+      <tr><td>Service</td><td>Workload identity, mesh mTLS certificates</td><td>Allow-listed service-to-service calls</td></tr>
+      <tr><td>AI agent</td><td>Agent identity plus the human or customer it acts for</td><td>Per-tool grants and amount limits; above limit, escalate to a person</td></tr>
+      <tr><td>Partner</td><td>OAuth2 client credentials with mTLS</td><td>Scoped APIs, rate limits</td></tr>
+    </tbody>
+  </table></div>
+  <p>Maker-checker applies to product publishing, GL mapping changes, manual journals, limit overrides, fee waivers above threshold, write-offs and agent actions above authority. The checker can never be the maker.</p>
+
+  <h3 id="s6-2"><span class="n">6.2</span>Data protection</h3>
+  <ul>
+    <li>TLS 1.3 in transit everywhere; mTLS inside the mesh.</li>
+    <li>Encryption at rest with per-tenant keys; master keys in the bank's HSM.</li>
+    <li>National ID, phone and address tokenized in the PII vault; services and logs see tokens only.</li>
+    <li>Masked data in all non-production environments.</li>
+    <li>Data classification on every field drives masking, retention and what AI tools may return.</li>
+  </ul>
+
+  <h3 id="s6-3"><span class="n">6.3</span>AI security</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Risk</th><th>Control</th></tr></thead>
+    <tbody>
+      <tr><td>Prompt injection through customer messages or documents</td><td>Untrusted content is marked as data; tool calls are checked by policy, not by the model's judgement</td></tr>
+      <tr><td>Agent exceeds its mandate</td><td>Per-tool grants, amount limits, escalation to Approvals, kill switch per agent</td></tr>
+      <tr><td>Data leakage to model providers</td><td>Self-hosted models by default; PII tokenized before any external call</td></tr>
+      <tr><td>Wrong or harmful advice</td><td>Answers cite product terms; evaluation suites and red-teaming before each release</td></tr>
+      <tr><td>Untraceable decisions</td><td>Prompt, retrieved context, tool calls, model version and outcome are recorded</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s6-4"><span class="n">6.4</span>Threat model: posting path</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Threat (STRIDE)</th><th>Example</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Spoofing</td><td>A service impersonates lending to post money</td><td>mTLS workload identity; ledger accepts only allow-listed callers per account type</td></tr>
+      <tr><td>Tampering</td><td>A posting is edited after commit</td><td>No update or delete grants on posting tables; reversals only; hash-chained audit</td></tr>
+      <tr><td>Repudiation</td><td>Nobody owns a manual journal</td><td>Actor, on-behalf-of, reason and trace id on every batch</td></tr>
+      <tr><td>Information disclosure</td><td>Balances leak through logs</td><td>Structured logging with masking; account numbers tokenized</td></tr>
+      <tr><td>Denial of service</td><td>Retry storm on PostBatch</td><td>Idempotency keys, rate limits, bulkheads per cell</td></tr>
+      <tr><td>Elevation of privilege</td><td>An agent posts above its limit</td><td>Authority checked at the gateway and again by policy at the service</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s6-5"><span class="n">6.5</span>Detection and response</h3>
+  <ul>
+    <li>Security events, audit logs and agent actions stream to the SIEM; alerts on privilege changes, unusual postings and failed approvals.</li>
+    <li>Secure SDLC: threat modelling per service, SAST, DAST, dependency scanning, secret scanning, signed builds.</li>
+    <li>Penetration test before launch and yearly; bug bounty after launch.</li>
+    <li>Incident runbooks with regulator notification timelines; quarterly tabletop exercises.</li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section class="part" id="s7">
+  <h2><span class="n">7</span>Compliance</h2>
+  <div class="callout warn"><strong>To be confirmed with compliance and legal.</strong> The mapping below assumes Thailand as the launch market and summarises obligations at design level. Regulations live in jurisdiction packs, so other markets are configuration, not code.</div>
+
+  <h3 id="s7-1"><span class="n">7.1</span>Regulatory map</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Area</th><th>Obligation (summary)</th><th>Platform capability</th></tr></thead>
+    <tbody>
+      <tr><td>Virtual bank licence</td><td>Bank of Thailand virtual bank framework: governance, risk management, technology</td><td>Full core with documented IT risk controls and cloud governance</td></tr>
+      <tr><td>IT and cyber risk</td><td>BOT IT risk, cyber resilience and cloud and outsourcing guidelines</td><td>Section 6 controls, DR drills, incident reporting</td></tr>
+      <tr><td>Personal data</td><td>PDPA: lawful basis, consent, purpose limitation, data subject rights</td><td>Consent registry, PII vault, rights workflows, retention policies</td></tr>
+      <tr><td>Financial reporting</td><td>TFRS 9 (EIR, ECL) and TFRS 16 (lessor)</td><td>EIR engine, ECL staging and runs, lease accounting</td></tr>
+      <tr><td>Market conduct</td><td>Fair disclosure, responsible lending, complaint handling, collections conduct</td><td>Disclosure templates, affordability checks, conduct rules in collections</td></tr>
+      <tr><td>Hire purchase</td><td>Effective rate disclosure, rate caps, early settlement rebates</td><td>Rule packs with caps (e.g. 10% new car, 15% used car, 23% motorcycle effective), rebate formulas</td></tr>
+      <tr><td>Personal loans</td><td>Interest rate ceiling for supervised personal loans</td><td>Cap checks at product publish and pricing</td></tr>
+      <tr><td>Tax</td><td>VAT on HP installments, withholding tax on deposit interest, e-Tax invoice</td><td>Tax engine blocks, invoice issuance</td></tr>
+      <tr><td>AML/CFT</td><td>AMLO customer due diligence, monitoring and reporting</td><td>Screening, transaction monitoring, case management, report drafts</td></tr>
+      <tr><td>Deposit protection</td><td>Per-depositor aggregation for DPA reporting</td><td>Aggregation reports from the party graph</td></tr>
+      <tr><td>Regulatory reporting</td><td>BOT data returns</td><td>Reporting marts fed from events, point-in-time correct</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s7-2"><span class="n">7.2</span>Control matrix</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Control</th><th>Objective</th><th>Implemented by</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td class="id">C-01</td><td>Every value movement balances</td><td>Ledger invariants, database constraints</td><td>Daily invariant report</td></tr>
+      <tr><td class="id">C-02</td><td>Sub-ledger agrees with GL</td><td>Automated daily reconciliation</td><td>Reconciliation report at 0.00</td></tr>
+      <tr><td class="id">C-03</td><td>Segregation of duties</td><td>Maker-checker in workflows and policy engine</td><td>Approval log with maker and checker</td></tr>
+      <tr><td class="id">C-04</td><td>Product changes are controlled</td><td>Simulation, golden tests, approval before publish</td><td>Version history and test results</td></tr>
+      <tr><td class="id">C-05</td><td>Privileged access is limited</td><td>Just-in-time access, bastion, session recording</td><td>Access reviews, recordings</td></tr>
+      <tr><td class="id">C-06</td><td>Changes to production are reviewed</td><td>GitOps, signed images, change approval</td><td>Git history, deployment records</td></tr>
+      <tr><td class="id">C-07</td><td>AI acts within authority</td><td>Agent gateway grants and escalation</td><td>Agent action log</td></tr>
+      <tr><td class="id">C-08</td><td>Personal data is protected</td><td>Tokenization, encryption, masking</td><td>Key inventory, masking reports</td></tr>
+      <tr><td class="id">C-09</td><td>Recovery works</td><td>Backups, replicas, drills</td><td>Drill reports with achieved RPO and RTO</td></tr>
+      <tr><td class="id">C-10</td><td>Only licensed, known software runs</td><td>SBOM, licence gate, image signing</td><td>SBOM per release</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s7-3"><span class="n">7.3</span>Model risk management</h3>
+  <ul>
+    <li>Model inventory with owner, purpose, risk tier, data lineage and approval status.</li>
+    <li>Independent validation, challenger models, and fairness testing on protected attributes.</li>
+    <li>Reason codes for every adverse credit decision, stored with the decision.</li>
+    <li>Monitoring for drift and stability; automatic fallback to rules on breach.</li>
+    <li>For agents: evaluation suites, red-teaming, versioned prompts and a kill switch per agent.</li>
+  </ul>
+
+  <h3 id="s7-4"><span class="n">7.4</span>Data retention</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Data</th><th>Retention (proposed)</th><th>Basis</th></tr></thead>
+    <tbody>
+      <tr><td>Postings and GL</td><td>10 years after contract closure</td><td>Accounting and audit requirements</td></tr>
+      <tr><td>KYC and AML records</td><td>Per AMLO requirements after relationship ends</td><td>AML/CFT</td></tr>
+      <tr><td>Audit and agent action logs</td><td>10 years, tamper-evident</td><td>Supervisory review</td></tr>
+      <tr><td>Marketing consent data</td><td>Until withdrawn, then deleted</td><td>PDPA</td></tr>
+      <tr><td>Non-production copies</td><td>Masked, refreshed, never real PII</td><td>PDPA, IT risk</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 8 -->
+<section class="part" id="s8">
+  <h2><span class="n">8</span>Open items</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Item</th><th>Owner</th><th>Needed by</th></tr></thead>
+    <tbody>
+      <tr><td class="id">O-1</td><td>Confirm launch market and the first design-partner bank</td><td>Founders</td><td>Phase 0 start</td></tr>
+      <tr><td class="id">O-2</td><td>Get the partner bank's approved technology list (Oracle? OpenShift? IBM MQ?)</td><td>Architecture</td><td>Phase 0 start</td></tr>
+      <tr><td class="id">O-3</td><td>Decide whether commercial model APIs are allowed alongside self-hosted models</td><td>Risk, AI</td><td>Phase 1</td></tr>
+      <tr><td class="id">O-4</td><td>Confirm Flyway Community covers the certified Oracle versions</td><td>Platform</td><td>Phase 0</td></tr>
+      <tr><td class="id">O-5</td><td>Validate regulatory map and retention periods with compliance and legal</td><td>Compliance</td><td>Phase 1</td></tr>
+      <tr><td class="id">O-6</td><td>Benchmark the ledger on PostgreSQL and Oracle against the 10k/s target</td><td>Ledger squad</td><td>End of Phase 0</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 9 -->
+<section class="part" id="s9">
+  <h2><span class="n">9</span>Glossary</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Arrangement</td><td>A customer contract: deposit, loan, lease or hire purchase.</td></tr>
+      <tr><td>Balance type</td><td>A named bucket inside a ledger account, such as principal or VAT due.</td></tr>
+      <tr><td>Bitemporal</td><td>Recording both when something is effective (value date) and when it was recorded (booking time).</td></tr>
+      <tr><td>CEL</td><td>Common Expression Language: safe, non-looping formulas used in product definitions.</td></tr>
+      <tr><td>Cell</td><td>A complete copy of the stack serving a group of tenants.</td></tr>
+      <tr><td>DPD</td><td>Days past due.</td></tr>
+      <tr><td>ECL</td><td>Expected credit loss under TFRS 9.</td></tr>
+      <tr><td>EIR</td><td>Effective interest rate, used for income recognition and disclosure.</td></tr>
+      <tr><td>Flat rate</td><td>Interest calculated on the original principal for the whole term, common in hire purchase.</td></tr>
+      <tr><td>MCP</td><td>Model Context Protocol: the standard through which AI agents call tools.</td></tr>
+      <tr><td>Maker-checker</td><td>A second person approves what the first person prepared.</td></tr>
+      <tr><td>Outbox</td><td>A table written in the same transaction as business data, from which events are published.</td></tr>
+      <tr><td>Saga</td><td>A multi-step process where each step has a compensating action if a later step fails.</td></tr>
+      <tr><td>TFRS</td><td>Thai Financial Reporting Standards, aligned with IFRS.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="foot">CoreBank software design document, version 0.1 draft. Source: <code>docs/design/corebank-design.html</code> in the CoreBank repository. Update this document with every accepted ADR.</p>
+</section>
+</main>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); });
+  function onScroll() {
+    var y = window.scrollY + 120, idx = 0;
+    targets.forEach(function (t, i) { if (t && t.offsetTop <= y) idx = i; });
+    links.forEach(function (a, i) { a.classList.toggle("on", i === idx); });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
