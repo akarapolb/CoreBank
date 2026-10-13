@@ -98,6 +98,8 @@ Balances are materialized projections updated in the same transaction as posting
 ## Limits, collateral and covenants (commercial)
 
 - **Facility tree**: group limit → company limit → product sub-limits (term loan, revolver, overdraft, leasing line, trade line). Utilization is checked atomically at drawdown.
+- **Off-balance-sheet exposure**: contingent balance types (`CONTINGENT_LC`, `CONTINGENT_GUARANTEE`, `UNDRAWN_COMMITMENT`) use the same limits and are posted to contra accounts, so trade and commitments count against limits and capital ([12](12-trade-treasury-syndication.md)).
+- **Multi-party arrangements**: roles such as agent, lender, confirming bank and beneficiary, with shares held as exact fractions for pro-rata allocation.
 - **Collateral**: types (real estate, vehicle, machinery, deposit, guarantee, receivables), valuations over time, haircuts, allocation across arrangements, LTV monitoring.
 - **Covenants**: financial ratios (DSCR, leverage), reporting obligations, test schedules, breach workflow. AI extracts figures from submitted financial statements (see [06](06-ai-native.md)).
 

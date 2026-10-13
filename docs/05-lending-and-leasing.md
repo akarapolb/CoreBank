@@ -18,7 +18,8 @@
 | SME term loan | LOAN | Equal principal, grace periods | Facility limits, covenants |
 | Revolving credit / overdraft | CREDIT_LINE | Interest on utilized, commitment fee on unutilized | Limit reviews, annual renewal |
 | Working capital / invoice finance | CREDIT_LINE | Bullet per drawdown | Receivables as collateral |
-| Corporate term / syndicated (later) | LOAN | Custom | Agency, participations, multi-currency |
+| Syndicated loans (lender or agent) | LOAN (multi-party) | Per tranche; term or RFR compounded in arrears | Pro-rata distribution, fees, secondary transfers ([12](12-trade-treasury-syndication.md)) |
+| Trade loans, bills discounting, forfaiting | LOAN | Bullet per bill, discount with EIR | Linked to LCs or invoices ([12](12-trade-treasury-syndication.md)) |
 | Credit card receivable (later) | CREDIT_LINE | Minimum due, statement cycle | Via card processor integration |
 
 ## Schedule engine

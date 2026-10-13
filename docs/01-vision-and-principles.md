@@ -25,6 +25,9 @@ A cloud-native core banking platform that a new virtual bank can launch on in mo
 - Product engine, pricing engine, fees and charges
 - Limits, collateral, guarantees and covenants
 - Payments hub integration (domestic instant, cards, SWIFT/ISO 20022), not a full payments switch
+- Trade finance: letters of credit, guarantees, collections, trade loans, supply-chain finance ([12](12-trade-treasury-syndication.md))
+- Treasury operations: FX and money-market deals, real-time positions, revaluation, nostro reconciliation, liquidity metrics, FTP
+- Syndicated lending as lender and as agent, including secondary transfers
 - Accounting (IFRS 9 / TFRS 9 ECL and EIR, IFRS 16 / TFRS 16 lessor accounting)
 - Collections and recoveries
 - Regulatory reporting data feeds
@@ -34,7 +37,7 @@ A cloud-native core banking platform that a new virtual bank can launch on in mo
 
 - Card issuing processor and card switch (integrate with a processor)
 - Payment scheme connectivity (integrate with scheme gateways)
-- Treasury / ALM front office, trading
+- Trading front office for complex derivatives (treasury operations are in scope)
 - Full CRM and marketing automation (we expose events and APIs to them)
 - Identity verification vendors (eKYC/biometrics: we orchestrate them)
 

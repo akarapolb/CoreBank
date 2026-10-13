@@ -32,7 +32,8 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 08 | [Security, risk and compliance](docs/08-security-and-compliance.md) | Security architecture, regulatory mapping, audit |
 | 10 | [Application architecture and modules](docs/10-application-architecture.md) | Layers, communication rules, request flow, Maven modules, dependency rules |
 | 11 | [Global scale and benchmark](docs/11-global-scale-and-benchmark.md) | Global sizing, high-performance design, capability check against global banks and leading platforms |
+| 12 | [Trade finance, treasury and syndication](docs/12-trade-treasury-syndication.md) | Native LCs and guarantees, treasury operations, syndicated lending as lender and agent |
 | SDD | [Design reference (HTML)](docs/design/corebank-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
-| — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Customer 360, HP contract, Product Studio, ledger, approvals, AI agents, architecture and module diagrams |
+| — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) and the [open-source-only policy](docs/adr/0006-open-source-only.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |

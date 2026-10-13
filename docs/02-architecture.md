@@ -50,6 +50,10 @@
 | **scheduler** | Due work for accrual posting, billing, maturity, aging (no batch); partitioned time-wheel per shard ([ADR-0007](adr/0007-scheduling-and-accrual-at-scale.md)) | Due-queue tables per shard |
 | **accounting** | Posting-to-GL mapping, sub-ledger to GL reconciliation, period close, IFRS 9/16 entries | RDBMS + warehouse |
 | **collections** | Delinquency buckets, strategies, promises-to-pay, agent assignment | RDBMS |
+| **trade-finance** | LCs, guarantees, collections, trade loans, supply-chain finance, document examination ([12](12-trade-treasury-syndication.md)) | RDBMS |
+| **treasury** | FX and money-market deals, real-time positions, revaluation, nostro reconciliation, liquidity metrics, FTP | RDBMS |
+| **syndication** | Syndicated facilities, tranches, lender register, drawdown notices, distributions, transfers | RDBMS |
+| **market-data** | FX rates, benchmark fixings (THOR, SOFR, SONIA, €STR), curves | RDBMS + cache |
 | **agent-gateway** | Exposes service APIs as AI tools, enforces policy and delegated authority, records AI actions | RDBMS |
 | **ai-decisioning** | Credit scoring, fraud, AML, collections propensity, model serving and monitoring | Model registry + feature store |
 

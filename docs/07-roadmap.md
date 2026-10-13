@@ -57,6 +57,7 @@ Also in Phase 1: scale-out test reaching 100,000 batches/s across 10 cells with 
 - Credit application workflow with authority matrix routing; bulk and payroll payments with client dual authorization; camt.053 and MT940 statements
 - Retail bank extensions: branch and teller (drawers and vaults as ledger accounts, supervisor overrides), floating-rate home loans with resets, cheque clearing adapter
 - Regulatory reporting data marts
+- Trade, treasury and syndication foundations ([12](12-trade-treasury-syndication.md)): contingent ledger, guarantees, sight import LCs, trade loans; real-time currency positions, rates service, customer FX, nostro reconciliation, FTP; RFR compounding engine and syndicated loans as lender
 
 **Exit criteria:** commercial pilot customer live; limit checks atomic under concurrent drawdowns; regulatory return dry-runs accepted.
 
@@ -64,7 +65,10 @@ Also in Phase 1: scale-out test reaching 100,000 batches/s across 10 cells with 
 
 - Multi-tenant SaaS hardening: tenant onboarding automation, per-tenant cells, data residency
 - Migration toolkit for incumbent banks (product mapping, balance migration, parallel run, reconciliation)
-- Advanced products: mortgages with floating resets, syndicated loans, BNPL partner platform, embedded finance APIs
+- Advanced products: BNPL partner platform, embedded finance APIs
+- Full trade finance: usance and export LCs, collections, supply-chain finance, AI document examination
+- Treasury: FX and money-market deals, revaluation, liquidity metrics (LCR, NSFR inputs), CLS settlement
+- Syndication as agent: drawdowns, rate fixing, pro-rata distribution, notices, secondary transfers
 - AI Tier 2/3: collections agents, product copilot, dynamic pricing, natural-language analytics
 - Certifications: ISO 27001, SOC 2 Type II, PCI DSS scope (if cards)
 
@@ -74,7 +78,7 @@ Also in Phase 1: scale-out test reaching 100,000 batches/s across 10 cells with 
 - Billion-account certification: month-end capitalization within the night window, zone and region failover drills
 - Jurisdiction packs beyond Thailand (Singapore, Malaysia, Indonesia, Hong Kong, then EU, UK, US)
 - Islamic banking product blocks; cross-border, cross-currency liquidity pooling
-- Native trade finance and syndication where integration is no longer enough
+- Digital trade (eUCP, electronic bills of lading), hedge accounting, security agent role, multi-currency revolving facilities with swingline
 - Tier-1 reference program and certifications
 
 See [11](11-global-scale-and-benchmark.md) for the global capability check that drives this phase.

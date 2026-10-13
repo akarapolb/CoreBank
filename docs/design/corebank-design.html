@@ -138,7 +138,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <ol>
     <li><a href="#s1"><span class="n">1</span>Introduction</a></li>
     <li><a href="#s2"><span class="n">2</span>Functional design</a>
-      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li><li><a href="#s2-4">Retail bank</a></li><li><a href="#s2-5">Commercial bank</a></li><li><a href="#s2-6">Segment readiness</a></li><li><a href="#s2-7">Fleet and floor plan</a></li></ol></li>
+      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li><li><a href="#s2-4">Retail bank</a></li><li><a href="#s2-5">Commercial bank</a></li><li><a href="#s2-6">Segment readiness</a></li><li><a href="#s2-7">Fleet and floor plan</a></li><li><a href="#s2-8">Trade, treasury, syndication</a></li></ol></li>
     <li><a href="#s3"><span class="n">3</span>Module design</a>
       <ol><li><a href="#s3-1">Services</a></li><li><a href="#s3-2">Modules and rules</a></li><li><a href="#s3-3">APIs and events</a></li></ol></li>
     <li><a href="#s4"><span class="n">4</span>Architecture</a>
@@ -175,8 +175,8 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <p>This document is the single reference for design decisions on CoreBank. Detailed reasoning for individual decisions lives in the architecture decision records (ADRs) in the repository under <code>docs/adr/</code>; this document summarises them and shows how they fit together.</p>
   <h3>Scope</h3>
   <div class="cards">
-    <div class="card"><h4>In scope</h4><ul><li>Customer (party) master and KYC status</li><li>Deposits, loans, credit lines, leases, hire purchase</li><li>Multi-currency double-entry ledger and GL</li><li>Product engine, pricing, fees, tax</li><li>Limits, collateral, covenants</li><li>Collections, TFRS 9 and TFRS 16 accounting</li><li>AI agent layer and AI decisioning</li></ul></div>
-    <div class="card"><h4>Integrated, not built</h4><ul><li>Card processing and card switch</li><li>Payment scheme connectivity</li><li>Identity verification vendors</li><li>CRM and marketing automation</li><li>Treasury front office</li></ul></div>
+    <div class="card"><h4>In scope</h4><ul><li>Customer (party) master and KYC status</li><li>Deposits, loans, credit lines, leases, hire purchase</li><li>Multi-currency double-entry ledger and GL</li><li>Product engine, pricing, fees, tax</li><li>Limits, collateral, covenants</li><li>Collections, TFRS 9 and TFRS 16 accounting</li><li>Trade finance, treasury operations, syndication</li><li>AI agent layer and AI decisioning</li></ul></div>
+    <div class="card"><h4>Integrated, not built</h4><ul><li>Card processing and card switch</li><li>Payment scheme connectivity</li><li>Identity verification vendors</li><li>CRM and marketing automation</li><li>Trading front office for complex derivatives</li></ul></div>
     <div class="card"><h4>Audience</h4><ul><li>Engineering and architecture</li><li>Product and operations</li><li>Risk, compliance and audit</li><li>Bank IT governance and the regulator, as supporting material</li></ul></div>
   </div>
   <h3>Design principles</h3>
@@ -225,6 +225,9 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
     <div class="card"><h4>Commercial</h4><ul><li>Facility trees and group exposure</li><li>Collateral valuation and LTV</li><li>Covenant tests and breaches</li><li>Multi-currency and FX</li></ul></div>
     <div class="card"><h4>Ledger and accounting</h4><ul><li>Double-entry posting engine</li><li>Sub-ledger to GL, daily reconciliation</li><li>TFRS 9 EIR and ECL</li><li>TFRS 16 lessor accounting</li></ul></div>
     <div class="card"><h4>Collections</h4><ul><li>Delinquency buckets and strategies</li><li>Promises to pay</li><li>Field and agent assignment</li><li>Recoveries</li></ul></div>
+    <div class="card"><h4>Trade finance</h4><ul><li>Import and export LCs, standby LCs</li><li>Guarantees, collections</li><li>Trade loans, discounting, forfaiting</li><li>Supply-chain finance, AI document checks</li></ul></div>
+    <div class="card"><h4>Treasury</h4><ul><li>FX and money-market deals</li><li>Real-time currency and cash positions</li><li>Revaluation, nostro reconciliation</li><li>Liquidity metrics, FTP, rates and curves</li></ul></div>
+    <div class="card"><h4>Syndication</h4><ul><li>Lender and agent roles</li><li>Drawdowns, RFR rate fixing</li><li>Pro-rata distribution of interest and fees</li><li>Secondary transfers, notices</li></ul></div>
     <div class="card"><h4>AI</h4><ul><li>Credit, fraud and AML models</li><li>Document intelligence</li><li>Customer assistant, ops and RM copilots</li><li>Product copilot</li></ul></div>
   </div>
 
@@ -267,6 +270,18 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">FR-LSE-08</td><td>Finance dealer stock per vehicle on a revolving line with an OEM-paid interest-free period and age-based curtailments.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
       <tr><td class="id">FR-LSE-09</td><td>Repay a floor-plan unit automatically when the bank finances its retail sale, by netting the retail HP payout.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
       <tr><td class="id">FR-LSE-10</td><td>Detect sold-out-of-trust units from registration and insurance data, open a stock audit and optionally freeze the dealer line.</td><td><span class="tag p1">Should</span></td><td>2</td></tr>
+      <tr><td class="id">FR-TRD-01</td><td>Issue, amend and pay import LCs under UCP 600 with contingent postings and margin holds.</td><td><span class="tag p0">Must</span></td><td>3–4</td></tr>
+      <tr><td class="id">FR-TRD-02</td><td>Issue guarantees under URDG 758 and process claims.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-TRD-03</td><td>Examine presented documents against LC terms with AI-listed discrepancies for a checker to decide.</td><td><span class="tag p1">Should</span></td><td>4</td></tr>
+      <tr><td class="id">FR-TRD-04</td><td>Run supply-chain finance programmes with an anchor buyer limit and per-invoice funding.</td><td><span class="tag p1">Should</span></td><td>4</td></tr>
+      <tr><td class="id">FR-TRS-01</td><td>Keep currency positions per entity and book in real time, updated in the posting transaction.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-TRS-02</td><td>Book FX spot, forward and swap deals with counterparty and settlement limits, confirmations and settlement.</td><td><span class="tag p0">Must</span></td><td>4</td></tr>
+      <tr><td class="id">FR-TRS-03</td><td>Reconcile nostro statements automatically against expected flows, with AI proposals for breaks.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-TRS-04</td><td>Compute LCR and NSFR inputs and intraday liquidity per currency from postings and contractual flows.</td><td><span class="tag p1">Should</span></td><td>4</td></tr>
+      <tr><td class="id">FR-SYN-01</td><td>Book the bank's share of a syndicated loan as lender and reconcile to agent notices.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-SYN-02</td><td>As agent, fund drawdowns pro rata and distribute every borrower payment by tranche and lender share.</td><td><span class="tag p0">Must</span></td><td>4</td></tr>
+      <tr><td class="id">FR-SYN-03</td><td>Compound risk-free rates in arrears with lookback, observation shift or lockout.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-SYN-04</td><td>Settle secondary transfers with accrued interest split between seller and buyer.</td><td><span class="tag p1">Should</span></td><td>4</td></tr>
       <tr><td class="id">FR-COM-01</td><td>Check facility limits atomically at drawdown across the facility tree.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
       <tr><td class="id">FR-COM-02</td><td>Test covenants on schedule and open a breach workflow on failure.</td><td><span class="tag p1">Should</span></td><td>3</td></tr>
       <tr><td class="id">FR-ACC-01</td><td>Map every posting to the GL and reconcile sub-ledger to GL to zero daily.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
@@ -366,6 +381,33 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <div class="flow"><span>Distributor delivers car to dealer</span><i>→</i><span>Unit drawdown, paid to distributor</span><i>→</i><span>Bank holds registration book</span><i>→</i><span>Free period (OEM pays)</span><i>→</i><span>Interest and curtailments as it ages</span><i>→</i><span>Sold: payoff within 48 h, or netted from the bank's retail HP payout</span></div>
   <div class="flow"><span class="alt">Registered or insured to a buyer but not repaid → sold-out-of-trust alert → stock audit → freeze new drawdowns</span></div>
   <p>Both are built on the arrangement hierarchy (a parent with child arrangements and an optional consolidated billing account) and on product-engine blocks for structure, per-unit disbursement, curtailment, interest-free periods and consolidated billing. Detail is in <code>docs/05-lending-and-leasing.md</code>.</p>
+
+  <h3 id="s2-8"><span class="n">2.8</span>Trade finance, treasury and syndication</h3>
+  <p>Built natively on the same ledger, limits and workflows, so a letter of credit, an FX deal and a syndicated loan share one customer view, one limit tree and one set of books. Detail in <code>docs/12-trade-treasury-syndication.md</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Shared foundation</th><th>Why it is needed</th></tr></thead>
+    <tbody>
+      <tr><td>Contingent ledger</td><td>LCs, guarantees and undrawn commitments are obligations, posted off balance sheet with balanced batches and counted against limits and capital</td></tr>
+      <tr><td>Multi-party arrangements</td><td>Agent, lenders, confirming and advising banks on one contract, with shares as exact fractions</td></tr>
+      <tr><td>Real-time currency positions</td><td>Every foreign-currency posting updates the bank's position in the same transaction</td></tr>
+      <tr><td>Market data</td><td>FX rates, THOR, SOFR, SONIA, €STR fixings and curves with value-dated history</td></tr>
+      <tr><td>SWIFT and ISO 20022</td><td>MT 3xx, 7xx and 9xx messages and their ISO 20022 equivalents mapped to events</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Import letter of credit</h4>
+  <div class="flow"><span>Application</span><i>→</i><span>Trade-line limit and margin</span><i>→</i><span>Issue MT700, contingent posted</span><i>→</i><span>Amend MT707</span><i>→</i><span>Documents presented</span><i>→</i><span>AI lists discrepancies, checker decides</span><i>→</i><span>Accept or refuse MT734</span><i>→</i><span>Pay at sight or maturity, contingent released</span></div>
+  <h4>Syndicated drawdown as agent</h4>
+  <div class="flow"><span>Borrower utilization request</span><i>→</i><span>Conditions precedent</span><i>→</i><span>Funding notice to each lender, pro rata</span><i>→</i><span>Lenders fund</span><i>→</i><span>Disburse to borrower</span><i>→</i><span>RFR compounded for the period</span><i>→</i><span>Payment split by tranche and share</span></div>
+  <h4>Treasury day, without a batch</h4>
+  <div class="flow"><span>Postings move positions live</span><i>→</i><span>Deals booked against limits</span><i>→</i><span>Confirmations matched</span><i>→</i><span>Nostro statements auto-matched</span><i>→</i><span>Revaluation at each entity's cut-off</span><i>→</i><span>LCR and NSFR inputs</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Phase</th><th>Trade finance</th><th>Treasury</th><th>Syndication</th></tr></thead>
+    <tbody>
+      <tr><td>3 · months 14–20</td><td>Contingent ledger, guarantees, sight import LCs, trade loans</td><td>Positions, rates service, customer FX, nostro reconciliation, FTP</td><td>RFR engine, lender role</td></tr>
+      <tr><td>4 · months 20–30</td><td>Usance and export LCs, collections, supply-chain finance, AI document checks</td><td>FX and money-market deals, revaluation, liquidity metrics, CLS</td><td>Agent role, distributions, notices, secondary transfers</td></tr>
+      <tr><td>5 · months 30–42</td><td>eUCP, electronic bills of lading, Islamic trade</td><td>Hedge accounting, IRRBB data</td><td>Security agent, multi-currency revolving with swingline</td></tr>
+    </tbody>
+  </table></div>
 </section>
 
 <!-- 3 -->
@@ -385,6 +427,10 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="mono">ledger</td><td>Accounts, postings, balances, holds</td><td>LedgerAccount, PostingBatch, Balance, Hold</td></tr>
       <tr><td class="mono">accounting</td><td>GL mapping, reconciliation, ECL, period close</td><td>GlMapping, GlEntry, EclRun</td></tr>
       <tr><td class="mono">collections</td><td>Strategies, cases, promises to pay</td><td>CollectionCase, Promise, Assignment</td></tr>
+      <tr><td class="mono">trade-finance</td><td>LCs, guarantees, collections, trade loans, SCF programmes, presentations</td><td>LetterOfCredit, Guarantee, Presentation, Discrepancy, ScfProgramme</td></tr>
+      <tr><td class="mono">treasury</td><td>Deals, positions, nostro expectations, revaluation, liquidity metrics</td><td>FxDeal, MoneyMarketDeal, Position, NostroItem, RevaluationRun</td></tr>
+      <tr><td class="mono">syndication</td><td>Facilities, tranches, lender register, notices, transfers</td><td>Facility, Tranche, LenderShare, Notice, Transfer</td></tr>
+      <tr><td class="mono">market-data</td><td>FX rates, benchmark fixings, curves</td><td>RateFixing, Curve</td></tr>
       <tr><td class="mono">payments-hub</td><td>Payment instructions and rail adapters</td><td>PaymentOrder, Settlement</td></tr>
       <tr><td class="mono">agent-gateway</td><td>Tool registry, delegated authority, AI audit</td><td>Agent, ToolGrant, AgentAction</td></tr>
       <tr><td class="mono">ai-decisioning</td><td>Model registry links, decisions, explanations</td><td>Decision, ReasonCode, ModelVersion</td></tr>
@@ -495,6 +541,9 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="mono">product-catalog</td><td class="mono">DraftProduct · Simulate · SubmitForApproval · Publish</td><td class="mono">ProductVersionPublished</td></tr>
       <tr><td class="mono">limits-collateral</td><td class="mono">Reserve · Utilize · Release · Revalue · TestCovenant</td><td class="mono">LimitBreached · CovenantBreached</td></tr>
       <tr><td class="mono">party</td><td class="mono">Onboard · UpdateKyc · RecordConsent</td><td class="mono">PartyOnboarded · KycExpired · ConsentChanged</td></tr>
+      <tr><td class="mono">trade-finance</td><td class="mono">ApplyLc · IssueLc · AmendLc · Present · Examine · Accept · Refuse · PayLc · IssueGuarantee · Claim</td><td class="mono">LcIssued · LcAmended · PresentationExamined · DiscrepancyRaised · LcPaid · GuaranteeClaimed</td></tr>
+      <tr><td class="mono">treasury</td><td class="mono">BookFxDeal · BookMmDeal · Confirm · GetPosition · Revalue · MatchNostro</td><td class="mono">FxDealBooked · PositionChanged · NostroBreakOpened · RevaluationPosted</td></tr>
+      <tr><td class="mono">syndication</td><td class="mono">CreateFacility · RequestDrawdown · RecordFunding · FixRate · Distribute · TransferShare</td><td class="mono">DrawdownNoticed · LenderFunded · InterestFixed · DistributionPosted · ShareTransferred</td></tr>
       <tr><td class="mono">agent-gateway</td><td class="mono">MCP tools generated from the APIs above</td><td class="mono">AgentActionRecorded · AgentEscalated</td></tr>
     </tbody>
   </table></div>
@@ -962,10 +1011,10 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">4</td><td>Multi-entity, multi-currency, multi-GAAP</td><td><span class="tag p1">Partial</span></td><td>3</td><td>Parallel ledgers by accounting book</td></tr>
       <tr><td class="id">5</td><td>Deposits, lending, leasing, hire purchase, fleet, floor plan</td><td><span class="tag ok">Covered</span></td><td>1–2</td><td>—</td></tr>
       <tr><td class="id">6</td><td>Risk-free-rate loans (SOFR, SONIA, €STR, THOR compounded in arrears)</td><td><span class="tag p0">Gap</span></td><td>3</td><td>RFR compounding block in the product engine</td></tr>
-      <tr><td class="id">7</td><td>Syndicated and agency loans</td><td><span class="tag p0">Gap</span></td><td>4</td><td>Native agency module or specialist integration</td></tr>
-      <tr><td class="id">8</td><td>Trade finance (LCs, guarantees, collections, supply-chain finance)</td><td><span class="tag p0">Gap</span></td><td>4–5</td><td>Integrate a specialist platform first; limits and postings in the core</td></tr>
+      <tr><td class="id">7</td><td>Syndicated and agency loans</td><td><span class="tag ok">Gap → native</span></td><td>3–5</td><td>Native syndication service: lender role Phase 3, agent Phase 4</td></tr>
+      <tr><td class="id">8</td><td>Trade finance (LCs, guarantees, collections, supply-chain finance)</td><td><span class="tag ok">Gap → native</span></td><td>3–5</td><td>Native trade-finance service on a contingent ledger</td></tr>
       <tr><td class="id">9</td><td>Global cash management and cross-border pooling</td><td><span class="tag p1">Partial</span></td><td>3–5</td><td>Extend sweeps to cross-currency, cross-entity pooling</td></tr>
-      <tr><td class="id">10</td><td>Treasury links: FX positions, nostro reconciliation, LCR and NSFR inputs</td><td><span class="tag p0">Gap</span></td><td>4</td><td>Real-time currency positions, nostro matching, liquidity mart</td></tr>
+      <tr><td class="id">10</td><td>Treasury: FX positions and deals, nostro reconciliation, LCR and NSFR inputs</td><td><span class="tag ok">Gap → native</span></td><td>3–4</td><td>Native treasury and market-data services</td></tr>
       <tr><td class="id">11</td><td>Correspondent banking and SWIFT gpi</td><td><span class="tag p1">Partial</span></td><td>4</td><td>gpi tracking, vostro accounts</td></tr>
       <tr><td class="id">12</td><td>Card issuing at scale</td><td><span class="tag p1">Partial</span></td><td>2</td><td>Through processors; holds and clearing designed</td></tr>
       <tr><td class="id">13</td><td>Sanctions screening at payment speed</td><td><span class="tag p1">Partial</span></td><td>1</td><td>Screening inside the 50 ms budget</td></tr>
@@ -983,7 +1032,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <div class="tbl"><table>
     <thead><tr><th>Dimension</th><th>Established global cores</th><th>Cloud-native cores</th><th>CoreBank</th></tr></thead>
     <tbody>
-      <tr><td>Functional breadth</td><td>Very broad, incl. trade and treasury</td><td>Retail and SME focus</td><td>Retail, SME, commercial, leasing, fleet, floor plan; trade and treasury by integration first</td></tr>
+      <tr><td>Functional breadth</td><td>Very broad, incl. trade and treasury</td><td>Retail and SME focus</td><td>Retail, SME, commercial, leasing, fleet, floor plan, trade finance, treasury operations, syndication, on one ledger</td></tr>
       <tr><td>Processing model</td><td>Often batch close of business</td><td>Real time</td><td>Real time with no end-of-day, designed for a billion accounts</td></tr>
       <tr><td>Product change</td><td>Configuration plus code and releases</td><td>Configuration or smart-contract code</td><td>Typed blocks and CEL, simulated and approved in days</td></tr>
       <tr><td>AI</td><td>Add-on tools</td><td>Add-on tools</td><td>Agents operate through governed tools with delegated authority and audit</td></tr>
@@ -996,8 +1045,8 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <h3 id="s8-3"><span class="n">8.3</span>How we win</h3>
   <div class="cards">
     <div class="card"><h4>Never beaten on</h4><ul><li>Correctness: no unbalanced posting, reconciliation at zero daily</li><li>Real time at a billion accounts, month end included</li><li>A new product variant in days, safely</li><li>Governed AI with full audit</li></ul></div>
-    <div class="card"><h4>Behind today</h4><ul><li>No live reference bank</li><li>Trade finance, treasury, syndication</li><li>Jurisdictions beyond Thailand</li><li>Certifications</li></ul></div>
-    <div class="card"><h4>Closing plan</h4><ul><li>Design-partner bank and an audited parallel run</li><li>Integrate trade and treasury in Phase 4</li><li>One jurisdiction pack per market, ASEAN first</li><li>SOC 2 and ISO 27001 before first launch</li></ul></div>
+    <div class="card"><h4>Behind today</h4><ul><li>No live reference bank</li><li>Trade, treasury and syndication not yet built</li><li>Jurisdictions beyond Thailand</li><li>Certifications</li></ul></div>
+    <div class="card"><h4>Closing plan</h4><ul><li>Design-partner bank and an audited parallel run</li><li>Native trade, treasury and syndication from Phase 3</li><li>One jurisdiction pack per market, ASEAN first</li><li>SOC 2 and ISO 27001 before first launch</li></ul></div>
   </div>
 </section>
 

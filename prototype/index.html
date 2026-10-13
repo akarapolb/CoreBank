@@ -313,6 +313,20 @@ button.ws:hover { border-color: var(--faint); }
 .result.ok { background: var(--good-soft); color: var(--good); }
 .result.warn { background: var(--warn-soft); color: var(--warn); }
 
+.panel-head .chip { white-space: normal; max-width: 100%; }
+.kpis.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .kpis.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .kpis.k4 { grid-template-columns: minmax(0, 1fr); } }
+/* Steps */
+.steps { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.steps li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.steps li.done { background: var(--good-soft); color: var(--good); }
+.steps li.now { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.mini { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; min-width: 80px; }
+.mini span { display: block; height: 100%; background: var(--accent); }
+.mini span.warn { background: var(--warn); }
+td.up { color: var(--good); } td.down { color: var(--crit); }
+
 /* Settings */
 .set-row { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px 32px; padding: 20px 0; border-bottom: 1px solid var(--line); }
 .set-row:first-of-type { padding-top: 4px; }
@@ -453,6 +467,9 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   <symbol id="i-corp" viewBox="0 0 24 24"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 0 1 1 1v11h-6"/><line x1="7" y1="7" x2="11" y2="7"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="7" y1="15" x2="11" y2="15"/></symbol>
   <symbol id="i-swap" viewBox="0 0 24 24"><polyline points="7 4 3 8 7 12"/><line x1="3" y1="8" x2="17" y2="8"/><polyline points="17 12 21 16 17 20"/><line x1="21" y1="16" x2="7" y2="16"/></symbol>
   <symbol id="i-truck" viewBox="0 0 24 24"><rect x="2" y="6" width="12" height="10" rx="1"/><path d="M14 9h4l3 3v4h-7"/><circle cx="6.5" cy="17.5" r="2" style="fill:var(--surface)"/><circle cx="17.5" cy="17.5" r="2" style="fill:var(--surface)"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
+  <symbol id="i-fx" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></symbol>
+  <symbol id="i-synd" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="12" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v9M12 10l-6 6.5M12 10l6 6.5"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 </svg>
 
@@ -478,6 +495,12 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       <a class="nav" href="#ledger" data-view="ledger"><svg class="ico"><use href="#i-ledger"/></svg><span class="grow">Ledger</span></a>
       <a class="nav" href="#approvals" data-view="approvals"><svg class="ico"><use href="#i-approve"/></svg><span class="grow">Approvals</span><span class="badge" id="apprBadge">0</span></a>
       <a class="nav" href="#agents" data-view="agents"><svg class="ico"><use href="#i-agent"/></svg><span class="grow">AI agents</span></a>
+    </nav>
+    <nav class="navgroup" aria-label="Markets and trade">
+      <div class="label">Markets and trade</div>
+      <a class="nav" href="#trade" data-view="trade"><svg class="ico"><use href="#i-globe"/></svg><span class="grow">Trade finance</span></a>
+      <a class="nav" href="#treasury" data-view="treasury"><svg class="ico"><use href="#i-fx"/></svg><span class="grow">Treasury</span></a>
+      <a class="nav" href="#syndication" data-view="syndication"><svg class="ico"><use href="#i-synd"/></svg><span class="grow">Syndication</span></a>
     </nav>
     <nav class="navgroup" aria-label="Segment" id="segNav" hidden>
       <div class="label" id="segLabel">Retail banking</div>
@@ -1017,7 +1040,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       </div>
 
       <div id="af-fleet" class="grid" style="gap:20px">
-        <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+        <div class="kpis k4">
           <div class="kpi"><span class="label">Master agreement</span><span class="v" style="font-size:20px">MA-2025-0031</span><span class="d">Siam Freight Logistics · cross-default</span></div>
           <div class="kpi"><span class="label">Vehicles financed</span><span class="v" id="fUnits"></span><span class="d" id="fSched"></span></div>
           <div class="kpi"><span class="label">Outstanding / limit</span><span class="v" id="fOut"></span><span class="d" id="fLim"></span></div>
@@ -1063,7 +1086,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       </div>
 
       <div id="af-floor" class="grid" style="gap:20px" hidden>
-        <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+        <div class="kpis k4">
           <div class="kpi"><span class="label">Dealer</span><span class="v" style="font-size:20px">Bangna Motors</span><span class="d">Line FP-2026-0007 · OEM repurchase guarantee</span></div>
           <div class="kpi"><span class="label">Units in stock</span><span class="v" id="pUnits"></span><span class="d" id="pMix"></span></div>
           <div class="kpi"><span class="label">Outstanding / line</span><span class="v" id="pOut"></span><span class="d" id="pLim"></span></div>
@@ -1081,6 +1104,153 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
             <tbody id="pTable"></tbody>
           </table></div>
           <p class="note">Each unit is a drawdown on the dealer line, paid straight to the distributor and secured by the vehicle's registration book, which the bank holds. Selling a unit with retail hire purchase from this bank repays it automatically from the retail payout.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRADE FINANCE -->
+    <section class="view" id="view-trade" aria-labelledby="h-trade" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Markets and trade · Trade operations, Bangkok</span>
+          <h1 id="h-trade">Trade finance</h1>
+          <p>Letters of credit, guarantees and trade loans on the same ledger and limits as lending. Obligations are posted off balance sheet the moment they are issued.</p>
+        </div>
+      </div>
+      <div class="kpis k4">
+        <div class="kpi"><span class="label">Contingent liabilities</span><span class="v">฿4.82bn</span><span class="d">LCs and guarantees, off balance sheet</span></div>
+        <div class="kpi"><span class="label">LCs outstanding</span><span class="v">312</span><span class="d">Import 241 · export confirmed 71</span></div>
+        <div class="kpi"><span class="label">Presentations to examine</span><span class="v">7</span><span class="d">Within 5 banking days (UCP 600 Art. 14)</span></div>
+        <div class="kpi"><span class="label">Guarantees in force</span><span class="v">1,184</span><span class="d">Performance, bid, advance payment</span></div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <div class="panel-head"><h2>Import LC LC-IMP-2026-0188</h2><span class="chip" id="lcStatus">Documents under examination</span></div>
+          <ol class="steps" id="lcSteps"></ol>
+          <dl class="kv">
+            <dt>Applicant</dt><dd>Siam Freight Logistics Co., Ltd.</dd>
+            <dt>Beneficiary</dt><dd>Hokuto Refrigeration Co., Ltd., Osaka</dd>
+            <dt>Amount</dt><dd class="mono">USD 1,280,000.00 ± 5% (after amendment 1)</dd>
+            <dt>Availability</dt><dd>By acceptance, 90 days after bill of lading date</dd>
+            <dt>Shipment</dt><dd>CIF Laem Chabang · latest 30 Sep 2026 · partial shipments not allowed</dd>
+            <dt>Expiry</dt><dd class="mono">21 Oct 2026, Bangkok</dd>
+            <dt>Margin</dt><dd class="mono">10% · USD 128,000.00 held on FCD-0090-55120</dd>
+            <dt>Limit</dt><dd>Trade line ฿60M · this LC uses ฿46.7M at 36.50</dd>
+          </dl>
+        </div>
+        <div class="panel" style="background:var(--agent-soft);border-color:transparent;box-shadow:none">
+          <div class="row"><span class="chip agent">AI document examination</span><span class="muted" style="font-size:12px">Presented 8 Oct 2026 · 6 documents · deadline 15 Oct</span></div>
+          <div class="checks" id="lcDocs"></div>
+          <p class="note">The AI cites the LC field for each finding. A trade checker makes the decision.</p>
+          <div class="row">
+            <button class="btn primary" id="lcAccept" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Accept with applicant waiver</span></button>
+            <button class="btn danger" id="lcRefuse" type="button">Refuse (MT734)</button>
+          </div>
+          <div class="result" id="lcResult" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TREASURY -->
+    <section class="view" id="view-treasury" aria-labelledby="h-trs" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Markets and trade · Treasury operations</span>
+          <h1 id="h-trs">Treasury</h1>
+          <p>Every foreign-currency posting moves the bank's position in the same transaction. Deals, nostros and liquidity are live, not end of day.</p>
+        </div>
+        <div class="row"><span class="chip acc" id="fxClock">Rates live</span></div>
+      </div>
+      <div class="kpis k4">
+        <div class="kpi"><span class="label">Net open position</span><span class="v" id="nop"></span><span class="d">Shorthand method: larger of total longs and total shorts, THB</span></div>
+        <div class="kpi"><span class="label">Nostro auto-match</span><span class="v" id="nostroRate">97.8%</span><span class="d">Today's statement lines</span></div>
+        <div class="kpi"><span class="label">LCR</span><span class="v">168%</span><span class="d">HQLA ฿182.4bn ÷ 30-day net outflows ฿108.6bn</span></div>
+        <div class="kpi"><span class="label">Intraday liquidity, THB</span><span class="v">฿41.2bn</span><span class="d">Lowest today ฿33.9bn at 10:40</span></div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <h2>Currency positions</h2>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Currency</th><th class="num">Position</th><th class="num">Mid rate</th><th class="num">THB equivalent</th><th>Limit usage</th></tr></thead>
+            <tbody id="posTable"></tbody>
+          </table></div>
+          <p class="note">Sample rates for illustration. Revaluation posts at each entity's cut-off; the position itself is always current.</p>
+        </div>
+        <div class="panel">
+          <h2>Customer FX deal</h2>
+          <form class="form" id="fxForm" onsubmit="return false">
+            <div class="field"><label for="fxSide">Customer</label><select id="fxSide"><option value="sell">Sells USD to the bank</option><option value="buy">Buys USD from the bank</option></select></div>
+            <div class="field"><label for="fxAmt">Amount, USD</label><input id="fxAmt" type="number" min="1" step="1000" value="250000"></div>
+            <div class="field"><label for="fxType">Value</label><select id="fxType"><option value="spot">Spot (T+2)</option><option value="fwd">1-month forward</option></select></div>
+            <div class="field"><label>Customer</label><input value="Siam Freight Logistics" disabled></div>
+          </form>
+          <div class="result" id="fxQuote"></div>
+          <div class="row"><button class="btn primary" id="fxBook" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Book deal</span></button></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Nostro reconciliation · USD at correspondent, New York</h2><span class="chip" id="nostroChip">1 break</span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Statement line (MT950)</th><th class="num">Amount USD</th><th>Matched to</th><th>Status</th></tr></thead>
+          <tbody id="nostroTable"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- SYNDICATION -->
+    <section class="view" id="view-syndication" aria-labelledby="h-syn" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Markets and trade · Loan agency</span>
+          <h1 id="h-syn">Syndication</h1>
+          <p>The bank is agent and a lender on this facility. Drawdowns, rate fixing and every payment are split by lender share, exactly to the satang.</p>
+        </div>
+        <span class="chip">SY-2026-004 · Tranche A term loan</span>
+      </div>
+      <div class="kpis k4">
+        <div class="kpi"><span class="label">Borrower</span><span class="v" style="font-size:19px">Siam Energy Transition</span><span class="d">Solar and storage portfolio</span></div>
+        <div class="kpi"><span class="label">Commitment</span><span class="v">฿6,000M</span><span class="d" id="synDrawn"></span></div>
+        <div class="kpi"><span class="label">Pricing</span><span class="v">THOR + 1.85%</span><span class="d">Compounded in arrears, 5-day lookback</span></div>
+        <div class="kpi"><span class="label">Lenders</span><span class="v" id="synLenders"></span><span class="d">Majority lenders: 66⅔%</span></div>
+      </div>
+      <div class="grid g2">
+        <div class="panel">
+          <h2>Lender register</h2>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Lender</th><th class="num">Share</th><th class="num">Commitment</th><th class="num">Drawn</th></tr></thead>
+            <tbody id="synReg"></tbody>
+          </table></div>
+          <h3>Transfer a share</h3>
+          <div class="form">
+            <div class="field"><label for="trFrom">Seller</label><select id="trFrom"></select></div>
+            <div class="field"><label for="trTo">Buyer</label><select id="trTo"></select></div>
+            <div class="field"><label for="trPct">Share of facility, %</label><input id="trPct" type="number" min="0.5" step="0.5" value="5"></div>
+            <div class="field"><label>Settlement date</label><input value="20 Oct 2026" disabled></div>
+          </div>
+          <div class="result" id="trResult"></div>
+          <div class="row"><button class="btn" id="trBook" type="button">Record transfer</button></div>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="panel">
+            <h2>Drawdown request</h2>
+            <div class="form">
+              <div class="field"><label for="ddAmt">Amount, THB million</label><input id="ddAmt" type="number" min="1" step="1" value="1250"></div>
+              <div class="field"><label>Value date</label><input value="20 Oct 2026" disabled></div>
+            </div>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Funding notice to</th><th class="num">Amount THB</th></tr></thead>
+              <tbody id="ddTable"></tbody>
+            </table></div>
+            <div class="row"><button class="btn primary" id="ddSend" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Send funding notices</span></button><span class="note">Rounding residual goes to the agent, by rule.</span></div>
+          </div>
+          <div class="panel">
+            <h2>Interest period 15 Sep – 15 Oct 2026</h2>
+            <dl class="kv" id="rfrCalc"></dl>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Distribution to</th><th class="num">Interest THB</th></tr></thead>
+              <tbody id="rfrDist"></tbody>
+            </table></div>
+          </div>
         </div>
       </div>
     </section>
@@ -1751,15 +1921,15 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   showArch("ledger");
 
   /* ---------- Routing ---------- */
-  var VIEWS = ["overview", "customer", "contract", "assetfin", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
+  var VIEWS = ["overview", "customer", "contract", "assetfin", "trade", "treasury", "syndication", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
   var current = "overview";
-  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking", assetfin: "Fleet and floor plan" };
+  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking", assetfin: "Fleet and floor plan", trade: "Trade finance", treasury: "Treasury", syndication: "Syndication" };
   function applyRoute() {
     var h = (location.hash || "").replace("#", "");
     current = VIEWS.indexOf(h) >= 0 ? h : "overview";
     VIEWS.forEach(function (v) { $("#view-" + v).hidden = v !== current; });
     $$(".nav").forEach(function (a) { if (a.getAttribute("data-view") === current) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : current === "settings" ? "Account" : current === "branch" ? "Retail banking" : current === "corporate" ? "Commercial banking" : "Operate";
+    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : current === "settings" ? "Account" : (current === "trade" || current === "treasury" || current === "syndication") ? "Markets and trade" : current === "branch" ? "Retail banking" : current === "corporate" ? "Commercial banking" : "Operate";
     var need = current === "branch" ? "retail" : current === "corporate" ? "commercial" : null;
     if (need && tenant !== need) setTenant(need, true);
     $("#crumbPage").textContent = TITLES[current];
@@ -1990,6 +2160,171 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   });
   renderFleet(); fleetQuote(); renderFloor();
 
+  /* ---------- Trade finance ---------- */
+  var LC_STEPS = ["Applied", "Issued MT700", "Amended MT707", "Documents presented", "Examination", "Accepted", "Paid at maturity"];
+  var lcAt = 4;
+  function renderLc() {
+    $("#lcSteps").innerHTML = LC_STEPS.map(function (t, i) { return "<li class='" + (i < lcAt ? "done" : i === lcAt && lcAt === 4 ? "now" : "") + "'>" + (i < lcAt ? "✓ " : "") + t + "</li>"; }).join("");
+  }
+  var LC_DOCS = [
+    ["good", "OK", "Commercial invoice: USD 1,236,400.00, within the ±5% tolerance (field 39A)."],
+    ["crit", "Discrepancy", "Bill of lading: shipped on board 2 Oct 2026, after the latest shipment date 30 Sep 2026 (field 44C)."],
+    ["crit", "Discrepancy", "Bill of lading: port of discharge Bangkok Port; LC requires Laem Chabang (field 44F)."],
+    ["good", "OK", "Insurance certificate: 110% of CIF value, covering Institute Cargo Clauses (A) (field 46A)."],
+    ["good", "OK", "Packing list and certificate of origin (Japan) consistent with the invoice."],
+    ["good", "OK", "Screening: parties, vessel NYK Aurora, ports and goods (HS 8418) clear."]
+  ];
+  $("#lcDocs").innerHTML = LC_DOCS.map(function (d) { return "<div><span class='chip " + d[0] + "'>" + d[1] + "</span><span>" + d[2] + "</span></div>"; }).join("");
+  $("#lcAccept").addEventListener("click", function () {
+    var amt = 1236400, res = $("#lcResult");
+    lcAt = 6; renderLc();
+    $("#lcStatus").textContent = "Accepted · matures 31 Dec 2026"; $("#lcStatus").className = "chip good";
+    batches.unshift({ id: bid(), time: nowTime(), value: "13 Oct 2026", actor: { type: "HUMAN", name: "Trade checker · waiver from applicant" }, reason: "LC-IMP-2026-0188 accepted · contingent to acceptance liability", legs: [
+      { acct: "LC-IMP-2026-0188 · contra (memo)", bt: "CONTINGENT_LC", side: "DR", amt: amt, ccy: "USD" },
+      { acct: "LC-IMP-2026-0188", bt: "CONTINGENT_LC", side: "CR", amt: amt, ccy: "USD" },
+      { acct: "Customer liability on acceptance · Siam Freight", bt: "PRINCIPAL", side: "DR", amt: amt, ccy: "USD" },
+      { acct: "GL 2420 Acceptances payable", bt: "—", side: "CR", amt: amt, ccy: "USD" } ] });
+    renderBatches();
+    res.hidden = false; res.className = "result ok";
+    res.textContent = "Accepted with the applicant's waiver. MT732 sent; USD 1,236,400.00 moved from contingent to acceptance liability, payable 31 Dec 2026.";
+    this.disabled = true; $("#lcRefuse").disabled = true;
+    toast("LC accepted · acceptance liability booked");
+  });
+  $("#lcRefuse").addEventListener("click", function () {
+    var res = $("#lcResult"); res.hidden = false; res.className = "result warn";
+    res.textContent = "Refusal drafted as MT734 listing 2 discrepancies; documents held at the presenter's disposal pending instructions. Sent to a second checker.";
+    approvals.unshift({ id: "APR-" + (1090 + approvals.length), title: "Refuse presentation · LC-IMP-2026-0188", kind: "Trade", maker: "Trade examiner", agent: null, detail: "Late shipment (2 Oct vs 30 Sep) and port of discharge. MT734 must go before 15 Oct 2026.", status: "PENDING" });
+    renderApprovals(); toast("MT734 refusal sent for second check");
+  });
+  renderLc();
+
+  /* ---------- Treasury ---------- */
+  var POS = [
+    { c: "USD", pos: 18400000, mid: 36.50, lim: 1000e6 },
+    { c: "EUR", pos: -3100000, mid: 39.70, lim: 300e6 },
+    { c: "JPY", pos: 420000000, mid: 0.2440, lim: 250e6 },
+    { c: "SGD", pos: 2600000, mid: 27.95, lim: 150e6 },
+    { c: "CNY", pos: -12000000, mid: 5.08, lim: 150e6 }
+  ];
+  function renderPos() {
+    var longs = 0, shorts = 0;
+    $("#posTable").innerHTML = POS.map(function (p) {
+      var thb = p.pos * p.mid, pct = Math.min(100, Math.abs(thb) / p.lim * 100); if (thb >= 0) longs += thb; else shorts -= thb;
+      return "<tr><td class='mono'>" + p.c + "</td><td class='num " + (p.pos >= 0 ? "up" : "down") + "'>" + (p.pos >= 0 ? "+" : "") + fmt0(p.pos) + "</td><td class='num'>" + p.mid.toFixed(p.mid < 1 ? 4 : 2) + "</td><td class='num'>" + fmt0(thb) + "</td><td><div class='mini' title='" + pct.toFixed(0) + "% of ฿" + fmt0(p.lim) + "'><span class='" + (pct > 75 ? "warn" : "") + "' style='width:" + pct.toFixed(1) + "%'></span></div></td></tr>";
+    }).join("");
+    $("#nop").textContent = "฿" + (Math.max(longs, shorts) / 1e6).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "M";
+  }
+  function fxQuote() {
+    var usd = POS[0], side = $("#fxSide").value, amt = Math.max(0, parseFloat($("#fxAmt").value) || 0), fwd = $("#fxType").value === "fwd";
+    var pts = fwd ? -0.055 : 0, margin = 0.08, rate = r2((usd.mid + pts + (side === "sell" ? -margin : margin)) * 100) / 100;
+    $("#fxQuote").className = "result";
+    $("#fxQuote").innerHTML = "Customer " + (side === "sell" ? "sells" : "buys") + " USD " + fmt0(amt) + " at <strong>" + rate.toFixed(4) + "</strong> (" + (fwd ? "mid " + usd.mid.toFixed(2) + ", forward points " + pts.toFixed(3) : "mid " + usd.mid.toFixed(2)) + ", margin 0.08). THB " + fmt(r2(amt * rate)) + ". Counterparty and settlement limits OK.";
+    return { side: side, amt: amt, rate: rate };
+  }
+  $$("#fxForm select, #fxForm input").forEach(function (el) { el.addEventListener("input", fxQuote); el.addEventListener("change", fxQuote); });
+  $("#fxBook").addEventListener("click", function () {
+    var q = fxQuote(); if (!q.amt) return;
+    var thb = r2(q.amt * q.rate), sell = q.side === "sell";
+    POS[0].pos += sell ? q.amt : -q.amt; renderPos();
+    batches.unshift({ id: bid(), time: nowTime(), value: $("#fxType").value === "fwd" ? "13 Nov 2026" : "15 Oct 2026", actor: { type: "HUMAN", name: "FX desk · Siam Freight Logistics" }, reason: "Customer FX " + (sell ? "sells" : "buys") + " USD at " + q.rate.toFixed(4), legs: [
+      { acct: "FCD-0090-55120 · Siam Freight", bt: "PRINCIPAL", side: sell ? "DR" : "CR", amt: q.amt, ccy: "USD" },
+      { acct: "GL 1810 FX position USD", bt: "—", side: sell ? "CR" : "DR", amt: q.amt, ccy: "USD" },
+      { acct: "GL 1811 FX position THB", bt: "—", side: sell ? "DR" : "CR", amt: thb, ccy: "THB" },
+      { acct: "CUR-0090-55100 · Siam Freight", bt: "PRINCIPAL", side: sell ? "CR" : "DR", amt: thb, ccy: "THB" } ] });
+    renderBatches(); toast("FX deal booked · USD position updated");
+  });
+  var NOSTRO = [
+    ["MT950 :61: CHIPS in, ref INV-88231", 412500.00, "PB-20261012-88021 · export proceeds", "auto"],
+    ["MT950 :61: Fedwire out, ref LC-IMP-2026-0141", -864000.00, "PB-20261012-87990 · LC payment", "auto"],
+    ["MT950 :61: CLS pay-in, ref FX-2026-55210", -2000000.00, "PB-20261012-87412 · FX swap leg", "auto"],
+    ["MT950 :61: Fedwire in, ref SFL-PO-7781", 249975.00, "", "break"],
+    ["MT950 :61: Interest credit Sep", 1184.22, "PB-20261001-10012 · nostro interest", "auto"]
+  ];
+  function renderNostro() {
+    var breaks = NOSTRO.filter(function (n) { return n[3] === "break"; }).length;
+    $("#nostroTable").innerHTML = NOSTRO.map(function (n, i) {
+      var st = n[3] === "auto" ? "<span class='chip good'>Auto-matched</span>" : n[3] === "ai" ? "<span class='chip good'>Matched · AI proposal accepted</span>" :
+        "<div style='display:flex;flex-direction:column;gap:6px'><span class='chip agent'>AI proposal</span><span style='font-size:12.5px'>Matches customer receipt of USD 250,000.00 from Siam Freight less USD 25.00 intermediary charge. Book the charge to GL 5230.</span><button class='btn' type='button' data-nostro='" + i + "' style='align-self:flex-start;padding:4px 10px;font-size:12.5px'>Accept proposal</button></div>";
+      return "<tr><td>" + n[0] + "</td><td class='num'>" + fmt(n[1]) + "</td><td>" + (n[2] || "—") + "</td><td>" + st + "</td></tr>";
+    }).join("");
+    $("#nostroChip").textContent = breaks ? breaks + " break" : "All matched"; $("#nostroChip").className = "chip " + (breaks ? "warn" : "good");
+    $("#nostroRate").textContent = breaks ? "97.8%" : "100%";
+    $$("[data-nostro]").forEach(function (b) { b.addEventListener("click", function () { var n = NOSTRO[+b.getAttribute("data-nostro")]; n[3] = "ai"; n[2] = "PB-20261013-88102 · receipt USD 250,000.00 less charge 25.00"; renderNostro(); toast("Nostro break matched"); }); });
+  }
+  setInterval(function () {
+    if (current !== "treasury" || document.hidden || reduce || document.documentElement.getAttribute("data-style") === "calm") return;
+    POS.forEach(function (p) { p.mid = p.mid * (1 + (Math.random() - 0.5) * 0.0006); });
+    renderPos(); fxQuote();
+  }, 2000);
+  renderPos(); fxQuote(); renderNostro();
+
+  /* ---------- Syndication ---------- */
+  var COMMIT = 6000e6, DRAWN = 3600e6, MARGIN = 0.0185;
+  var LENDERS = [
+    { n: "Demo Commercial Bank (agent)", s: 0.25, agent: true },
+    { n: "Andaman Bank", s: 0.20 }, { n: "Chao Phraya Bank", s: 0.20 }, { n: "Lanna Bank", s: 0.20 }, { n: "Siam Infrastructure Fund", s: 0.15 }
+  ];
+  function proRata(total) {
+    var satang = Math.round(total * 100), parts = LENDERS.map(function (l) { return Math.floor(satang * l.s); });
+    var resid = satang - parts.reduce(function (a, b) { return a + b; }, 0), ai = LENDERS.findIndex(function (l) { return l.agent; });
+    parts[ai] += resid;
+    return parts.map(function (p) { return p / 100; });
+  }
+  function renderSyn() {
+    $("#synReg").innerHTML = LENDERS.map(function (l) { return "<tr><td>" + esc(l.n) + "</td><td class='num'>" + (l.s * 100).toFixed(2) + "%</td><td class='num'>" + fmt0(COMMIT * l.s) + "</td><td class='num'>" + fmt0(DRAWN * l.s) + "</td></tr>"; }).join("");
+    $("#synDrawn").textContent = "Drawn ฿" + fmt0(DRAWN / 1e6) + "M · available ฿" + fmt0((COMMIT - DRAWN) / 1e6) + "M";
+    $("#synLenders").textContent = LENDERS.length;
+    var opts = LENDERS.map(function (l, i) { return "<option value='" + i + "'>" + esc(l.n) + "</option>"; }).join("");
+    var f = $("#trFrom").value, t = $("#trTo").value;
+    $("#trFrom").innerHTML = opts; $("#trTo").innerHTML = opts + "<option value='new'>Bangkok Pension Fund (new lender)</option>";
+    $("#trFrom").value = f || "3"; $("#trTo").value = t || "new";
+    renderDd(); renderRfr(); trQuote();
+  }
+  function renderDd() {
+    var amt = Math.max(0, parseFloat($("#ddAmt").value) || 0) * 1e6, avail = COMMIT - DRAWN;
+    if (amt > avail) { $("#ddTable").innerHTML = "<tr><td colspan='2' class='err'>Exceeds the available ฿" + fmt0(avail / 1e6) + "M.</td></tr>"; $("#ddSend").disabled = true; return; }
+    $("#ddSend").disabled = amt <= 0;
+    var parts = proRata(amt);
+    $("#ddTable").innerHTML = LENDERS.map(function (l, i) { return "<tr><td>" + esc(l.n) + "</td><td class='num'>" + fmt(parts[i]) + "</td></tr>"; }).join("") + "<tr><td><strong>Total</strong></td><td class='num'><strong>" + fmt(amt) + "</strong></td></tr>";
+  }
+  function renderRfr() {
+    var start = new Date(2026, 8, 15), end = new Date(2026, 9, 15), days = Math.round((end - start) / 86400000), seed = 3, prod = 1, d = new Date(start), last = 1.48, bdays = 0;
+    var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    while (d < end) {
+      var dow = d.getDay(), n = 1;
+      if (dow === 5) n = 3; else if (dow === 6 || dow === 0) { d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); continue; }
+      last = Math.max(1.30, Math.min(1.60, last + (rnd() - 0.5) * 0.02)); bdays++;
+      prod *= 1 + (last / 100) * n / 365;
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    }
+    var comp = (prod - 1) * 365 / days, allIn = comp + MARGIN, interest = r2(DRAWN * allIn * days / 365);
+    $("#rfrCalc").innerHTML = "<dt>Observation</dt><dd>" + bdays + " business days, 5-day lookback</dd><dt>Compounded THOR</dt><dd class='mono'>" + (comp * 100).toFixed(5) + "%</dd><dt>All-in rate</dt><dd class='mono'>" + (allIn * 100).toFixed(5) + "%</dd><dt>On drawn</dt><dd class='mono'>" + fmt(DRAWN) + " × " + days + "/365</dd><dt><strong>Interest due</strong></dt><dd class='mono'><strong>" + fmt(interest) + "</strong></dd>";
+    var parts = proRata(interest);
+    $("#rfrDist").innerHTML = LENDERS.map(function (l, i) { return "<tr><td>" + esc(l.n) + "</td><td class='num'>" + fmt(parts[i]) + "</td></tr>"; }).join("");
+  }
+  function trQuote() {
+    var from = LENDERS[+$("#trFrom").value], to = $("#trTo").value, pct = Math.max(0, parseFloat($("#trPct").value) || 0) / 100, el = $("#trResult");
+    if (!from) return null;
+    if (to === $("#trFrom").value) { el.className = "result warn"; el.textContent = "Seller and buyer must be different."; return null; }
+    if (pct > from.s + 1e-9) { el.className = "result warn"; el.textContent = esc(from.n) + " holds only " + (from.s * 100).toFixed(2) + "%."; return null; }
+    var accrued = r2(DRAWN * pct * (MARGIN + 0.0148) * 5 / 365);
+    el.className = "result"; el.innerHTML = "Transfers ฿" + fmt0(COMMIT * pct) + " commitment (฿" + fmt0(DRAWN * pct) + " drawn). Interest accrued from 15 Oct to settlement, about ฿" + fmt(accrued) + ", goes to the seller; the buyer earns from 20 Oct.";
+    return { from: from, to: to, pct: pct };
+  }
+  $("#ddAmt").addEventListener("input", renderDd);
+  $("#ddSend").addEventListener("click", function () { var amt = (parseFloat($("#ddAmt").value) || 0); toast("Funding notices sent to " + LENDERS.length + " lenders · ฿" + fmt0(amt) + "M"); });
+  ["#trFrom", "#trTo", "#trPct"].forEach(function (id) { $(id).addEventListener("input", trQuote); $(id).addEventListener("change", trQuote); });
+  $("#trBook").addEventListener("click", function () {
+    var q = trQuote(); if (!q) return;
+    q.from.s = r2((q.from.s - q.pct) * 10000) / 10000;
+    if (q.to === "new") LENDERS.push({ n: "Bangkok Pension Fund", s: q.pct }); else LENDERS[+q.to].s = r2((LENDERS[+q.to].s + q.pct) * 10000) / 10000;
+    LENDERS = LENDERS.filter(function (l) { return l.s > 0; });
+    $("#trFrom").value = ""; $("#trTo").value = "";
+    renderSyn(); toast("Transfer recorded · lender register updated");
+  });
+  renderSyn();
+
+
 
   /* ---------- Interface style: Modern or Calm ---------- */
   function setStyle(mode, save) {
@@ -2009,13 +2344,15 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
-  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp", assetfin: "i-truck" };
+  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp", assetfin: "i-truck", trade: "i-globe", treasury: "i-fx", syndication: "i-synd" };
   var COMMANDS = VIEWS.map(function (v) { return { group: "Go to", label: TITLES[v], icon: ICON[v], run: function () { location.hash = v; } }; }).concat([
     { group: "Records", label: "HP-2025-004812 · Napat Srisuk", hint: "Hire purchase", icon: "i-contract", run: function () { location.hash = "contract"; } },
     { group: "Records", label: "Siam Freight Logistics Co., Ltd.", hint: "P-200118", icon: "i-customer", run: function () { location.hash = "customer"; } },
     { group: "Records", label: "TL-2024-000311 · restructure proposal", hint: "APR-1043", icon: "i-approve", run: function () { location.hash = "approvals"; } },
     { group: "Records", label: "MA-2025-0031 · fleet master agreement", hint: "Siam Freight", icon: "i-truck", run: function () { location.hash = "assetfin"; showAf("fleet"); } },
     { group: "Records", label: "FP-2026-0007 · Bangna Motors floor plan", hint: "Dealer", icon: "i-truck", run: function () { location.hash = "assetfin"; showAf("floor"); } },
+    { group: "Records", label: "LC-IMP-2026-0188 · import LC", hint: "USD 1.28M", icon: "i-globe", run: function () { location.hash = "trade"; } },
+    { group: "Records", label: "SY-2026-004 · syndicated loan", hint: "฿6,000M", icon: "i-synd", run: function () { location.hash = "syndication"; } },
     { group: "Switch bank", label: "Demo Virtual Bank", icon: "i-swap", run: function () { setTenant("virtual"); location.hash = "overview"; } },
     { group: "Switch bank", label: "Demo Retail Bank", icon: "i-swap", run: function () { setTenant("retail"); location.hash = "branch"; } },
     { group: "Switch bank", label: "Demo Commercial Bank", icon: "i-swap", run: function () { setTenant("commercial"); location.hash = "corporate"; } },

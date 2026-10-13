@@ -102,10 +102,10 @@ Status: Covered = in the current plan · Partial = partly covered · Gap = not p
 | 4 | Multi-entity, multi-currency, multi-GAAP (local GAAP and IFRS group reporting) | Partial | 3 | Add parallel ledgers by accounting book |
 | 5 | Deposits, lending, leasing, hire purchase, fleet, floor plan | Covered | 1–2 | — |
 | 6 | Risk-free-rate lending (SOFR, SONIA, €STR, THOR compounded in arrears, lookback, observation shift) | Gap | 3 | Add RFR compounding block to the product engine |
-| 7 | Syndicated and agency loans | Gap | 4 | Native agency module or integration with specialist systems |
-| 8 | Trade finance (letters of credit, guarantees, collections, supply-chain finance) | Gap | 4–5 | Integrate a specialist trade platform first, with limits and postings in the core |
+| 7 | Syndicated and agency loans | Gap → planned native | 3–5 | Native `syndication` service: lender role in Phase 3, agent in Phase 4 ([12](12-trade-treasury-syndication.md)) |
+| 8 | Trade finance (letters of credit, guarantees, collections, supply-chain finance) | Gap → planned native | 3–5 | Native `trade-finance` service on a contingent ledger ([12](12-trade-treasury-syndication.md)) |
 | 9 | Global cash management: cross-border pooling, virtual accounts, ISO 20022 statements | Partial | 3–4 | Extend sweeps to cross-currency and cross-entity pooling |
-| 10 | Treasury links: FX positions, nostro reconciliation, liquidity (LCR and NSFR inputs) | Gap | 4 | Real-time currency positions, nostro matching, liquidity data mart |
+| 10 | Treasury: FX positions, deals, nostro reconciliation, liquidity (LCR and NSFR inputs) | Gap → planned native | 3–4 | Native `treasury` and `market-data` services ([12](12-trade-treasury-syndication.md)) |
 | 11 | Correspondent banking and SWIFT gpi tracking | Partial | 4 | gpi status in payments-hub, vostro accounts |
 | 12 | Card issuing at scale | Partial | 2 | Through processors; holds and clearing already designed |
 | 13 | Sanctions screening at payment speed | Partial | 1 | Screening inside the 50 ms budget, with case management |
@@ -126,7 +126,7 @@ This compares CoreBank with the **typical public positioning** of two groups of 
 
 | Dimension | Established global cores | Cloud-native cores | CoreBank target | How we win |
 |---|---|---|---|---|
-| Functional breadth | Very broad, incl. trade and treasury | Retail and SME focus | Retail, SME, commercial, leasing, fleet, floor plan | Match on lending and leasing depth now; partner for trade and treasury until native |
+| Functional breadth | Very broad, incl. trade and treasury | Retail and SME focus | Retail, SME, commercial, leasing, fleet, floor plan, trade finance, treasury operations, syndication | Native on one ledger and limit tree, so trade, FX and syndicated exposure are real time and in one customer view |
 | Processing model | Often batch close of business | Real time | Real time, no end-of-day, at billion-account scale | Computed accrual and time-wheel scheduling (ADR-0007) |
 | Product change | Configuration plus code and releases | Configuration or smart-contract code | Typed blocks plus CEL, simulated and approved in days | Business users change products without code, with golden tests |
 | AI | Add-on tools | Add-on tools | Agents operate the bank through governed tools, with delegated authority and audit | The only design where AI is a first-class, controlled operator |
@@ -147,7 +147,7 @@ This compares CoreBank with the **typical public positioning** of two groups of 
 ### Where we are behind today, and the plan
 
 1. **Proven references.** Win one design-partner bank, run a parallel run against a real book, and publish benchmark results with an independent auditor.
-2. **Trade finance, treasury and syndication.** Integrate specialist systems first (Phase 4), then go native where it pays off.
+2. **Trade finance, treasury and syndication.** Built natively from Phase 3, complete in Phase 4 ([12](12-trade-treasury-syndication.md)).
 3. **Jurisdiction breadth.** Build one jurisdiction pack per target market, starting with Thailand, then Singapore, Malaysia and Indonesia.
 4. **Certifications.** SOC 2 Type II and ISO 27001 before the first production launch; PCI DSS where card data is in scope.
 
@@ -155,5 +155,6 @@ This compares CoreBank with the **typical public positioning** of two groups of 
 
 - **Phase 1:** scale-out test to 100,000/s across 10 cells; sanctions screening inside the payment latency budget.
 - **Phase 3:** RFR compounding, multi-GAAP books, open banking profiles, operational resilience controls, billion-account test.
-- **Phase 4:** multi-region active-active, treasury links, syndication and trade integration, migration factory.
-- **Phase 5, new (months 30–42): global bank.** Additional jurisdiction packs, Islamic banking, cross-border pooling, native trade finance where justified, tier-1 certification and reference program.
+- **Phase 3 and 4:** native trade finance, treasury operations and syndication ([12](12-trade-treasury-syndication.md)).
+- **Phase 4:** multi-region active-active, migration factory.
+- **Phase 5, new (months 30–42): global bank.** Additional jurisdiction packs, Islamic banking, cross-border pooling, digital trade, tier-1 certification and reference program.
