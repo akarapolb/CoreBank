@@ -80,7 +80,7 @@ class LendingTest {
         Loan l = open();
         assertThat(l.instalments()).hasSize(12);
         assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-10_000_000);      // asset: debit balance
-        assertThat(bal(new AccountId("dep:D1"))).isEqualTo(20_000_000 + 10_000_000 - 100_000);
+        assertThat(bal(new AccountId("dep:D1"))).isEqualTo(20_000_000 + 10_000_000 - 100_000 - 7_000);   // fee plus 7% VAT on the fee
         assertThat(bal(LoanService.FEE_INCOME)).isEqualTo(100_000);
         assertThatThrownBy(this::open).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> svc.disburse("L2", "p", "NOPE", 1, Money.of(BigDecimal.TEN, Currency.THB), 12, D0, "D1"))
@@ -279,5 +279,171 @@ class LendingTest {
         assertThat(bal(LoanService.penaltyAcct("L1"))).isZero();
         assertThat(bal(LoanService.interestAcct("L1"))).isZero();
         assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+    }
+
+    // ---- Phase 1 gap closers: prepayment, payment holiday, VAT on fees
+
+    private Loan billAndPay(Loan l, int number) {
+        var i = l.instalments().get(number - 1);
+        svc.bill("L1", number, i.dueDate());
+        return svc.repay("L1", "m" + number, Money.ofMinor(i.principalDue() + i.interestDue(), Currency.THB), i.dueDate());
+    }
+
+    private long outstandingPrincipal(Loan l) {
+        return l.instalments().stream().mapToLong(Loan.Instalment::principalOutstanding).sum();
+    }
+
+    @Test
+    void partialPrepaymentReducingTheInstalment() {
+        Loan l = billAndPay(open(), 1);
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        long before = outstandingPrincipal(l);
+        long oldPayment = l.instalments().get(1).principalDue() + l.instalments().get(1).interestDue();
+        Loan after = svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1), LoanService.PrepaymentMode.REDUCE_INSTALMENT);
+        assertThat(after.instalments()).hasSize(12);                                            // same number of instalments
+        assertThat(outstandingPrincipal(after)).isEqualTo(before - 2_000_000);
+        long newPayment = after.instalments().get(1).principalDue() + after.instalments().get(1).interestDue();
+        assertThat(newPayment).isLessThan(oldPayment);                                           // smaller payment
+        assertThat(after.instalments().get(1).dueDate()).isEqualTo(l.instalments().get(1).dueDate());   // dates unchanged
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-outstandingPrincipal(after));       // ledger agrees with the schedule
+        // the same reference again does nothing
+        assertThat(outstandingPrincipal(svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1),
+                LoanService.PrepaymentMode.REDUCE_INSTALMENT))).isEqualTo(outstandingPrincipal(after));
+    }
+
+    @Test
+    void partialPrepaymentReducingTheTerm() {
+        Loan l = billAndPay(open(), 1);
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(1);
+        long oldPayment = l.instalments().get(1).principalDue() + l.instalments().get(1).interestDue();
+        Loan after = svc.prepay("L1", "pp2", Money.ofMinor(3_000_000, Currency.THB), day, LoanService.PrepaymentMode.REDUCE_TERM);
+        assertThat(after.instalments().size()).isLessThan(12);                                   // shorter loan
+        long newPayment = after.instalments().get(1).principalDue() + after.instalments().get(1).interestDue();
+        assertThat(newPayment).isLessThanOrEqualTo(oldPayment);
+        assertThat(after.instalments().get(after.instalments().size() - 1).dueDate())
+                .isEqualTo(l.instalments().get(after.instalments().size() - 1).dueDate());
+        // it still runs to zero
+        Loan cur = after;
+        for (int i = 2; i <= cur.instalments().size(); i++) {
+            var inst = cur.instalments().get(i - 1);
+            svc.bill("L1", i, inst.dueDate());
+            cur = svc.repay("L1", "m" + i, Money.ofMinor(inst.principalDue() + inst.interestDue(), Currency.THB), inst.dueDate());
+        }
+        assertThat(cur.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+    }
+
+    @Test
+    void prepaymentRules() {
+        Loan l = open();
+        Loan l2 = svc.bill("L1", 1, l.instalments().get(0).dueDate());
+        // instalment 1 is billed but unpaid: arrears block a prepayment
+        assertThatThrownBy(() -> svc.prepay("L1", "y", Money.ofMinor(1_000, Currency.THB), l2.instalments().get(0).dueDate().plusDays(1),
+                LoanService.PrepaymentMode.REDUCE_TERM)).isInstanceOf(IllegalStateException.class);
+        Loan paid = svc.repay("L1", "m1", Money.ofMinor(916_800, Currency.THB), l2.instalments().get(0).dueDate());
+        LocalDate ok = paid.instalments().get(0).dueDate().plusDays(1);
+        assertThatThrownBy(() -> svc.prepay("L1", "z", Money.ofMinor(0, Currency.THB), ok, LoanService.PrepaymentMode.REDUCE_TERM))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.prepay("L1", "z", Money.ofMinor(99_000_000, Currency.THB), ok, LoanService.PrepaymentMode.REDUCE_TERM))
+                .hasMessageContaining("settle");
+        assertThatThrownBy(() -> svc.prepay("L1", "z", Money.ofMinor(1_000, Currency.THB), paid.instalments().get(1).dueDate(),
+                LoanService.PrepaymentMode.REDUCE_TERM)).hasMessageContaining("between");
+    }
+
+    @Test
+    void paymentHolidayCapitalisesInterestAndMovesTheSchedule() {
+        Loan l = billAndPay(open(), 1);
+        long before = outstandingPrincipal(l);
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(1);
+        Loan after = svc.holiday("L1", "h1", 2, day);
+        assertThat(after.instalments()).hasSize(12);
+        long capitalised = outstandingPrincipal(after) - before;
+        assertThat(capitalised).isEqualTo(Math.round(before * 0.015) + Math.round((before + Math.round(before * 0.015)) * 0.015)
+                + 0 * 1);                                                                       // two months of interest at 1.5%
+        assertThat(after.instalments().get(1).dueDate()).isAfter(l.instalments().get(1).dueDate().plusDays(50));   // moved about two months
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-outstandingPrincipal(after));
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(150_000 + capitalised);
+        assertThat(outstandingPrincipal(svc.holiday("L1", "h1", 2, day))).isEqualTo(outstandingPrincipal(after));   // retry safe
+        assertThatThrownBy(() -> svc.holiday("L1", "h2", 0, day)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.holiday("L1", "h3", 7, day)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void holidayAndPrepaymentRefuseFlatRateProducts() throws IOException {
+        String flat = yaml().replace("rate_type: FIXED", "rate_type: FLAT").replace("method: ANNUITY", "method: ANNUITY_FROM_FLAT")
+                .replace("rate: 0.18", "rate: 0.05");
+        wire(flat);
+        Loan l = svc.disburse("L1", "p", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        svc.bill("L1", 1, l.instalments().get(0).dueDate());
+        svc.repay("L1", "m1", Money.ofMinor(l.instalments().get(0).principalDue() + l.instalments().get(0).interestDue(), Currency.THB),
+                l.instalments().get(0).dueDate());
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(1);
+        assertThatThrownBy(() -> svc.holiday("L1", "h", 1, day)).hasMessageContaining("annuity");
+        assertThatThrownBy(() -> svc.prepay("L1", "p", Money.ofMinor(1_000, Currency.THB), day, LoanService.PrepaymentMode.REDUCE_TERM))
+                .hasMessageContaining("annuity");
+    }
+
+    @Test
+    void vatOnTheOriginationFeeIsCollectedAndInvoiced() throws IOException {
+        List<org.fabor.engine.tax.TaxInvoice> invoices = new java.util.ArrayList<>();
+        product = ProductLoader.parse(yaml());
+        wire(yaml());
+        svc = new LoanService(T, ledger, new LoanRepo.InMemory(), (c, v) -> product, BusinessCalendar.monToFri(Set.of()),
+                new LoanService.Invoicing("0105500000001", invoices::add));
+        // the sample product charges VAT on fees at 7%: fee 1,000.00 plus 70.00 VAT
+        svc.disburse("L1", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        assertThat(bal(LoanService.FEE_INCOME)).isEqualTo(100_000);
+        assertThat(bal(LoanService.VAT_PAYABLE)).isEqualTo(7_000);
+        assertThat(bal(new AccountId("dep:D1"))).isEqualTo(20_000_000 + 10_000_000 - 100_000 - 7_000);
+        assertThat(invoices).hasSize(1);
+        assertThat(invoices.get(0).gross().minor()).isEqualTo(107_000);
+        assertThat(invoices.get(0).number()).isEqualTo("INV-L1-FEE");
+        // without invoicing configured the VAT is still collected
+        wire(yaml());
+        svc.disburse("L2", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        assertThat(bal(LoanService.VAT_PAYABLE)).isEqualTo(7_000);
+    }
+
+    @Test
+    void zeroRateProductWithoutTaxOrHolidayRuleStillSupportsChanges() throws IOException {
+        String y = yaml().replace("rate: 0.18", "rate: 0").replace("  holiday_rule: FOLLOWING\n", "")
+                .replaceAll("(?s)tax:.*?early_settlement:", "early_settlement:");
+        wire(y);
+        Loan l = svc.disburse("L1", "p", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("12000"), Currency.THB), 6, D0, "D1");
+        assertThat(bal(LoanService.VAT_PAYABLE)).isZero();                    // no tax block: no VAT
+        // a prepayment before the first due date is allowed (nothing billed yet)
+        Loan pre = svc.prepay("L1", "early", Money.ofMinor(100_000, Currency.THB), D0.plusDays(3), LoanService.PrepaymentMode.REDUCE_INSTALMENT);
+        assertThat(outstandingPrincipal(pre)).isEqualTo(1_200_000 - 100_000);
+        // a holiday on a zero-rate loan capitalises nothing but still moves the schedule, and retries stay safe
+        Loan h = svc.holiday("L1", "h", 1, D0.plusDays(4));
+        assertThat(outstandingPrincipal(h)).isEqualTo(1_100_000);
+        assertThat(h.instalments().get(0).dueDate()).isAfter(l.instalments().get(0).dueDate());
+        assertThat(svc.holiday("L1", "h", 1, D0.plusDays(4)).instalments().get(0).dueDate()).isEqualTo(h.instalments().get(0).dueDate());
+    }
+
+    @Test
+    void holidayOnANonAccrualLoanCapitalisesIntoSuspense() {
+        Loan l = open();
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        svc.bill("L1", 1, due1);
+        svc.accrueDaily("L1", due1.plusDays(90));                         // non-accrual now
+        svc.repay("L1", "arrears", Money.ofMinor(916_800 + 367, Currency.THB), due1.plusDays(90));
+        long suspenseBefore = bal(LoanService.INTEREST_SUSPENSE);
+        Loan after = svc.holiday("L1", "h", 1, due1.plusDays(91));
+        assertThat(after.status()).isEqualTo(Loan.Status.NON_ACCRUAL);
+        assertThat(bal(LoanService.INTEREST_SUSPENSE)).isGreaterThan(suspenseBefore);
+    }
+
+    @Test
+    void changesNeedInstalmentsLeft() {
+        Loan l = open();
+        Loan cur = l;
+        for (int i = 1; i <= 12; i++) {
+            var inst = cur.instalments().get(i - 1);
+            svc.bill("L1", i, inst.dueDate());
+            cur = svc.repay("L1", "m" + i, Money.ofMinor(inst.principalDue() + inst.interestDue(), Currency.THB), inst.dueDate());
+        }
+        LocalDate late = cur.instalments().get(11).dueDate().plusDays(1);
+        assertThatThrownBy(() -> svc.holiday("L1", "h", 1, late)).isInstanceOf(IllegalStateException.class);
     }
 }

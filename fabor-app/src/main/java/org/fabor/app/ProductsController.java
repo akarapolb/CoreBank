@@ -12,11 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Master Builder over HTTP: draft, check, submit, approve, publish. The actor comes from X-Actor (see ApiTokenFilter). */
+/** Master Builder over HTTP: draft, check, submit, approve, publish. The actor and roles come from the verified token (see SecurityConfig). */
 @RestController
 @RequestMapping("/api/v1/products")
 class ProductsController {
@@ -43,13 +42,13 @@ class ProductsController {
     record ApproveRequest(String role) { }
 
     @PostMapping(value = "/drafts", consumes = {"application/yaml", MediaType.TEXT_PLAIN_VALUE})
-    DraftView create(@RequestHeader("X-Actor") String actor, @RequestBody String yaml) {
-        return DraftView.of(builder.createDraft(actor, yaml));
+    DraftView create(Actor actor, @RequestBody String yaml) {
+        return DraftView.of(builder.createDraft(actor.require("product-maker").name(), yaml));
     }
 
     @PostMapping(value = "/drafts/{id}/yaml", consumes = {"application/yaml", MediaType.TEXT_PLAIN_VALUE})
-    DraftView update(@RequestHeader("X-Actor") String actor, @PathVariable String id, @RequestBody String yaml) {
-        return DraftView.of(builder.updateDraft(id, actor, yaml));
+    DraftView update(Actor actor, @PathVariable String id, @RequestBody String yaml) {
+        return DraftView.of(builder.updateDraft(id, actor.require("product-maker").name(), yaml));
     }
 
     @GetMapping("/drafts/{id}/check")
@@ -58,18 +57,18 @@ class ProductsController {
     }
 
     @PostMapping("/drafts/{id}/submit")
-    DraftView submit(@RequestHeader("X-Actor") String actor, @PathVariable String id) {
-        return DraftView.of(builder.submit(id, actor));
+    DraftView submit(Actor actor, @PathVariable String id) {
+        return DraftView.of(builder.submit(id, actor.require("product-maker").name()));
     }
 
     @PostMapping("/drafts/{id}/approve")
-    DraftView approve(@RequestHeader("X-Actor") String actor, @PathVariable String id, @RequestBody ApproveRequest r) {
-        return DraftView.of(builder.approve(id, actor, r.role()));
+    DraftView approve(Actor actor, @PathVariable String id, @RequestBody ApproveRequest r) {
+        return DraftView.of(builder.approve(id, actor.require("approver-" + String.valueOf(r.role()).toLowerCase()).name(), r.role()));
     }
 
     @PostMapping("/drafts/{id}/publish")
-    VersionView publish(@RequestHeader("X-Actor") String actor, @PathVariable String id) {
-        return VersionView.of(builder.publish(id, actor));
+    VersionView publish(Actor actor, @PathVariable String id) {
+        return VersionView.of(builder.publish(id, actor.require("product-publisher").name()));
     }
 
     @GetMapping("/{product}/versions")
@@ -78,7 +77,8 @@ class ProductsController {
     }
 
     @PostMapping("/{product}/versions/{version}/retire")
-    Map<String, Object> retire(@PathVariable String product, @PathVariable int version) {
+    Map<String, Object> retire(Actor actor, @PathVariable String product, @PathVariable int version) {
+        actor.require("product-publisher");
         builder.retire(product, version);
         return Map.of("product", product, "version", version, "retired", true);
     }

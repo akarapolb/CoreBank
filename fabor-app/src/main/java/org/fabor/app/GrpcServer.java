@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.fabor.ledger.adapter.web.LedgerGrpcService;
 import org.springframework.context.SmartLifecycle;
 
-/** Runs the ledger gRPC endpoint next to the HTTP API, with the same bearer token. */
+/** Runs the ledger gRPC endpoint next to the HTTP API, with the same authentication mode. */
 final class GrpcServer implements SmartLifecycle {
     private static final Metadata.Key<String> AUTH = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
 
@@ -24,10 +24,31 @@ final class GrpcServer implements SmartLifecycle {
     private final byte[] expected;
     private Server server;
 
-    GrpcServer(int port, LedgerGrpcService service, String token) {
+    private final org.springframework.security.oauth2.jwt.JwtDecoder jwt;
+
+    /** Exactly one of {@code token} (development) or {@code jwt} (OIDC, role {@code ledger-client}) authenticates callers. */
+    GrpcServer(int port, LedgerGrpcService service, String token, org.springframework.security.oauth2.jwt.JwtDecoder jwt) {
         this.port = port;
         this.service = service;
-        this.expected = ("Bearer " + token).getBytes(StandardCharsets.UTF_8);
+        this.expected = token == null ? null : ("Bearer " + token).getBytes(StandardCharsets.UTF_8);
+        this.jwt = jwt;
+    }
+
+    private boolean authorised(String header) {
+        if (header == null) {
+            return false;
+        }
+        if (expected != null) {
+            return MessageDigest.isEqual(header.getBytes(StandardCharsets.UTF_8), expected);
+        }
+        if (!header.startsWith("Bearer ")) {
+            return false;
+        }
+        try {
+            return ActorResolver.rolesOf(jwt.decode(header.substring(7))).contains("ledger-client");
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @Override
@@ -39,8 +60,7 @@ final class GrpcServer implements SmartLifecycle {
             @Override
             public <Q, R> ServerCall.Listener<Q> interceptCall(ServerCall<Q, R> call, Metadata headers,
                                                               ServerCallHandler<Q, R> next) {
-                String h = headers.get(AUTH);
-                if (h == null || !MessageDigest.isEqual(h.getBytes(StandardCharsets.UTF_8), expected)) {
+                if (!authorised(headers.get(AUTH))) {
                     call.close(Status.UNAUTHENTICATED.withDescription("bearer token required"), new Metadata());
                     return new ServerCall.Listener<>() { };
                 }

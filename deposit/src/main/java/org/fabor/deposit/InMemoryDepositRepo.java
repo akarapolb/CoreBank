@@ -19,6 +19,11 @@ public final class InMemoryDepositRepo implements DepositRepo {
     }
 
     @Override
+    public synchronized java.util.List<String> accountIds() {
+        return accounts.keySet().stream().sorted().toList();
+    }
+
+    @Override
     public synchronized YearToDate yearToDate(String accountId, int year) {
         return ytd.getOrDefault(accountId + "/" + year, new YearToDate(0, 0));
     }

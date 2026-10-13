@@ -68,11 +68,13 @@ class AppConfig {
         return new Migrations(ds);
     }
 
+    /** Development token mode only. In OIDC mode (the default) this filter does not exist. */
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "fabor.auth-mode", havingValue = "token")
     FilterRegistrationBean<ApiTokenFilter> apiTokenFilter(FaborProperties p) {
         FilterRegistrationBean<ApiTokenFilter> r = new FilterRegistrationBean<>(new ApiTokenFilter(p.apiToken()));
         r.addUrlPatterns("/api/*");
-        r.setOrder(1);
+        r.setOrder(org.springframework.core.Ordered.HIGHEST_PRECEDENCE);
         return r;
     }
 
@@ -91,8 +93,10 @@ class AppConfig {
     }
 
     @Bean
-    GrpcServer grpcServer(FaborProperties p, LedgerService ledger) {
-        return new GrpcServer(p.grpcPort(), new LedgerGrpcService(ledger), p.apiToken());
+    GrpcServer grpcServer(FaborProperties p, LedgerService ledger,
+                          org.springframework.beans.factory.ObjectProvider<org.springframework.security.oauth2.jwt.JwtDecoder> jwt) {
+        return new GrpcServer(p.grpcPort(), new LedgerGrpcService(ledger), p.tokenMode() ? p.apiToken() : null,
+                p.tokenMode() ? null : jwt.getObject());
     }
 
     // ---- security

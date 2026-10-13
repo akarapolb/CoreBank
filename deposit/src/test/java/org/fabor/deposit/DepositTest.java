@@ -75,6 +75,7 @@ class DepositTest {
                 .isInstanceOf(InsufficientFundsException.class);
         svc.deposit("A1", "r1", thb("1000"), LocalDate.of(2026, 1, 1)); // retry of r1: no double credit
         assertThat(svc.balance("A1", LocalDate.of(2026, 1, 3))).isEqualTo(thb("600"));
+        assertThat(repo.accountIds()).containsExactly("A1");
         assertThatThrownBy(() -> svc.open("A1", "p", "SAVINGS_TIERED", 1)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> svc.open("A2", "p", "NOPE", 1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> svc.deposit("ZZ", "x", thb("1"), LocalDate.of(2026, 1, 1))).isInstanceOf(IllegalArgumentException.class);

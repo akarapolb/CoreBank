@@ -7,6 +7,9 @@ public interface DepositRepo {
 
     Optional<DepositAccount> find(String id);
 
+    /** Ids of all accounts, for operations such as scheduler backfill. */
+    java.util.List<String> accountIds();
+
     /** Interest paid and tax withheld so far this year, for the tax exemption rule. */
     YearToDate yearToDate(String accountId, int year);
 

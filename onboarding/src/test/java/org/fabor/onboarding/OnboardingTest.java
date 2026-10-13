@@ -144,7 +144,7 @@ class OnboardingTest {
         Loan loan = out.loan();
         assertThat(loan.id()).isEqualTo("LN-A-1");
         assertThat(ledger.balance(T, new AccountId("dep:SAV-P1"), BalanceType.SETTLED, Currency.THB, TODAY).minor())
-                .isEqualTo(10_000_000 - 100_000);
+                .isEqualTo(10_000_000 - 100_000 - 7_000);
         assertThat(detokenized).contains("origination:KYC_PROCESSING");     // PII access was audited by the vault hook
         assertThat(audit.all()).extracting(AuditLog.Record::action).contains("CREDIT_DECISION_APPROVE", "LOAN_DISBURSED");
     }

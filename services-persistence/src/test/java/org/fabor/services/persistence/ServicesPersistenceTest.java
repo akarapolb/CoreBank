@@ -178,6 +178,7 @@ class ServicesPersistenceTest {
         deposits.save(a);
         assertThat(deposits.find("SAV-P1")).contains(a);
         assertThat(deposits.find("x")).isEmpty();
+        assertThat(deposits.accountIds()).containsExactly("SAV-P1");
         assertThat(deposits.yearToDate("SAV-P1", 2026).grossInterest()).isZero();
         deposits.addYearToDate("SAV-P1", 2026, 100, 15);
         deposits.addYearToDate("SAV-P1", 2026, 50, 0);
@@ -194,6 +195,9 @@ class ServicesPersistenceTest {
         loans.save(paid);
         assertThat(loans.find("L1")).contains(paid);
         assertThat(loans.find("zz")).isEmpty();
+        assertThat(loans.activeIds()).containsExactly("L1");
+        loans.save(paid.withStatus(Loan.Status.CLOSED));
+        assertThat(loans.activeIds()).isEmpty();
     }
 
     @Test

@@ -210,4 +210,26 @@ class ScheduleEngineTest {
         assertThatThrownBy(() -> req(1000, "0.1", 12, Method.ANNUITY, -1, 0)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> req(1000, "0.1", 12, Method.ANNUITY, 0, -1)).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void irregularFirstPeriodIsChargedForItsActualDays() {
+        // disbursed 15 Jan, first due 1 Mar: 45 days, not a full month
+        ScheduleRequest q = new ScheduleRequest(thb(12_000_000), new BigDecimal("0.12"), 12, Frequency.MONTHLY, D0,
+                LocalDate.of(2026, 3, 2), Method.ANNUITY, null, 0, CAL, Convention.FOLLOWING, RoundingMode.HALF_UP);
+        Schedule s = ScheduleEngine.build(q);
+        long actual = Math.round(12_000_000 * 0.12 * 46 / 365.0);   // 15 Jan -> 2 Mar is 46 days
+        assertThat(s.installments().get(0).interest().minor()).isEqualTo(actual);
+        assertThat(s.installments().get(0).interest().minor()).isNotEqualTo(120_000);   // not a flat month of 1%
+        assertInvariants(s, 12_000_000);
+        // a regular first period is unchanged
+        ScheduleRequest regular = new ScheduleRequest(thb(12_000_000), new BigDecimal("0.12"), 12, Frequency.MONTHLY, D0,
+                LocalDate.of(2026, 2, 15), Method.ANNUITY, null, 0, BusinessCalendar.monToFri(Set.of()), Convention.PRECEDING,
+                RoundingMode.HALF_UP);
+        assertThat(ScheduleEngine.build(regular).installments().get(0).interest().minor()).isEqualTo(120_000);
+        for (Method m : new Method[] {Method.EQUAL_PRINCIPAL, Method.BULLET}) {
+            ScheduleRequest odd = new ScheduleRequest(thb(12_000_000), new BigDecimal("0.12"), 6, Frequency.MONTHLY, D0,
+                    LocalDate.of(2026, 3, 2), m, null, 0, CAL, Convention.FOLLOWING, RoundingMode.HALF_UP);
+            assertThat(ScheduleEngine.build(odd).installments().get(0).interest().minor()).isEqualTo(actual);
+        }
+    }
 }

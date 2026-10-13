@@ -11,6 +11,13 @@ import org.fabor.engine.product.ProductDefinition;
 import org.fabor.engine.product.ProductQuote;
 import org.fabor.engine.product.ProductValidator;
 import org.fabor.engine.schedule.Installment;
+import org.fabor.engine.schedule.Frequency;
+import org.fabor.engine.schedule.Method;
+import org.fabor.engine.schedule.ScheduleEngine;
+import org.fabor.engine.schedule.ScheduleRequest;
+import org.fabor.engine.tax.TaxInvoice;
+import org.fabor.engine.tax.Vat;
+import org.fabor.platform.time.BusinessCalendar.Convention;
 import org.fabor.ledger.application.LedgerService;
 import org.fabor.ledger.domain.AccountId;
 import org.fabor.ledger.domain.BalanceType;
@@ -35,15 +42,28 @@ public final class LoanService {
     public static final AccountId INTEREST_INCOME = new AccountId("gl:interest-income");
     public static final AccountId INTEREST_SUSPENSE = new AccountId("gl:interest-suspense");
     public static final AccountId PENALTY_INCOME = new AccountId("gl:penalty-income");
+    public static final AccountId VAT_PAYABLE = new AccountId("gl:vat-payable");
+
+    /** Where tax invoices for fees go (the e-Tax service). {@code sellerTaxId} identifies the lender on them. */
+    public record Invoicing(String sellerTaxId, java.util.function.Consumer<TaxInvoice> sink) { }
+
+    public enum PrepaymentMode { REDUCE_TERM, REDUCE_INSTALMENT }
 
     private final TenantId tenant;
     private final LedgerService ledger;
     private final LoanRepo repo;
     private final BiFunction<String, Integer, ProductDefinition> products;
     private final BusinessCalendar calendar;
+    private final Invoicing invoicing;
 
     public LoanService(TenantId tenant, LedgerService ledger, LoanRepo repo,
                        BiFunction<String, Integer, ProductDefinition> products, BusinessCalendar calendar) {
+        this(tenant, ledger, repo, products, calendar, null);
+    }
+
+    public LoanService(TenantId tenant, LedgerService ledger, LoanRepo repo,
+                       BiFunction<String, Integer, ProductDefinition> products, BusinessCalendar calendar, Invoicing invoicing) {
+        this.invoicing = invoicing;
         this.tenant = tenant;
         this.ledger = ledger;
         this.repo = repo;
@@ -72,11 +92,24 @@ public final class LoanService {
         ProductDefinition p = product(productCode, version);
         var quote = ProductQuote.quote(p, principal, term, date, calendar);
         Money fees = quote.disbursementFees().values().stream().reduce(Money.zero(principal.currency()), Money::plus);
+        Money feeVat = Money.zero(principal.currency());
+        var vat = p.tax() == null ? null : p.tax().vat();
+        if (!fees.isZero() && vat != null && vat.appliesTo() != null && vat.appliesTo().contains("FEES")) {
+            feeVat = Vat.exclusive(fees, vat.rate()).vat();
+        }
         List<Entry> entries = new ArrayList<>();
         entries.add(new Entry(principalAcct(id), BalanceType.SETTLED, Direction.DEBIT, principal));
-        entries.add(new Entry(new AccountId("dep:" + depositAccountId), BalanceType.SETTLED, Direction.CREDIT, principal.minus(fees)));
+        entries.add(new Entry(new AccountId("dep:" + depositAccountId), BalanceType.SETTLED, Direction.CREDIT,
+                principal.minus(fees).minus(feeVat)));
         if (!fees.isZero()) {
             entries.add(new Entry(FEE_INCOME, BalanceType.SETTLED, Direction.CREDIT, fees));
+        }
+        if (!feeVat.isZero()) {
+            entries.add(new Entry(VAT_PAYABLE, BalanceType.SETTLED, Direction.CREDIT, feeVat));
+            if (invoicing != null) {
+                invoicing.sink().accept(TaxInvoice.of("INV-" + id + "-FEE", date, invoicing.sellerTaxId(), party,
+                        List.of(new TaxInvoice.Line("Loan origination fee " + id, fees, feeVat))));
+            }
         }
         post(id, "disburse", date, entries);
         List<Loan.Instalment> list = new ArrayList<>();
@@ -280,6 +313,132 @@ public final class LoanService {
             }
         }
         return total;
+    }
+
+    /**
+     * Partial prepayment on an instalment due date: the amount reduces principal, then the unbilled instalments are
+     * rebuilt on the new balance, either keeping the number of instalments (smaller payment) or keeping about the same
+     * payment (shorter loan). Only fixed-rate annuity products; nothing may be overdue or due unpaid. Idempotent per reference.
+     */
+    public Loan prepay(String loanId, String reference, Money amount, LocalDate date, PrepaymentMode mode) {
+        Loan loan = load(loanId);
+        if (ledger.find(tenant, new BatchId(loanId + ":prepay-" + reference)).isPresent()) {
+            return loan;
+        }
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        requireAnnuity(p);
+        int first = firstUnbilled(loan);
+        requireNothingDue(loan, first);
+        Loan.Instalment head = loan.instalments().get(first);
+        if (date.isBefore(first == 0 ? loan.disbursedOn() : loan.instalments().get(first - 1).dueDate()) || !date.isBefore(head.dueDate())) {
+            throw new IllegalArgumentException("Prepayment must fall between the last billed due date and the next one");
+        }
+        if (amount.minor() <= 0) {
+            throw new IllegalArgumentException("Prepayment must be positive");
+        }
+        long outstanding = loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum();
+        if (amount.minor() >= outstanding) {
+            throw new IllegalArgumentException("Prepayment would clear the loan; use settle()");
+        }
+        long newBalance = outstanding - amount.minor();
+        long level = head.principalDue() + head.interestDue();
+        int remaining = loan.instalments().size() - first;
+        int n = remaining;
+        if (mode == PrepaymentMode.REDUCE_TERM) {
+            n = 1;
+            while (n < remaining && rebuild(p, loan, newBalance, n, date).get(0).total().minor() > level) {
+                n++;
+            }
+        }
+        List<Installment> fresh = rebuild(p, loan, newBalance, n, date);
+        List<Loan.Instalment> list = new ArrayList<>(loan.instalments().subList(0, first));
+        for (int i = 0; i < n; i++) {
+            list.add(new Loan.Instalment(first + i + 1, loan.instalments().get(first + i).dueDate(), fresh.get(i).principal().minor(),
+                    fresh.get(i).interest().minor(), 0, 0, 0, 0, false));
+        }
+        post(loanId, "prepay-" + reference, date, List.of(
+                Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED, amount),
+                new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, amount)));
+        return keep(loan.withInstalments(List.copyOf(list), loan.status()));
+    }
+
+    /**
+     * Payment holiday: the next {@code periods} instalments are skipped, interest for the holiday is capitalised into the
+     * principal (posted as income, or suspense if the loan is non-accrual) and the remaining instalments are rebuilt and
+     * moved later by the same number of periods. Idempotent per reference.
+     */
+    public Loan holiday(String loanId, String reference, int periods, LocalDate date) {
+        Loan loan = load(loanId);
+        if (ledger.find(tenant, new BatchId(loanId + ":holiday-" + reference)).isPresent()) {
+            return loan;
+        }
+        if (periods < 1 || periods > 6) {
+            throw new IllegalArgumentException("A payment holiday is 1 to 6 periods");
+        }
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        requireAnnuity(p);
+        int first = firstUnbilled(loan);
+        requireNothingDue(loan, first);
+        Frequency f = Frequency.valueOf(p.schedule().frequency());
+        java.math.BigDecimal r = org.fabor.engine.interest.Rates.periodic(p.pricing().rate(), f.perYear());
+        Money out = money(loan, loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum());
+        Money start = out;
+        for (int i = 0; i < periods; i++) {
+            out = out.plus(out.times(r, java.math.RoundingMode.HALF_UP));
+        }
+        Money capitalised = out.minus(start);
+        int remaining = loan.instalments().size() - first;
+        Convention conv = p.schedule().holidayRule() == null ? Convention.FOLLOWING : Convention.valueOf(p.schedule().holidayRule());
+        List<Installment> fresh = rebuild(p, loan, out.minor(), remaining, date);
+        List<Loan.Instalment> list = new ArrayList<>(loan.instalments().subList(0, first));
+        for (int i = 0; i < remaining; i++) {
+            LocalDate moved = calendar.adjust(f.nth(loan.instalments().get(first + i).dueDate(), periods), conv);
+            list.add(new Loan.Instalment(first + i + 1, moved, fresh.get(i).principal().minor(), fresh.get(i).interest().minor(),
+                    0, 0, 0, 0, false));
+        }
+        if (!capitalised.isZero()) {
+            AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
+            post(loanId, "holiday-" + reference, date, List.of(
+                    new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, capitalised),
+                    new Entry(income, BalanceType.SETTLED, Direction.CREDIT, capitalised)));
+        } else {
+            post(loanId, "holiday-" + reference, date, List.of(
+                    new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, Money.ofMinor(1, out.currency())),
+                    new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, Money.ofMinor(1, out.currency()))));
+        }
+        return keep(loan.withInstalments(List.copyOf(list), loan.status()));
+    }
+
+    private List<Installment> rebuild(ProductDefinition p, Loan loan, long principal, int periods, LocalDate from) {
+        Convention conv = p.schedule().holidayRule() == null ? Convention.FOLLOWING : Convention.valueOf(p.schedule().holidayRule());
+        return ScheduleEngine.build(new ScheduleRequest(money(loan, principal), p.pricing().rate(), periods,
+                Frequency.valueOf(p.schedule().frequency()), from, null, Method.ANNUITY, null, 0, calendar, conv,
+                java.math.RoundingMode.HALF_UP)).installments();
+    }
+
+    private static void requireAnnuity(ProductDefinition p) {
+        if (p.pricing() == null || p.pricing().rate() == null || !"ANNUITY".equals(p.schedule().method())) {
+            throw new IllegalArgumentException("Only fixed-rate annuity products support this change");
+        }
+    }
+
+    private static int firstUnbilled(Loan loan) {
+        int i = 0;
+        while (i < loan.instalments().size() && loan.instalments().get(i).billed()) {
+            i++;
+        }
+        if (i == loan.instalments().size()) {
+            throw new IllegalStateException("No instalments remain");
+        }
+        return i;
+    }
+
+    private static void requireNothingDue(Loan loan, int firstUnbilled) {
+        for (int i = 0; i < firstUnbilled; i++) {
+            if (!loan.instalments().get(i).settled()) {
+                throw new IllegalStateException("Instalment " + (i + 1) + " is unpaid; clear arrears first");
+            }
+        }
     }
 
     private Loan keep(Loan loan) {

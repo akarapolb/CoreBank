@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Assumptions;
 
 /** End to end through HTTP and gRPC against a real PostgreSQL: products, onboarding, deposits, origination, repayment. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"fabor.api-token=test-token-1234567890", "fabor.grpc-port=19090", "fabor.scheduler-enabled=false",
+        properties = {"fabor.auth-mode=token", "fabor.api-token=test-token-1234567890", "fabor.grpc-port=19090", "fabor.scheduler-enabled=false",
                 "management.server.port=0"})
 @Import(FaborAppTest.Fakes.class)
 class FaborAppTest {
@@ -161,7 +161,7 @@ class FaborAppTest {
         assertThat(decision.get("decision")).isEqualTo("APPROVE");
         assertThat(decision.get("loanId")).isEqualTo("LN-APP1");
         Map<String, Object> balance = call(HttpMethod.GET, "/api/v1/accounts/SAV-P1/balance?asOf=2026-01-15", "ops", null, MediaType.APPLICATION_JSON);
-        assertThat(((Number) balance.get("minor")).longValue()).isEqualTo(9_900_000);
+        assertThat(((Number) balance.get("minor")).longValue()).isEqualTo(9_893_000);
 
         // retries are safe: the same application is not a second loan
         ResponseEntity<Map> again = http.exchange("/api/v1/loans/applications", HttpMethod.POST,
@@ -182,6 +182,15 @@ class FaborAppTest {
             assertThat(rs.getLong(1)).isEqualTo(12 + 1 + 1);
         }
 
+        // backfill: losing the queue and running it again restores exactly the same due work, and a second run adds nothing
+        try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
+            st.execute("TRUNCATE scheduler_due");
+        }
+        Map<String, Object> filled = call(HttpMethod.POST, "/api/v1/admin/scheduler/backfill", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(((Number) filled.get("queued")).intValue()).isEqualTo(14);
+        Map<String, Object> again2 = call(HttpMethod.POST, "/api/v1/admin/scheduler/backfill", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(((Number) again2.get("queued")).intValue()).isZero();
+
         // gRPC endpoint: needs the token, serves the same ledger
         ManagedChannel ch = NettyChannelBuilder.forAddress("localhost", 19090).usePlaintext().build();
         try {
@@ -197,7 +206,7 @@ class FaborAppTest {
             Metadata md = new Metadata();
             md.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer " + TOKEN);
             var authed = LedgerGrpc.newBlockingStub(ch).withInterceptors(MetadataUtils.newAttachHeadersInterceptor(md));
-            assertThat(authed.getBalance(req).getMinor()).isEqualTo(9_900_000);
+            assertThat(authed.getBalance(req).getMinor()).isEqualTo(9_893_000);
         } finally {
             ch.shutdownNow();
         }

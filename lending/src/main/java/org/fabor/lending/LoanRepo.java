@@ -9,6 +9,9 @@ public interface LoanRepo {
 
     Optional<Loan> find(String id);
 
+    /** Ids of loans that still need servicing (not closed). */
+    java.util.List<String> activeIds();
+
     final class InMemory implements LoanRepo {
         private final Map<String, Loan> loans = new HashMap<>();
 
@@ -20,6 +23,11 @@ public interface LoanRepo {
         @Override
         public synchronized Optional<Loan> find(String id) {
             return Optional.ofNullable(loans.get(id));
+        }
+
+        @Override
+        public synchronized java.util.List<String> activeIds() {
+            return loans.values().stream().filter(l -> l.status() != Loan.Status.CLOSED).map(Loan::id).sorted().toList();
         }
     }
 }

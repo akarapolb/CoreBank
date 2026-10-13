@@ -40,7 +40,8 @@ class CustomersController {
     record PartyView(String id, String status, String depositAccountId) { }
 
     @PostMapping
-    PartyView register(@RequestBody RegisterRequest r) {
+    PartyView register(Actor actor, @RequestBody RegisterRequest r) {
+        actor.require("ops");
         if (r.consents() != null) {
             for (ConsentGrant g : r.consents()) {
                 consents.grant(tenant, r.partyId(), g.purpose(), g.version(), clock.instant(), g.channel());
@@ -54,14 +55,15 @@ class CustomersController {
     }
 
     @PostMapping("/{id}/consents/{purpose}/withdraw")
-    Map<String, Object> withdraw(@PathVariable String id, @PathVariable String purpose) {
+    Map<String, Object> withdraw(Actor actor, @PathVariable String id, @PathVariable String purpose) {
+        actor.require("ops");
         consents.withdraw(tenant, id, purpose, clock.instant(), "API");
         return Map.of("party", id, "purpose", purpose, "withdrawn", true);
     }
 
     @PostMapping("/{id}/release")
-    PartyView release(@PathVariable String id, @org.springframework.web.bind.annotation.RequestHeader("X-Actor") String actor) {
-        Party p = onboarding.release(id, actor);
+    PartyView release(@PathVariable String id, Actor actor) {
+        Party p = onboarding.release(id, actor.require("compliance-analyst").name());
         lifecycle.onAccountOpened(p.depositAccountId());
         return new PartyView(p.id(), p.status().name(), p.depositAccountId());
     }

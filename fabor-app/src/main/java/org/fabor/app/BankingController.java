@@ -43,13 +43,15 @@ class BankingController {
     record BalanceView(String account, long minor, String currency, LocalDate asOf) { }
 
     @PostMapping("/accounts/{id}/deposits")
-    Map<String, Object> deposit(@PathVariable String id, @RequestBody MoneyMove m) {
+    Map<String, Object> deposit(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
+        actor.require("ops");
         deposits.deposit(id, m.reference(), Money.ofMinor(m.amountMinor(), Currency.of(m.currency())), m.valueDate());
         return Map.of("account", id, "reference", m.reference(), "status", "posted");
     }
 
     @PostMapping("/accounts/{id}/withdrawals")
-    Map<String, Object> withdraw(@PathVariable String id, @RequestBody MoneyMove m) {
+    Map<String, Object> withdraw(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
+        actor.require("ops");
         deposits.withdraw(id, m.reference(), Money.ofMinor(m.amountMinor(), Currency.of(m.currency())), m.valueDate());
         return Map.of("account", id, "reference", m.reference(), "status", "posted");
     }
@@ -69,7 +71,8 @@ class BankingController {
     record DecisionView(String decision, int score, List<ReasonView> reasons, String loanId) { }
 
     @PostMapping("/loans/applications")
-    DecisionView apply(@RequestBody ApplicationRequest r) {
+    DecisionView apply(Actor actor, @RequestBody ApplicationRequest r) {
+        actor.require("ops");
         var out = origination.apply(new OriginationService.Application(r.applicationId(), r.partyId(), r.productCode(),
                 r.productVersion(), r.amountMinor(), r.termMonths(), r.monthlyInstalmentMinor(), r.monthlyIncomeMinor(),
                 r.existingDebtMinor(), r.monthsAtEmployer(), r.asOf()), Currency.of(r.currency()));
@@ -91,13 +94,15 @@ class BankingController {
     }
 
     @PostMapping("/loans/{id}/repayments")
-    LoanView repay(@PathVariable String id, @RequestBody MoneyMove m) {
+    LoanView repay(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
+        actor.require("ops");
         loans.repay(id, m.reference(), Money.ofMinor(m.amountMinor(), Currency.of(m.currency())), m.valueDate());
         return loan(id, m.valueDate());
     }
 
     @PostMapping("/loans/{id}/settlement")
-    LoanView settle(@PathVariable String id, @RequestBody MoneyMove m) {
+    LoanView settle(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
+        actor.require("ops");
         loans.settle(id, m.reference(), m.valueDate());
         return loan(id, m.valueDate());
     }

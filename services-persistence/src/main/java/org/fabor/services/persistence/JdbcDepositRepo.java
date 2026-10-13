@@ -40,6 +40,20 @@ public final class JdbcDepositRepo implements DepositRepo {
     }
 
     @Override
+    public java.util.List<String> accountIds() {
+        return Jdbc.tx(ds, c -> {
+            java.util.List<String> out = new java.util.ArrayList<>();
+            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id FROM deposit_account WHERE tenant = ? ORDER BY id", tenant.value());
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        });
+    }
+
+    @Override
     public YearToDate yearToDate(String accountId, int year) {
         return Jdbc.tx(ds, c -> {
             try (PreparedStatement ps = Jdbc.prep(c, "SELECT gross, withheld FROM deposit_ytd WHERE tenant = ? AND account = ? "

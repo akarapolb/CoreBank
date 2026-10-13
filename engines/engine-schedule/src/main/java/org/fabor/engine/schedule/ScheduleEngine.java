@@ -44,6 +44,20 @@ public final class ScheduleEngine {
         return Rates.periodic(q.annualRate(), q.frequency().perYear());
     }
 
+    /**
+     * Interest for period {@code n}. A regular period is opening x periodic rate. When the first due date is not one
+     * regular period after disbursement, the first period is charged for its actual days (ACT/365 fixed) instead, so a
+     * customer who pays first after 45 days is charged for 45 days.
+     */
+    private static Money interestFor(ScheduleRequest q, int n, Money open, BigDecimal r) {
+        if (n == 1 && q.firstDue() != null && !q.firstDue().equals(q.frequency().nth(q.disbursement(), 1))) {
+            long days = java.time.temporal.ChronoUnit.DAYS.between(q.disbursement(), q.firstDue());
+            return open.times(q.annualRate().multiply(BigDecimal.valueOf(days), Rates.MC)
+                    .divide(BigDecimal.valueOf(365), Rates.MC), q.rounding());
+        }
+        return open.times(r, q.rounding());
+    }
+
     private static Installment row(ScheduleRequest q, int n, Money opening, Money principal, Money interest) {
         return new Installment(n, due(q, n), principal, interest, principal.plus(interest), opening.minus(principal));
     }
@@ -56,7 +70,7 @@ public final class ScheduleEngine {
         List<Installment> out = new ArrayList<>();
         Money open = q.principal();
         for (int n = 1; n <= q.periods(); n++) {
-            Money interest = open.times(r, q.rounding());
+            Money interest = interestFor(q, n, open, r);
             Money principal;
             if (n <= io) {
                 principal = Money.zero(open.currency());
@@ -104,7 +118,7 @@ public final class ScheduleEngine {
         List<Installment> out = new ArrayList<>();
         Money open = q.principal();
         for (int n = 1; n <= q.periods(); n++) {
-            Money interest = open.times(r, q.rounding());
+            Money interest = interestFor(q, n, open, r);
             Money principal = n <= io ? Money.zero(open.currency()) : parts[n - io - 1];
             if (n == q.periods()) {
                 principal = open;
@@ -121,7 +135,7 @@ public final class ScheduleEngine {
         List<Installment> out = new ArrayList<>();
         Money open = q.principal();
         for (int n = 1; n <= q.periods(); n++) {
-            Money interest = open.times(r, q.rounding());
+            Money interest = interestFor(q, n, open, r);
             Money principal = n == q.periods() ? open : Money.zero(open.currency());
             out.add(row(q, n, open, principal, interest));
         }

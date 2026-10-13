@@ -1,4 +1,6 @@
 spring:
+  # OIDC mode (default): set SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI (or ..._JWK_SET_URI).
+  # With neither set there is no JwtDecoder and the app refuses to start: it never runs unauthenticated.
   flyway:
     enabled: false
   application:
@@ -29,6 +31,7 @@ management:
 
 fabor:
   tenant: ${FABOR_TENANT:bank-a}
+  auth-mode: ${FABOR_AUTH_MODE:oidc}
   api-token: ${FABOR_API_TOKEN:}
   master-key: ${FABOR_MASTER_KEY:}
   grpc-port: ${FABOR_GRPC_PORT:9090}

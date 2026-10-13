@@ -33,12 +33,14 @@ class Lifecycle {
     private final LoanService loans;
     private final LoanRepo loanRepo;
     private final DepositService deposits;
+    private final org.fabor.deposit.DepositRepo depositRepo;
     private final Clock clock;
     private final SchedulerWorker worker;
     private final boolean enabled;
 
-    Lifecycle(TenantId tenant, DueQueueStore queue, LoanService loans, LoanRepo loanRepo, DepositService deposits, Clock clock,
-              FaborProperties props) {
+    Lifecycle(TenantId tenant, DueQueueStore queue, LoanService loans, LoanRepo loanRepo, DepositService deposits,
+              org.fabor.deposit.DepositRepo depositRepo, Clock clock, FaborProperties props) {
+        this.depositRepo = depositRepo;
         this.tenant = tenant;
         this.queue = queue;
         this.loans = loans;
@@ -73,9 +75,26 @@ class Lifecycle {
                 startOf(YearMonth.from(today()).plusMonths(1).atDay(1)), accountId));
     }
 
+    /**
+     * Bills one instalment. The schedule can change after the task was queued (prepayment, payment holiday), so the
+     * handler reads the live schedule: an instalment that no longer exists is dropped, one that moved is re-queued
+     * for its new date, and a billed one is left alone.
+     */
     private Optional<Instant> bill(Task t, int attempt) {
         String[] p = t.payload().split("\\|");
-        loans.bill(p[0], Integer.parseInt(p[1]), today());
+        int number = Integer.parseInt(p[1]);
+        Loan loan = loanRepo.find(p[0]).orElse(null);
+        if (loan == null || number > loan.instalments().size() || loan.status() == Loan.Status.CLOSED) {
+            return Optional.empty();
+        }
+        Loan.Instalment i = loan.instalments().get(number - 1);
+        if (i.billed()) {
+            return Optional.empty();
+        }
+        if (today().isBefore(i.dueDate())) {
+            return Optional.of(startOf(i.dueDate()));
+        }
+        loans.bill(p[0], number, today());
         return Optional.empty();
     }
 
@@ -87,6 +106,41 @@ class Lifecycle {
     private Optional<Instant> capitalize(Task t, int attempt) {
         deposits.capitalize(t.payload(), YearMonth.from(today().minusDays(1)));
         return Optional.of(startOf(YearMonth.from(today()).plusMonths(1).atDay(1)));
+    }
+
+    /**
+     * Makes sure every active loan and account has its due work queued. Safe to run any time: tasks are keyed, so
+     * existing ones are untouched. Covers loans created before the scheduler existed and any lost tasks.
+     * @return number of tasks newly queued
+     */
+    int backfill() {
+        int added = 0;
+        for (String id : loanRepo.activeIds()) {
+            Loan loan = loanRepo.find(id).orElseThrow();
+            for (Loan.Instalment i : loan.instalments()) {
+                if (!i.billed() && queue.enqueue(new Task(tenant, "bill:" + id + ":" + i.number(), "LOAN_BILL", id,
+                        startOf(i.dueDate()), id + "|" + i.number()))) {
+                    added++;
+                }
+            }
+            if (queue.enqueue(new Task(tenant, "accrue:" + id, "LOAN_ACCRUE", id, startOf(today().plusDays(1)), id))) {
+                added++;
+            }
+        }
+        for (String account : depositRepo.accountIds()) {
+            if (queue.enqueue(new Task(tenant, "capitalize:" + account, "DEPOSIT_CAPITALIZE", account,
+                    startOf(YearMonth.from(today()).plusMonths(1).atDay(1)), account))) {
+                added++;
+            }
+        }
+        return added;
+    }
+
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    void backfillOnStartup() {
+        if (enabled) {
+            backfill();
+        }
     }
 
     @Scheduled(fixedDelayString = "${fabor.scheduler-poll-ms:1000}")
