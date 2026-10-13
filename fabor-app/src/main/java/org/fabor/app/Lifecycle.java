@@ -84,7 +84,7 @@ class Lifecycle {
         String[] p = t.payload().split("\\|");
         int number = Integer.parseInt(p[1]);
         Loan loan = loanRepo.find(p[0]).orElse(null);
-        if (loan == null || number > loan.instalments().size() || loan.status() == Loan.Status.CLOSED) {
+        if (loan == null || number > loan.instalments().size() || loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
             return Optional.empty();
         }
         Loan.Instalment i = loan.instalments().get(number - 1);
@@ -100,7 +100,7 @@ class Lifecycle {
 
     private Optional<Instant> accrue(Task t, int attempt) {
         Loan l = loans.accrueDaily(t.payload(), today());
-        return l.status() == Loan.Status.CLOSED ? Optional.empty() : Optional.of(startOf(today().plusDays(1)));
+        return l.status() == Loan.Status.CLOSED || l.status() == Loan.Status.WRITTEN_OFF ? Optional.empty() : Optional.of(startOf(today().plusDays(1)));
     }
 
     private Optional<Instant> capitalize(Task t, int attempt) {

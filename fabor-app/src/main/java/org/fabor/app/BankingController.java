@@ -106,4 +106,31 @@ class BankingController {
         loans.settle(id, m.reference(), m.valueDate());
         return loan(id, m.valueDate());
     }
+
+    record RestructureRequest(String reference, java.math.BigDecimal newRate, int newTerm, LocalDate date) { }
+
+    record WriteOffRequest(String reference, LocalDate date, boolean override) { }
+
+    /** Restructuring needs a credit officer; the result is a new schedule at a rate no higher than before. */
+    @PostMapping("/loans/{id}/restructure")
+    LoanView restructure(Actor actor, @PathVariable String id, @RequestBody RestructureRequest r) {
+        actor.require("credit-officer");
+        loans.restructure(id, r.reference(), r.newRate(), r.newTerm(), r.date());
+        return loan(id, r.date());
+    }
+
+    /** Writing a loan off before its write-off day count needs a separate, stronger role. */
+    @PostMapping("/loans/{id}/write-off")
+    LoanView writeOff(Actor actor, @PathVariable String id, @RequestBody WriteOffRequest r) {
+        actor.require("write-off-approver");
+        loans.writeOff(id, r.reference(), r.date(), r.override() && actor.has("write-off-exception"));
+        return loan(id, r.date());
+    }
+
+    @PostMapping("/loans/{id}/recoveries")
+    Map<String, Object> recover(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
+        actor.require("ops");
+        Money owed = loans.recover(id, m.reference(), Money.ofMinor(m.amountMinor(), Currency.of(m.currency())), m.valueDate());
+        return Map.of("loan", id, "stillOwedMinor", owed.minor());
+    }
 }

@@ -194,9 +194,18 @@ class ServicesPersistenceTest {
                 l.instalments().get(1)), Loan.Status.NON_ACCRUAL);
         loans.save(paid);
         assertThat(loans.find("L1")).contains(paid);
+        // a restructuring replaces the rate and can shorten the schedule: old rows beyond the new length are removed
+        Loan restructured = paid.withRate(new java.math.BigDecimal("0.090000")).withInstalments(
+                List.of(new Loan.Instalment(1, LocalDate.of(2026, 5, 15), 70_000, 6_000, 0, 0, 0, 0, false)), Loan.Status.ACTIVE);
+        loans.save(restructured);
+        Loan back = loans.find("L1").orElseThrow();
+        assertThat(back.instalments()).hasSize(1);
+        assertThat(back.rateOverride()).isEqualByComparingTo("0.09");
+        assertThat(back.generation()).isEqualTo(1);
+        assertThat(back.tag()).isEqualTo("g1-");
         assertThat(loans.find("zz")).isEmpty();
         assertThat(loans.activeIds()).containsExactly("L1");
-        loans.save(paid.withStatus(Loan.Status.CLOSED));
+        loans.save(restructured.withStatus(Loan.Status.WRITTEN_OFF));
         assertThat(loans.activeIds()).isEmpty();
     }
 

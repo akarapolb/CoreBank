@@ -9,7 +9,7 @@ public interface LoanRepo {
 
     Optional<Loan> find(String id);
 
-    /** Ids of loans that still need servicing (not closed). */
+    /** Ids of loans that still need servicing (neither closed nor written off). */
     java.util.List<String> activeIds();
 
     final class InMemory implements LoanRepo {
@@ -27,7 +27,7 @@ public interface LoanRepo {
 
         @Override
         public synchronized java.util.List<String> activeIds() {
-            return loans.values().stream().filter(l -> l.status() != Loan.Status.CLOSED).map(Loan::id).sorted().toList();
+            return loans.values().stream().filter(l -> l.status() != Loan.Status.CLOSED && l.status() != Loan.Status.WRITTEN_OFF).map(Loan::id).sorted().toList();
         }
     }
 }

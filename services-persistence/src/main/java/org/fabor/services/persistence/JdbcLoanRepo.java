@@ -25,15 +25,21 @@ public final class JdbcLoanRepo implements LoanRepo {
     public void save(Loan l) {
         Jdbc.tx(ds, c -> {
             try (PreparedStatement ps = Jdbc.prep(c, "INSERT INTO loan (tenant, id, party, product_code, product_version, currency, "
-                    + "deposit_account, disbursed_on, principal, status) VALUES (?,?,?,?,?,?,?,?,?,?) "
-                    + "ON CONFLICT (tenant, id) DO UPDATE SET status = EXCLUDED.status", tenant.value(), l.id(), l.party(),
+                    + "deposit_account, disbursed_on, principal, status, rate_override, generation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
+                    + "ON CONFLICT (tenant, id) DO UPDATE SET status = EXCLUDED.status, rate_override = EXCLUDED.rate_override, "
+                    + "generation = EXCLUDED.generation", tenant.value(), l.id(), l.party(),
                     l.productCode(), l.productVersion(), l.currency(), l.depositAccountId(), l.disbursedOn(), l.principal(),
-                    l.status().name())) {
+                    l.status().name(), l.rateOverride(), l.generation())) {
                 ps.executeUpdate();
+            }
+            try (PreparedStatement del = Jdbc.prep(c, "DELETE FROM loan_instalment WHERE tenant = ? AND loan_id = ? AND number > ?",
+                    tenant.value(), l.id(), l.instalments().size())) {
+                del.executeUpdate();   // a prepayment or restructuring can shorten the schedule
             }
             try (PreparedStatement ps = c.prepareStatement("INSERT INTO loan_instalment (tenant, loan_id, number, due_date, "
                     + "principal_due, interest_due, principal_paid, interest_paid, penalty_accrued, penalty_paid, billed) "
                     + "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (tenant, loan_id, number) DO UPDATE SET "
+                    + "due_date = EXCLUDED.due_date, principal_due = EXCLUDED.principal_due, interest_due = EXCLUDED.interest_due, "
                     + "principal_paid = EXCLUDED.principal_paid, interest_paid = EXCLUDED.interest_paid, "
                     + "penalty_accrued = EXCLUDED.penalty_accrued, penalty_paid = EXCLUDED.penalty_paid, billed = EXCLUDED.billed")) {
                 for (Loan.Instalment i : l.instalments()) {
@@ -61,13 +67,14 @@ public final class JdbcLoanRepo implements LoanRepo {
         return Jdbc.tx(ds, c -> {
             Loan head;
             try (PreparedStatement ps = Jdbc.prep(c, "SELECT party, product_code, product_version, currency, deposit_account, "
-                    + "disbursed_on, principal, status FROM loan WHERE tenant = ? AND id = ?", tenant.value(), id);
+                    + "disbursed_on, principal, status, rate_override, generation FROM loan WHERE tenant = ? AND id = ?", tenant.value(), id);
                  ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     return Optional.<Loan>empty();
                 }
                 head = new Loan(id, rs.getString(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5),
-                        rs.getObject(6, LocalDate.class), rs.getLong(7), List.of(), Loan.Status.valueOf(rs.getString(8)));
+                        rs.getObject(6, LocalDate.class), rs.getLong(7), List.of(), Loan.Status.valueOf(rs.getString(8)),
+                        rs.getBigDecimal(9), rs.getInt(10));
             }
             List<Loan.Instalment> list = new ArrayList<>();
             try (PreparedStatement ps = Jdbc.prep(c, "SELECT number, due_date, principal_due, interest_due, principal_paid, "
@@ -86,7 +93,7 @@ public final class JdbcLoanRepo implements LoanRepo {
     public List<String> activeIds() {
         return Jdbc.tx(ds, c -> {
             List<String> out = new ArrayList<>();
-            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id FROM loan WHERE tenant = ? AND status <> 'CLOSED' ORDER BY id",
+            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id FROM loan WHERE tenant = ? AND status NOT IN ('CLOSED', 'WRITTEN_OFF') ORDER BY id",
                     tenant.value()); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     out.add(rs.getString(1));

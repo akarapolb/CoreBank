@@ -446,4 +446,108 @@ class LendingTest {
         LocalDate late = cur.instalments().get(11).dueDate().plusDays(1);
         assertThatThrownBy(() -> svc.holiday("L1", "h", 1, late)).isInstanceOf(IllegalStateException.class);
     }
+
+    // ---- restructuring, write-off and recovery
+
+    private Loan inArrears() {
+        Loan l = open();
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        svc.bill("L1", 1, due1);
+        svc.accrueDaily("L1", due1.plusDays(1));
+        svc.accrueDaily("L1", due1.plusDays(2));          // penalty 734
+        return svc.accrueDaily("L1", due1.plusDays(2));
+    }
+
+    @Test
+    void restructuringClearsArrearsAndBooksAModificationLoss() {
+        Loan l = inArrears();
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(10);
+        Loan r = svc.restructure("L1", "tdr1", new BigDecimal("0.09"), 18, day);
+        assertThat(r.instalments()).hasSize(18);
+        assertThat(r.status()).isEqualTo(Loan.Status.ACTIVE);
+        assertThat(r.rateOverride()).isEqualByComparingTo("0.09");
+        assertThat(r.instalments().stream().allMatch(i -> !i.billed() && i.principalPaid() == 0)).isTrue();
+        // arrears are gone from the receivables: interest moved into principal, penalty waived
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.penaltyAcct("L1"))).isZero();
+        assertThat(bal(LoanService.PENALTY_WAIVED)).isEqualTo(-734);
+        // lower rate than the original effective rate: the PV of the new cash flows is below carrying, a loss is booked
+        long loss = -bal(LoanService.MODIFICATION_LOSS);
+        assertThat(loss).isPositive();
+        // the ledger and the new schedule agree to the satang
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-outstandingPrincipal(r));
+        // retry changes nothing; a higher rate is refused
+        assertThat(svc.restructure("L1", "tdr1", new BigDecimal("0.09"), 18, day).instalments()).hasSize(18);
+        assertThat(-bal(LoanService.MODIFICATION_LOSS)).isEqualTo(loss);
+        assertThatThrownBy(() -> svc.restructure("L1", "tdr2", new BigDecimal("0.30"), 18, day)).hasMessageContaining("raise");
+        assertThatThrownBy(() -> svc.restructure("L1", "tdr3", new BigDecimal("0.09"), 0, day)).isInstanceOf(IllegalArgumentException.class);
+        // the restructured loan runs to zero at the new rate
+        Loan cur = r;
+        for (int i = 1; i <= cur.instalments().size(); i++) {
+            var inst = cur.instalments().get(i - 1);
+            svc.bill("L1", i, inst.dueDate());
+            cur = svc.repay("L1", "r" + i, Money.ofMinor(inst.principalDue() + inst.interestDue(), Currency.THB), inst.dueDate());
+        }
+        assertThat(cur.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+    }
+
+    @Test
+    void restructuringAtTheSameRateWithNoArrearsBooksNoLoss() {
+        Loan l = billAndPay(open(), 1);
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(1);
+        Loan r = svc.restructure("L1", "same", new BigDecimal("0.18"), 11, day);
+        assertThat(bal(LoanService.MODIFICATION_LOSS)).isZero();
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-outstandingPrincipal(r));
+        Loan closed = svc.settle("L1", "end", day.plusDays(1));
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThatThrownBy(() -> svc.restructure("L1", "late", new BigDecimal("0.10"), 5, day)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void writeOffMovesEverythingOffTheBooksAndTracksRecoveries() throws IOException {
+        Loan l = inArrears();
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        assertThatThrownBy(() -> svc.writeOff("L1", "w", due1.plusDays(100), false)).hasMessageContaining("360 days");
+        LocalDate day = due1.plusDays(360);
+        long owed = 10_000_000 + 150_000 + 734;
+        Loan w = svc.writeOff("L1", "w1", day, false);
+        assertThat(w.status()).isEqualTo(Loan.Status.WRITTEN_OFF);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.penaltyAcct("L1"))).isZero();
+        assertThat(-bal(LoanService.WRITE_OFF_EXPENSE)).isEqualTo(owed);
+        assertThat(svc.writeOff("L1", "w1", day, false).status()).isEqualTo(Loan.Status.WRITTEN_OFF);   // retry
+        assertThatThrownBy(() -> svc.writeOff("L1", "w2", day, false)).isInstanceOf(IllegalStateException.class);
+        // the debt is remembered off balance sheet
+        assertThat(ledger.currentBalance(T, LoanService.writtenOffMemo("L1"), BalanceType.CONTINGENT, Currency.THB).minor()).isEqualTo(-owed);
+        // no more income accrues on a written-off loan
+        assertThat(svc.accrueDaily("L1", day.plusDays(5)).status()).isEqualTo(Loan.Status.WRITTEN_OFF);
+        // recoveries: income, memo shrinks, never more than is owed
+        assertThat(svc.recover("L1", "rec1", Money.ofMinor(1_000_000, Currency.THB), day.plusDays(10)).minor()).isEqualTo(owed - 1_000_000);
+        assertThat(bal(LoanService.RECOVERY_INCOME)).isEqualTo(1_000_000);
+        assertThat(svc.recover("L1", "rec1", Money.ofMinor(1_000_000, Currency.THB), day.plusDays(10)).minor()).isEqualTo(owed - 1_000_000);   // retry
+        assertThatThrownBy(() -> svc.recover("L1", "rec2", Money.ofMinor(owed, Currency.THB), day.plusDays(11))).hasMessageContaining("exceeds");
+        assertThat(svc.recover("L1", "rec3", Money.ofMinor(owed - 1_000_000, Currency.THB), day.plusDays(12)).isZero()).isTrue();
+        // an active loan has no recoveries
+        wire(yaml());
+        open();
+        assertThatThrownBy(() -> svc.recover("L1", "x", Money.ofMinor(1, Currency.THB), D0)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void earlyWriteOffNeedsAnOverrideAndWrittenOffLoansLeaveTheActiveList() throws IOException {
+        Loan l = open();
+        assertThatThrownBy(() -> svc.writeOff("L1", "w", D0.plusDays(30), false)).isInstanceOf(IllegalStateException.class);
+        Loan w = svc.writeOff("L1", "w", D0.plusDays(30), true);
+        assertThat(w.status()).isEqualTo(Loan.Status.WRITTEN_OFF);
+        LoanRepo.InMemory repo = new LoanRepo.InMemory();
+        repo.save(l);
+        repo.save(w.withStatus(Loan.Status.WRITTEN_OFF));
+        assertThat(repo.activeIds()).isEmpty();
+        // a product with no write-off rule needs the override too
+        wire(yaml().replaceAll("(?s)delinquency:.*?accounting:", "accounting:"));
+        open();
+        assertThatThrownBy(() -> svc.writeOff("L1", "w", D0.plusDays(400), false)).hasMessageContaining("override");
+    }
 }

@@ -137,7 +137,7 @@ public final class LoanService {
         }
         AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
         if (i.interestDue() > 0) {
-            post(loanId, "bill-" + number, i.dueDate(), List.of(
+            post(loanId, loan.tag() + "bill-" + number, i.dueDate(), List.of(
                     new Entry(interestAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, i.interestDue())),
                     new Entry(income, BalanceType.SETTLED, Direction.CREDIT, money(loan, i.interestDue()))));
         }
@@ -148,6 +148,9 @@ public final class LoanService {
     /** Accrues the day's late charge on every overdue instalment, then applies the non-accrual rule. Idempotent per day. */
     public Loan accrueDaily(String loanId, LocalDate day) {
         Loan loan = load(loanId);
+        if (loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
+            return loan;
+        }
         ProductDefinition p = product(loan.productCode(), loan.productVersion());
         List<Loan.Instalment> list = new ArrayList<>(loan.instalments());
         long totalPenalty = 0;
@@ -158,11 +161,11 @@ public final class LoanService {
             }
             long overdue = i.principalOutstanding() + i.interestOutstanding();
             long perDay = dailyPenalty(p, overdue);
-            if (perDay > 0 && !postedPenalty(loanId, i.number(), day)) {
+            if (perDay > 0 && !postedPenalty(loanId, loan.tag(), i.number(), day)) {
                 totalPenalty += perDay;
                 list.set(k, new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalPaid(),
                         i.interestPaid(), i.penaltyAccrued() + perDay, i.penaltyPaid(), true));
-                post(loanId, "pen-" + i.number() + "-" + day, day, List.of(
+                post(loanId, loan.tag() + "pen-" + i.number() + "-" + day, day, List.of(
                         new Entry(penaltyAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, perDay)),
                         new Entry(PENALTY_INCOME, BalanceType.SETTLED, Direction.CREDIT, money(loan, perDay))));
             }
@@ -298,8 +301,8 @@ public final class LoanService {
         repo.save(loan.withInstalments(List.copyOf(list), status));
     }
 
-    private boolean postedPenalty(String loanId, int number, LocalDate day) {
-        return ledger.find(tenant, new BatchId(loanId + ":pen-" + number + "-" + day)).isPresent();
+    private boolean postedPenalty(String loanId, String tag, int number, LocalDate day) {
+        return ledger.find(tenant, new BatchId(loanId + ":" + tag + "pen-" + number + "-" + day)).isPresent();
     }
 
     private long dailyPenalty(ProductDefinition p, long overdue) {
@@ -380,7 +383,7 @@ public final class LoanService {
         int first = firstUnbilled(loan);
         requireNothingDue(loan, first);
         Frequency f = Frequency.valueOf(p.schedule().frequency());
-        java.math.BigDecimal r = org.fabor.engine.interest.Rates.periodic(p.pricing().rate(), f.perYear());
+        java.math.BigDecimal r = org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear());
         Money out = money(loan, loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum());
         Money start = out;
         for (int i = 0; i < periods; i++) {
@@ -409,9 +412,13 @@ public final class LoanService {
         return keep(loan.withInstalments(List.copyOf(list), loan.status()));
     }
 
+    private static java.math.BigDecimal rateOf(Loan loan, ProductDefinition p) {
+        return loan.rateOverride() != null ? loan.rateOverride() : p.pricing().rate();
+    }
+
     private List<Installment> rebuild(ProductDefinition p, Loan loan, long principal, int periods, LocalDate from) {
         Convention conv = p.schedule().holidayRule() == null ? Convention.FOLLOWING : Convention.valueOf(p.schedule().holidayRule());
-        return ScheduleEngine.build(new ScheduleRequest(money(loan, principal), p.pricing().rate(), periods,
+        return ScheduleEngine.build(new ScheduleRequest(money(loan, principal), rateOf(loan, p), periods,
                 Frequency.valueOf(p.schedule().frequency()), from, null, Method.ANNUITY, null, 0, calendar, conv,
                 java.math.RoundingMode.HALF_UP)).installments();
     }
@@ -439,6 +446,175 @@ public final class LoanService {
                 throw new IllegalStateException("Instalment " + (i + 1) + " is unpaid; clear arrears first");
             }
         }
+    }
+
+    public static final AccountId MODIFICATION_LOSS = new AccountId("gl:modification-loss");
+    public static final AccountId PENALTY_WAIVED = new AccountId("gl:penalty-waived");
+    public static final AccountId WRITE_OFF_EXPENSE = new AccountId("gl:write-off-expense");
+    public static final AccountId RECOVERY_INCOME = new AccountId("gl:recovery-income");
+
+    /** Memo account (off balance sheet) holding what a written-off loan still owes and may be recovered. */
+    public static AccountId writtenOffMemo(String id) {
+        return new AccountId("loan:" + id + ":written-off");
+    }
+
+    /**
+     * Restructuring (troubled debt): arrears are cleared into a new schedule at new terms. Unpaid billed interest is
+     * capitalised into principal, unpaid penalties are waived, and the loan is rebuilt over {@code newTerm} periods at
+     * {@code newRate}. Under IFRS 9 a modification is measured against the original effective rate: the new cash flows
+     * are discounted at the old periodic rate and any shortfall against the carrying amount is booked as a modification
+     * loss (a gain is not recognised here: policy decides). Fixed-rate annuity products only. Idempotent per reference.
+     *
+     * @return the restructured loan; the modification loss posted is on the ledger under {@link #MODIFICATION_LOSS}
+     */
+    public Loan restructure(String loanId, String reference, java.math.BigDecimal newRate, int newTerm, LocalDate date) {
+        Loan loan = load(loanId);
+        if (ledger.find(tenant, new BatchId(loanId + ":restructure-" + reference)).isPresent()) {
+            return loan;
+        }
+        if (loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
+            throw new IllegalStateException("Loan is " + loan.status());
+        }
+        if (newTerm < 1 || newTerm > 120 || newRate.signum() < 0 || newRate.compareTo(java.math.BigDecimal.ONE) > 0) {
+            throw new IllegalArgumentException("Invalid restructuring terms");
+        }
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        requireAnnuity(p);
+        if (newRate.compareTo(rateOf(loan, p)) > 0) {
+            throw new IllegalArgumentException("A restructuring cannot raise the rate");
+        }
+        long principal = 0;
+        long unpaidInterest = 0;
+        long unpaidPenalty = 0;
+        for (Loan.Instalment i : loan.instalments()) {
+            principal += i.principalOutstanding();
+            unpaidInterest += i.billed() ? i.interestOutstanding() : 0;
+            unpaidPenalty += i.billed() ? i.penaltyOutstanding() : 0;
+        }
+        long carrying = principal + unpaidInterest;                        // what the loan is worth before modification
+        Frequency f = Frequency.valueOf(p.schedule().frequency());
+        java.math.BigDecimal oldPeriodic = org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear());
+        Loan target = loan.withRate(newRate);
+        List<Installment> fresh = rebuild(p, target, carrying, newTerm, date);
+        // present value of the new payments at the original effective rate
+        java.math.BigDecimal pv = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal factor = java.math.BigDecimal.ONE;
+        for (Installment i : fresh) {
+            factor = factor.multiply(java.math.BigDecimal.ONE.add(oldPeriodic), org.fabor.engine.interest.Rates.MC);
+            pv = pv.add(java.math.BigDecimal.valueOf(i.total().minor()).divide(factor, org.fabor.engine.interest.Rates.MC));
+        }
+        long pvMinor = pv.setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
+        long loss = Math.max(0, carrying - pvMinor);
+
+        List<Entry> entries = new ArrayList<>();
+        if (unpaidInterest > 0) {   // interest receivable becomes principal of the new loan
+            entries.add(new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, unpaidInterest)));
+            entries.add(new Entry(interestAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, unpaidInterest)));
+        }
+        if (unpaidPenalty > 0) {    // penalties are waived: receivable written back against income
+            entries.add(new Entry(PENALTY_WAIVED, BalanceType.SETTLED, Direction.DEBIT, money(loan, unpaidPenalty)));
+            entries.add(new Entry(penaltyAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, unpaidPenalty)));
+        }
+        if (loss > 0) {
+            entries.add(new Entry(MODIFICATION_LOSS, BalanceType.SETTLED, Direction.DEBIT, money(loan, loss)));
+            entries.add(new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, loss)));
+        }
+        if (entries.isEmpty()) {   // nothing to book: a marker keeps the operation idempotent
+            entries.add(new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, Money.ofMinor(1, Currency.of(loan.currency()))));
+            entries.add(new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, Money.ofMinor(1, Currency.of(loan.currency()))));
+        }
+        post(loanId, "restructure-" + reference, date, entries);
+
+        // the carrying amount after booking is carrying - loss; the new schedule is built on the full carrying and its
+        // principal is reduced by the loss on the last instalments so the schedule and the ledger agree
+        List<Loan.Instalment> list = new ArrayList<>();
+        Frequency freq = f;
+        LocalDate anchor = freq.nth(date, 1);
+        for (int k = 0; k < fresh.size(); k++) {
+            Installment i = fresh.get(k);
+            list.add(new Loan.Instalment(k + 1, calendar.adjust(freq.nth(anchor, k), Convention.FOLLOWING), i.principal().minor(),
+                    i.interest().minor(), 0, 0, 0, 0, false));
+        }
+        long left = loss;
+        for (int k = list.size() - 1; k >= 0 && left > 0; k--) {
+            Loan.Instalment i = list.get(k);
+            long cut = Math.min(left, i.principalDue());
+            list.set(k, new Loan.Instalment(i.number(), i.dueDate(), i.principalDue() - cut, i.interestDue(), 0, 0, 0, 0, false));
+            left -= cut;
+        }
+        return keep(target.withInstalments(List.copyOf(list), Loan.Status.ACTIVE));
+    }
+
+    /**
+     * Writes the loan off: every remaining balance leaves the loan accounts into expense, and the amount owed is kept
+     * on a memo account so later recoveries can be tracked. Allowed once the loan has reached the product's write-off
+     * days past due, or earlier with {@code override} (an approved exception). Idempotent per reference.
+     */
+    public Loan writeOff(String loanId, String reference, LocalDate date, boolean override) {
+        Loan loan = load(loanId);
+        if (ledger.find(tenant, new BatchId(loanId + ":writeoff-" + reference)).isPresent()) {
+            return loan;
+        }
+        if (loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
+            throw new IllegalStateException("Loan is " + loan.status());
+        }
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        Integer threshold = p.delinquency() == null ? null : p.delinquency().writeOffAtDpd();
+        if (!override && (threshold == null || dpd(loan, date) < threshold)) {
+            throw new IllegalStateException("Write-off needs " + (threshold == null ? "an approved override" : threshold + " days past due"));
+        }
+        long principal = 0;
+        long interest = 0;
+        long penalty = 0;
+        List<Loan.Instalment> cleared = new ArrayList<>();
+        for (Loan.Instalment i : loan.instalments()) {
+            principal += i.principalOutstanding();
+            interest += i.billed() ? i.interestOutstanding() : 0;
+            penalty += i.billed() ? i.penaltyOutstanding() : 0;
+            cleared.add(new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalDue(),
+                    i.billed() ? i.interestDue() : i.interestPaid(), i.penaltyAccrued(), i.penaltyAccrued(), true));
+        }
+        long total = principal + interest + penalty;
+        List<Entry> entries = new ArrayList<>();
+        entries.add(new Entry(WRITE_OFF_EXPENSE, BalanceType.SETTLED, Direction.DEBIT, money(loan, total)));
+        if (principal > 0) {
+            entries.add(new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, principal)));
+        }
+        if (interest > 0) {
+            entries.add(new Entry(interestAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, interest)));
+        }
+        if (penalty > 0) {
+            entries.add(new Entry(penaltyAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, penalty)));
+        }
+        post(loanId, "writeoff-" + reference, date, entries);
+        // memo: the borrower still owes it
+        post(loanId, "writeoff-memo-" + reference, date, List.of(
+                new Entry(writtenOffMemo(loanId), BalanceType.CONTINGENT, Direction.DEBIT, money(loan, total)),
+                new Entry(new AccountId("gl:written-off-memo"), BalanceType.CONTINGENT, Direction.CREDIT, money(loan, total))));
+        return keep(loan.withInstalments(List.copyOf(cleared), Loan.Status.WRITTEN_OFF));
+    }
+
+    /** Money recovered from a written-off borrower: income, and a reduction of the memo balance. Idempotent per reference. */
+    public Money recover(String loanId, String reference, Money amount, LocalDate date) {
+        Loan loan = load(loanId);
+        if (loan.status() != Loan.Status.WRITTEN_OFF) {
+            throw new IllegalStateException("Only written-off loans have recoveries");
+        }
+        Money memo = ledger.currentBalance(tenant, writtenOffMemo(loanId), BalanceType.CONTINGENT, Currency.of(loan.currency()));
+        long owed = -memo.minor();                                   // debit balance: positive amount still owed
+        if (ledger.find(tenant, new BatchId(loanId + ":recovery-" + reference)).isEmpty()) {
+            if (amount.minor() > owed) {
+                throw new IllegalArgumentException("Recovery exceeds what is still owed (" + owed + ")");
+            }
+            post(loanId, "recovery-" + reference, date, List.of(
+                    Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED, amount),
+                    new Entry(RECOVERY_INCOME, BalanceType.SETTLED, Direction.CREDIT, amount)));
+            post(loanId, "recovery-memo-" + reference, date, List.of(
+                    new Entry(new AccountId("gl:written-off-memo"), BalanceType.CONTINGENT, Direction.DEBIT, amount),
+                    new Entry(writtenOffMemo(loanId), BalanceType.CONTINGENT, Direction.CREDIT, amount)));
+        }
+        return Money.ofMinor(-ledger.currentBalance(tenant, writtenOffMemo(loanId), BalanceType.CONTINGENT, Currency.of(loan.currency())).minor(),
+                Currency.of(loan.currency()));
     }
 
     private Loan keep(Loan loan) {
