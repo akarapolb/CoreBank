@@ -25,7 +25,6 @@ Measured against the Phase 1 plan items ([07](07-roadmap.md), `plan/plan.json`).
 |---|---|
 | Real eKYC provider, credit bureau (NCB), PromptPay rails | Ports exist; the app wires "no provider" defaults (eKYC fails closed, bureau returns nothing). Needs provider contracts and credentials. |
 | Credit decisioning model, document intelligence, fraud ML, customer assistant | Rule-based decisioning only. Models need data and model-risk governance; the assistant needs an LLM deployment. |
-| Reference mobile app | Not built. The REST API is the base for it. |
 | Scale-out test (100k/s across 10 cells) | Needs a performance environment. Sharding and cross-shard transfers are built and tested in memory only. |
 | Penetration test, IT risk assessment, regulator sandbox, design partner, Series A, staff pilot | External or business work, not code. |
 | Oracle for scheduler and services repositories | PostgreSQL only; the ledger has an Oracle store that has never been run. |
@@ -41,11 +40,14 @@ Measured against the Phase 1 plan items ([07](07-roadmap.md), `plan/plan.json`).
 | Partial prepayment, payment holidays | Prepayment (reduce term or reduce instalment) and holidays with interest capitalised, on fixed-rate annuity products; ledger balances equal the rebuilt schedule; retries safe. |
 | VAT on fees, tax invoices | VAT on the origination fee when the product says so, posted to VAT payable, with a tax invoice handed to a sink. |
 | Odd-day first-period interest | The schedule engine charges a first period of irregular length for its actual days. |
+| Restructuring, write-off, recovery | Restructuring clears arrears into a new schedule at a rate no higher than before, capitalises unpaid interest, waives penalties and books the IFRS 9 modification loss against the original effective rate. Write-off moves all balances to expense at the product's days past due (or with an exception role) and keeps the debt on a memo account; recoveries are income and cannot exceed what is owed. A schedule generation counter keeps posting ids unique. REST endpoints need `credit-officer`, `write-off-approver`, `ops`. |
+| Console sign-in | Authorization code with PKCE (S256, state check, code removed from the address bar, expiry handling), driven in Chromium against the mock IdP: sign-in, a maker cannot publish, a no-role user is refused. |
+| Reference mobile app | `/app/`: a phone-first web app (installable, shell cached offline, API never cached) on a customer API scoped by the token's `party_id` claim: balance, activity, loans, pay a due instalment. A staff token is not a customer, an unlinked login sees nothing, another customer's loan looks non-existent. Driven in a phone-sized Chromium. Native iOS and Android apps are not built; QR display is not built. |
 | Loans created before the scheduler existed | `backfill` queues missing billing, accrual and interest work for active loans and accounts; runs at startup and from an admin endpoint; the billing task now follows schedule changes. |
 
 ## Known gaps in what is built
 
-- Loan servicing still lacks restructuring (modification gain or loss, debt consolidation) and write-off and recovery.
+- Loan servicing still lacks debt consolidation and the TFRS 9 allowance behind write-offs (Phase 2 ECL). Restructuring books a modification loss but never a gain, and ignores interest accrued since the last due date.
 - Prepayment and holidays do not apply to flat-rate (hire purchase) products; those need the rebate rules of Phase 2.
 - Browser sign-in for the console (authorization code with PKCE) is not built; OIDC is exercised through API tokens only, against a locally generated key, not a real Keycloak.
 - Rule-pack values (rate cap, retention, thresholds) are configuration to confirm with counsel and the regulator, not legal advice.

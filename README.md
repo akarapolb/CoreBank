@@ -10,7 +10,7 @@
 **The Financial and Banking Operator.** An AI-native core banking platform for **retail**, **commercial (SME and corporate)** and **virtual (digital-only) banks**.
 Any lending product, including **leasing and hire purchase**, is built from configuration, not code.
 
-> Status: **Phase 0 built, exit criteria partly open** ([exit report](docs/phase0-exit-report.md)); **Phase 1 core services built** ([status](docs/phase1-status.md)). The blueprint is in `docs/`; code so far: `platform/` (money, time, tenancy), `ledger/` (domain, gRPC contract, in-memory, PostgreSQL and Oracle stores, group commit, sharding, outbox, metrics, benchmark) and `agent-gateway/` (read-only MCP tools). See the [quickstart](docs/quickstart.md). Build with `mvn verify` (Java 21, Maven 3.9); set `FABOR_PG_URL` to also run the PostgreSQL tests. See the [roadmap](docs/07-roadmap.md) and [coding standards](docs/coding-standards.md).
+> Status: **Phase 0 built, exit criteria partly open** ([exit report](docs/phase0-exit-report.md)); **Phase 1 built except external-dependent items** ([status](docs/phase1-status.md)). The blueprint is in `docs/`; code so far: `platform/` (money, time, tenancy), `ledger/` (domain, gRPC contract, in-memory, PostgreSQL and Oracle stores, group commit, sharding, outbox, metrics, benchmark) and `agent-gateway/` (read-only MCP tools). See the [quickstart](docs/quickstart.md). Build with `mvn verify` (Java 21, Maven 3.9); set `FABOR_PG_URL` to also run the PostgreSQL tests. See the [roadmap](docs/07-roadmap.md) and [coding standards](docs/coding-standards.md).
 
 ## What "unicorn grade" means here
 
