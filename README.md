@@ -1,5 +1,12 @@
 # Fabor OS
 
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/fabor-os-lockup-dark.svg">
+    <img src="brand/fabor-os-lockup-light.svg" alt="Fabor OS" height="56">
+  </picture>
+</p>
+
 **The Financial and Banking Operator.** An AI-native core banking platform for **retail**, **commercial (SME and corporate)** and **virtual (digital-only) banks**.
 Any lending product, including **leasing and hire purchase**, is built from configuration, not code.
 
@@ -36,6 +43,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 13 | [Business and revenue model](docs/13-business-model.md) | Editions, price metrics, add-ons, services, example customers, unit economics |
 | SDD | [Design reference (HTML)](docs/design/fabor-os-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Master Builder, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
+| Brand | [Brand mark](brand/index.html) | Logo, meaning, concepts, colours, sizes and usage rules |
 | ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md), [multi-database support](docs/adr/0005-multi-database-support.md) the [open-source-only policy](docs/adr/0006-open-source-only.md) and the [open-core model](docs/adr/0009-open-core-model.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |
 
