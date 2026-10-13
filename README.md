@@ -41,6 +41,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 11 | [Global scale and benchmark](docs/11-global-scale-and-benchmark.md) | Global sizing, high-performance design, capability check against global banks and leading platforms |
 | 12 | [Trade finance, treasury and syndication](docs/12-trade-treasury-syndication.md) | Native LCs and guarantees, treasury operations, syndicated lending as lender and agent |
 | 13 | [Business and revenue model](docs/13-business-model.md) | Editions, price metrics, add-ons, services, example customers, unit economics |
+| 14 | [Engineering plan](docs/14-engineering-plan.md) ([HTML](docs/design/fabor-os-engineering-plan.html)) | Team topology, hiring, Phase 0 sprint plan, epics by phase, ways of working, CI/CD, testing, metrics |
 | SDD | [Design reference (HTML)](docs/design/fabor-os-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Master Builder, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
 | Brand | [Brand mark](brand/index.html) | Logo, meaning, concepts, colours, sizes and usage rules |

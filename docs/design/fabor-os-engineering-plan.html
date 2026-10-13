@@ -1,0 +1,498 @@
+<title>Fabor OS Engineering Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column for an engineering plan; timelines and wide tables scroll inside their frames. */
+:root { --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#EEF0F4; --line:#E3E6EB; --fg:#0F1729; --muted:#5F6B7E; --accent:#3156F5; --teal:#14B89A;
+  --b0:#3156F5; --b1:#4D6CF7; --b2:#14B89A; --b3:#0E8F78; --b4:#7C8CF8; --b5:#E08A3C;
+  --font:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif; --mono:"Geist Mono", ui-monospace, Menlo, monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0A0C11; --surface:#11141B; --surface-2:#171B24; --line:#262B36; --fg:#E9ECF2; --muted:#9099AB; --accent:#7E98FF; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg:#0A0C11; --surface:#11141B; --surface-2:#171B24; --line:#262B36; --fg:#E9ECF2; --muted:#9099AB; --accent:#7E98FF; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+main { max-width: 980px; margin: 0 auto; padding-inline: 24px; padding-block: 44px 96px; }
+header { display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+h1 { font-size: 36px; letter-spacing: -0.035em; margin: 0; line-height: 1.15; font-weight: 600; text-wrap: balance; }
+header p { color: var(--muted); font-size: 17px; max-width: 66ch; margin: 0; }
+h2 { font-size: 24px; letter-spacing: -0.02em; margin: 48px 0 12px; font-weight: 600; text-wrap: balance; }
+h3 { font-size: 17px; margin: 28px 0 8px; font-weight: 600; }
+p, li { max-width: 74ch; }
+ul, ol { padding-left: 22px; }
+li { margin: 4px 0; }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.55; }
+pre code { background: none; padding: 0; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.5; }
+th { text-align: left; font-weight: 500; font-size: 12.5px; color: var(--muted); background: var(--surface-2); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+figure.dia { margin: 16px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.scroll { overflow-x: auto; }
+.scroll svg { display: block; width: 100%; min-width: 720px; height: auto; }
+figcaption { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+svg .lbl { fill: var(--fg); font-family: var(--font); font-size: 12.5px; font-weight: 500; }
+svg .tick { fill: var(--muted); font-family: var(--font); font-size: 11px; }
+svg .grid { stroke: var(--line); stroke-dasharray: 3 4; }
+svg .ms { fill: var(--fg); }
+svg .bar.b0 { fill: var(--b0); } svg .bar.b1 { fill: var(--b1); } svg .bar.b2 { fill: var(--b2); } svg .bar.b3 { fill: var(--b3); } svg .bar.b4 { fill: var(--b4); } svg .bar.b5 { fill: var(--b5); }
+@media (max-width: 720px) { main { padding-inline: 16px; } h1 { font-size: 28px; } }
+</style>
+<main>
+<header>
+  <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64.0 64.0" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#3156F5"/><rect x="18" y="14" width="9" height="36" rx="1.5" fill="#FFFFFF"/><rect x="18" y="14" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="18" y="27.5" width="28" height="9" rx="1.5" fill="#FFFFFF"/><rect x="37" y="41" width="9" height="9" rx="1.5" fill="#14B89A"/></svg><span>Fabor OS</span></div>
+  <h1>Engineering plan</h1>
+  <p>Who builds Fabor OS, in what order, with which practices and quality gates, starting with a sprint-by-sprint plan for Phase 0.</p>
+</header>
+<p>How the Fabor OS team builds the platform: who, in what order, with which practices and quality gates. It turns the roadmap (07) into executable work, starting with a sprint-level plan for Phase 0.</p>
+<h2>1. Engineering goals</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Goal</th>
+<th>Measured by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Correct money, always</td>
+<td>Zero unbalanced postings in any environment; property-based and conformance suites green on every merge</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Fast by design</td>
+<td>Ledger p99 &lt; 50 ms at 10,000 batches/s per cell; no p99 regression merges</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Ship small and often</td>
+<td>Trunk-based development, daily merges, release every 2 weeks from Phase 1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Portable and open</td>
+<td>PostgreSQL and Oracle green on every merge; only OSI-licensed dependencies</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Operable from day one</td>
+<td>Every service has dashboards, alerts and a runbook before it reaches staging</td>
+</tr>
+</tbody>
+</table></div>
+<h2>2. Workstreams and dependencies</h2>
+<pre><code>Platform kernel (money, time, tenancy, persistence, events, security)
+   └─► Ledger ─► Scheduler (time-wheel) ─┐
+                                         ├─► Deposits ─► Payments hub
+   Product engine + simulator ───────────┤
+                                         ├─► Lending ─► Leasing / HP ─► Fleet, floor plan
+                                         └─► Limits &amp; collateral ─► Commercial ─► Trade, treasury, syndication
+   Agent gateway + AI decisioning ─────────► (attaches to every service through its APIs)
+   Delivery platform (CI/CD, environments, observability) ─► everything
+</code></pre>
+<p>The ledger and platform kernel are on the critical path for everything. Nothing that moves money starts before the ledger passes its conformance suite.</p>
+<figure class="dia"><div class="scroll"><svg viewBox="0 0 1000 270" role="img" aria-label="Roadmap: Phase 0 months 0 to 3, Phase 1 to month 9, Phase 2 to 14, Phase 3 to 20, Phase 4 to 30, Phase 5 to 42, with milestones at each phase end."><line x1="150.0" y1="30" x2="150.0" y2="246" class="grid"/><text x="150.0" y="262" class="tick" text-anchor="middle">M0</text><line x1="268.6" y1="30" x2="268.6" y2="246" class="grid"/><text x="268.6" y="262" class="tick" text-anchor="middle">M6</text><line x1="387.1" y1="30" x2="387.1" y2="246" class="grid"/><text x="387.1" y="262" class="tick" text-anchor="middle">M12</text><line x1="505.7" y1="30" x2="505.7" y2="246" class="grid"/><text x="505.7" y="262" class="tick" text-anchor="middle">M18</text><line x1="624.3" y1="30" x2="624.3" y2="246" class="grid"/><text x="624.3" y="262" class="tick" text-anchor="middle">M24</text><line x1="742.9" y1="30" x2="742.9" y2="246" class="grid"/><text x="742.9" y="262" class="tick" text-anchor="middle">M30</text><line x1="861.4" y1="30" x2="861.4" y2="246" class="grid"/><text x="861.4" y="262" class="tick" text-anchor="middle">M36</text><line x1="980.0" y1="30" x2="980.0" y2="246" class="grid"/><text x="980.0" y="262" class="tick" text-anchor="middle">M42</text><text x="10" y="55" class="lbl">Phase 0 · Foundations</text><rect x="150.0" y="40" width="59.3" height="22" rx="6" class="bar b0"/><text x="10" y="89" class="lbl">Phase 1 · Retail and virtual bank</text><rect x="209.3" y="74" width="118.6" height="22" rx="6" class="bar b1"/><text x="10" y="123" class="lbl">Phase 2 · Asset finance</text><rect x="327.9" y="108" width="98.8" height="22" rx="6" class="bar b2"/><text x="10" y="157" class="lbl">Phase 3 · Commercial, trade, treasury</text><rect x="426.7" y="142" width="118.6" height="22" rx="6" class="bar b3"/><text x="10" y="191" class="lbl">Phase 4 · Scale and platform</text><rect x="545.2" y="176" width="197.6" height="22" rx="6" class="bar b4"/><text x="10" y="225" class="lbl">Phase 5 · Global bank</text><rect x="742.9" y="210" width="237.1" height="22" rx="6" class="bar b5"/><g><path d="M209.3 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="218.3" y="27" class="tick">Open source</text></g><g><path d="M327.9 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="336.9" y="27" class="tick">Staff pilot</text></g><g><path d="M426.7 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="435.7" y="27" class="tick">Parallel run</text></g><g><path d="M545.2 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="554.2" y="27" class="tick">Commercial pilot</text></g><g><path d="M742.9 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="751.9" y="27" class="tick">Incumbent migration</text></g><g><path d="M980.0 18 l6 6 -6 6 -6 -6 z" class="ms"/><text x="972.0" y="14" class="tick" text-anchor="end">Global reference</text></g></svg></div><figcaption>Phases and milestones over 42 months. Each milestone is the phase's exit proof.</figcaption></figure>
+<h2>3. Team topology</h2>
+<p>Squads of 5–7 people, each owning services end to end (build, test, run). Every squad has a tech lead, engineers, a quality engineer and access to a shared SRE.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Squad</th>
+<th>Owns</th>
+<th>Starts</th>
+<th>Size at start → Phase 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ledger &amp; platform</td>
+<td>Platform kernel, ledger, scheduler, performance</td>
+<td>Month 0</td>
+<td>6 → 8</td>
+</tr>
+<tr>
+<td>Delivery platform &amp; SRE</td>
+<td>CI/CD, environments, observability, security tooling</td>
+<td>Month 0</td>
+<td>3 → 6</td>
+</tr>
+<tr>
+<td>Product engine</td>
+<td>DSL, CEL, schedule and interest engines, simulator, Master Builder</td>
+<td>Month 1</td>
+<td>4 → 6</td>
+</tr>
+<tr>
+<td>Deposits &amp; payments</td>
+<td>Deposits, payments hub, PromptPay, statements</td>
+<td>Month 3</td>
+<td>5 → 6</td>
+</tr>
+<tr>
+<td>Lending &amp; leasing</td>
+<td>Lending, leasing, HP, fleet, floor plan, collections</td>
+<td>Month 3</td>
+<td>6 → 8</td>
+</tr>
+<tr>
+<td>AI &amp; data</td>
+<td>Agent gateway, decisioning, feature store, model risk tooling</td>
+<td>Month 2</td>
+<td>4 → 7</td>
+</tr>
+<tr>
+<td>Channels</td>
+<td>Back-office console, reference apps</td>
+<td>Month 4</td>
+<td>3 → 5</td>
+</tr>
+<tr>
+<td>Commercial &amp; markets</td>
+<td>Limits, collateral, trade, treasury, syndication</td>
+<td>Month 12</td>
+<td>5 → 10</td>
+</tr>
+<tr>
+<td>Accounting &amp; risk</td>
+<td>GL, TFRS 9 and 16, regulatory reporting</td>
+<td>Month 8</td>
+<td>4 → 6</td>
+</tr>
+</tbody>
+</table></div>
+<p>Headcount: about <strong>25 at month 3</strong>, <strong>40 at month 12</strong>, <strong>60 at month 20</strong>. Shared roles: architect, security lead, product managers per two squads, technical writer, domain experts (lending, accounting, compliance).</p>
+<h3>Hiring order (first 6 months)</h3>
+<ol>
+<li>Founding engineers: core banking architect, ledger tech lead, platform/SRE lead.</li>
+<li>Ledger engineers with database internals experience (PostgreSQL and Oracle).</li>
+<li>Product engine lead with financial mathematics background.</li>
+<li>Lending and accounting domain lead (TFRS 9, Thai hire purchase).</li>
+<li>AI lead with model risk experience.</li>
+<li>Security lead before the first external pilot.</li>
+</ol>
+<h2>4. Phase 0 sprint plan (12 weeks, 2-week sprints)</h2><figure class="dia"><div class="scroll"><svg viewBox="0 0 1000 220" role="img" aria-label="Phase 0 sprints S0 to S5, two weeks each, over 12 weeks."><text x="218.0" y="26" class="tick" text-anchor="middle">W1</text><text x="283.8" y="26" class="tick" text-anchor="middle">W2</text><text x="349.7" y="26" class="tick" text-anchor="middle">W3</text><text x="415.5" y="26" class="tick" text-anchor="middle">W4</text><text x="481.3" y="26" class="tick" text-anchor="middle">W5</text><text x="547.2" y="26" class="tick" text-anchor="middle">W6</text><text x="613.0" y="26" class="tick" text-anchor="middle">W7</text><text x="678.8" y="26" class="tick" text-anchor="middle">W8</text><text x="744.7" y="26" class="tick" text-anchor="middle">W9</text><text x="810.5" y="26" class="tick" text-anchor="middle">W10</text><text x="876.3" y="26" class="tick" text-anchor="middle">W11</text><text x="942.2" y="26" class="tick" text-anchor="middle">W12</text><text x="10" y="50" class="lbl">S0 Foundations</text><rect x="190.0" y="36" width="127.7" height="20" rx="5" class="bar b0"/><text x="10" y="80" class="lbl">S1 Platform kernel</text><rect x="321.7" y="66" width="127.7" height="20" rx="5" class="bar b1"/><text x="10" y="110" class="lbl">S2 Ledger on PostgreSQL</text><rect x="453.3" y="96" width="127.7" height="20" rx="5" class="bar b2"/><text x="10" y="140" class="lbl">S3 Oracle, outbox, events</text><rect x="585.0" y="126" width="127.7" height="20" rx="5" class="bar b3"/><text x="10" y="170" class="lbl">S4 Performance 10k/s</text><rect x="716.7" y="156" width="127.7" height="20" rx="5" class="bar b4"/><text x="10" y="200" class="lbl">S5 Hardening, launch</text><rect x="848.3" y="186" width="127.7" height="20" rx="5" class="bar b5"/></svg></div><figcaption>Phase 0 in six two-week sprints. The ledger runs on PostgreSQL by week 6, on Oracle by week 8 and at 10,000 batches/s by week 10.</figcaption></figure>
+<p><strong>Goal:</strong> a correct, fast, portable ledger on a production-grade delivery platform, ready to open-source with a published benchmark.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Sprint</th>
+<th>Weeks</th>
+<th>Goal</th>
+<th>Deliverables</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S0</td>
+<td>1–2</td>
+<td>Foundations</td>
+<td>Maven multi-module repo per 10; CI with build, unit tests, ArchUnit, licence gate (ORT), SBOM; dev environment with Testcontainers; coding standards; ADR template</td>
+<td>A hello-world service builds, tests and deploys to dev in under 15 minutes</td>
+</tr>
+<tr>
+<td>S1</td>
+<td>3–4</td>
+<td>Platform kernel</td>
+<td><code>platform-money</code> (minor units, BigDecimal, rounding, currencies), <code>platform-time</code> (calendars, day counts, business days), <code>platform-tenancy</code>, idempotency keys</td>
+<td>100% branch coverage on money and day-count; property tests for rounding and day counts</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>5–6</td>
+<td>Ledger domain on PostgreSQL</td>
+<td>Posting batch model, balance types, holds, reversals, bitemporal balances; <code>LedgerStore</code> SPI; PostgreSQL implementation; gRPC <code>PostBatch</code></td>
+<td>Conformance suite: balanced per currency, idempotent, reversals, as-of queries all green</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>7–8</td>
+<td>Portability and events</td>
+<td>Oracle <code>LedgerStore</code>; transactional outbox; Debezium to Kafka; event schemas in Apicurio; Flyway migrations for both databases</td>
+<td>Same conformance suite green on PostgreSQL and Oracle; events published exactly once in effect</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>9–10</td>
+<td>Performance</td>
+<td>Group commit, ordered row locks, asynchronous internal balances, hot-account striping, application-level sharding, performance environment, Gatling scenarios</td>
+<td>10,000 batches/s at p99 &lt; 50 ms on PostgreSQL in one cell; Oracle baseline recorded</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>11–12</td>
+<td>Hardening and launch</td>
+<td>Chaos tests (kill primary, partition zone), balance rebuild check, observability dashboards and runbooks, agent gateway skeleton with read-only tools, open-source readiness (docs, CONTRIBUTING, security policy)</td>
+<td>Phase 0 exit criteria met; benchmark report published with a reproducible harness</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Phase 0 exit criteria</h3>
+<ul>
+<li>Property-based tests prove ledger invariants under concurrency on both databases.</li>
+<li>10,000 batches/s at p99 &lt; 50 ms on PostgreSQL; Oracle baseline published.</li>
+<li>Full balance rebuild from postings matches projections.</li>
+<li>Killing a database primary loses no committed posting.</li>
+<li>Licence gate, SBOM and signed images in every build.</li>
+</ul>
+<h2>5. Phases 1–5: epics and milestones</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Months</th>
+<th>Epics</th>
+<th>Milestone</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>3–9</td>
+<td>Product engine v1 and Master Builder; deposits; personal and nano loans; scheduler (ADR-0007); GL and daily reconciliation; PromptPay, eKYC, bureau; onboarding and origination workflows; credit, fraud and document AI; customer assistant; 10-cell scale-out test; sanctions screening</td>
+<td>Staff pilot live; 30 days of reconciliation at zero</td>
+</tr>
+<tr>
+<td>2</td>
+<td>9–14</td>
+<td>Hire purchase, finance and operating leases, fleet, floor plan; flat-to-EIR, VAT, e-Tax invoices; collections v1; TFRS 9 ECL and TFRS 16</td>
+<td>Parallel run on a 100k-contract book matches to the satang</td>
+</tr>
+<tr>
+<td>3</td>
+<td>14–20</td>
+<td>Limits and collateral, commercial lending, cash management, credit applications; branch and teller; floating home loans; contingent ledger, guarantees, sight LCs; positions, nostro, FTP; RFR engine, lender role; billion-account test</td>
+<td>Commercial pilot live; billion-account month end within the night window</td>
+</tr>
+<tr>
+<td>4</td>
+<td>20–30</td>
+<td>Multi-tenant SaaS hardening; migration factory; full trade finance; FX and money-market deals; syndication agent; multi-region active-active</td>
+<td>First incumbent migration in parallel run</td>
+</tr>
+<tr>
+<td>5</td>
+<td>30–42</td>
+<td>Additional jurisdiction packs; Islamic banking; cross-border pooling; digital trade; hedge accounting; tier-1 certification</td>
+<td>Global-bank reference program</td>
+</tr>
+</tbody>
+</table></div>
+<h2>6. Ways of working</h2>
+<h3>Development flow</h3>
+<ul>
+<li><strong>Trunk-based development.</strong> Branches live less than two days; incomplete work hides behind feature flags.</li>
+<li><strong>Pull requests:</strong> one reviewer by default; two for ledger, money, security and public API changes. DCO sign-off on every commit.</li>
+<li><strong>ADRs</strong> for any change to a recorded decision; open for comment for seven days.</li>
+<li><strong>Definition of ready:</strong> acceptance criteria, test cases for money behavior, and affected ADRs identified.</li>
+<li><strong>Definition of done:</strong> merged to trunk, all gates green, dashboards and runbook updated, docs updated, deployed to staging.</li>
+</ul>
+<h3>Testing strategy</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What</th>
+<th>Where it runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit</td>
+<td>Domain rules, plain Java, milliseconds</td>
+<td>Every commit</td>
+</tr>
+<tr>
+<td>Property-based (jqwik)</td>
+<td>Money, rounding, day counts, schedule invariants, ledger invariants</td>
+<td>Every commit</td>
+</tr>
+<tr>
+<td>Golden tests</td>
+<td>Product behavior from the simulator, to the satang</td>
+<td>Every commit</td>
+</tr>
+<tr>
+<td>Contract</td>
+<td>OpenAPI, Protobuf and event schemas between services</td>
+<td>Every commit</td>
+</tr>
+<tr>
+<td>Integration (Testcontainers)</td>
+<td>Persistence on PostgreSQL and Oracle, Kafka, outbox</td>
+<td>Every merge</td>
+</tr>
+<tr>
+<td>Conformance</td>
+<td><code>LedgerStore</code> and scheduler suites per database</td>
+<td>Every merge</td>
+</tr>
+<tr>
+<td>Performance (Gatling)</td>
+<td>Ledger and payment scenarios against budgets</td>
+<td>Every ledger change; nightly full run</td>
+</tr>
+<tr>
+<td>Chaos</td>
+<td>Primary loss, zone partition, slow Kafka</td>
+<td>Weekly and before every release</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>SAST (Semgrep), dependency and container scanning (Trivy), DAST (OWASP ZAP)</td>
+<td>Every merge; DAST nightly</td>
+</tr>
+<tr>
+<td>Agent evaluation</td>
+<td>Tool-call correctness, refusals, injection resistance</td>
+<td>Every change to an agent or prompt</td>
+</tr>
+</tbody>
+</table></div>
+<h3>CI/CD pipeline</h3>
+<pre><code>commit → build + unit + property + ArchUnit (≤ 8 min)
+       → SQL lint, SAST, secret scan, licence gate, SBOM (≤ 4 min)
+       → integration on PostgreSQL + Oracle, contract tests (≤ 15 min)
+       → signed image (cosign) → dev (auto)
+       → nightly: performance, DAST, full chaos subset
+       → staging (auto, from trunk) → canary to production (approval)
+</code></pre>
+<p>Tooling: GitHub with GitHub Actions for hosting CI (pipelines kept portable to Tekton for bank-hosted builds), Renovate for dependency updates, ORT for licences, Syft for SBOMs, Trivy, Semgrep, cosign, Argo CD for deployment.</p>
+<h3>Releases</h3>
+<ul>
+<li>Semantic versioning. Releases every two weeks from Phase 1.</li>
+<li>Long-term-support release every six months, supported for 24 months (the certified Enterprise build).</li>
+<li>Database migrations are backward compatible for one release, so rollbacks are always possible.</li>
+</ul>
+<h3>Operations</h3>
+<ul>
+<li>Every service ships with RED metrics (rate, errors, duration), traces, structured logs, SLOs and a runbook.</li>
+<li>On-call rotation per squad from the first pilot; blameless post-incident reviews within five days.</li>
+<li>Error budgets: a squad that exhausts its budget pauses feature work for reliability work.</li>
+</ul>
+<h2>7. Engineering metrics</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lead time, commit to production</td>
+<td>Under 1 day by Phase 2</td>
+</tr>
+<tr>
+<td>Deployment frequency</td>
+<td>Daily to staging; every 2 weeks to production</td>
+</tr>
+<tr>
+<td>Change failure rate</td>
+<td>Under 10%</td>
+</tr>
+<tr>
+<td>Time to restore</td>
+<td>Under 1 hour</td>
+</tr>
+<tr>
+<td>CI time to merge-ready</td>
+<td>Under 30 minutes</td>
+</tr>
+<tr>
+<td>Flaky test rate</td>
+<td>Under 1%; flaky tests are fixed or removed within a week</td>
+</tr>
+<tr>
+<td>Escaped money defects</td>
+<td>Zero</td>
+</tr>
+</tbody>
+</table></div>
+<h2>8. Environments and budget (Phase 0–1)</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>Purpose</th>
+<th>Indicative monthly cloud cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dev (ephemeral per branch)</td>
+<td>Feature work</td>
+<td>$3–5k</td>
+</tr>
+<tr>
+<td>SIT</td>
+<td>Integration on both databases</td>
+<td>$3–4k</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Benchmarks at 10k/s, later 100k/s on demand</td>
+<td>$6–10k steady; $25–40k during scale-out runs</td>
+</tr>
+<tr>
+<td>Staging</td>
+<td>Release candidates, production-like</td>
+<td>$5–8k</td>
+</tr>
+<tr>
+<td>Pilot production (Phase 1)</td>
+<td>Staff pilot, 3 zones</td>
+<td>$10–15k</td>
+</tr>
+</tbody>
+</table></div>
+<p>Oracle testing uses the free Oracle Database container image in CI; a bank-provided Oracle environment is used for certification benchmarks.</p>
+<h2>9. Engineering risks</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ledger defects</td>
+<td>Conformance and property suites, two-reviewer rule, daily rebuild checks</td>
+</tr>
+<tr>
+<td>Performance target missed</td>
+<td>Benchmark from sprint S4; TigerBeetle evaluation gate (ADR-0002)</td>
+</tr>
+<tr>
+<td>Oracle divergence</td>
+<td>Both databases in CI from S3; shared conformance suite</td>
+</tr>
+<tr>
+<td>Scope creep in Phase 1</td>
+<td>Fixed exit criteria; anything else goes to the next phase</td>
+</tr>
+<tr>
+<td>Hiring delays</td>
+<td>Start with a smaller founding team on the critical path (ledger, platform)</td>
+</tr>
+<tr>
+<td>Flaky integration tests</td>
+<td>Testcontainers with fixed images, quarantine with a one-week fix rule</td>
+</tr>
+</tbody>
+</table></div>
+<h2>10. First 30 days</h2>
+<ol>
+<li>Hire or assign the architect, ledger lead and platform lead.</li>
+<li>Create the GitHub organisation, repository structure and CI skeleton (S0).</li>
+<li>Agree coding standards, review rules and the ADR process.</li>
+<li>Stand up dev and SIT environments with Testcontainers for PostgreSQL and Oracle.</li>
+<li>Start S1 (money and time libraries) with property-based tests first.</li>
+<li>Book the performance environment for S4.</li>
+<li>Line up one design partner to provide anonymized data for parallel-run planning.</li>
+</ol>
+</main>
