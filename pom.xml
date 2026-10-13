@@ -44,6 +44,7 @@
     <module>accounting</module>
     <module>decisioning</module>
     <module>onboarding</module>
+    <module>services-persistence</module>
     <module>payments</module>
   </modules>
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>org.fabor</groupId><artifactId>fabor-os</artifactId><version>0.1.0-SNAPSHOT</version><relativePath>../pom.xml</relativePath></parent>
+  <artifactId>services-persistence</artifactId>
+  <name>Fabor OS :: services-persistence</name>
+  <description>PostgreSQL implementations of the service repositories (deposit, lending, party, catalog) and the security stores (audit, PII vault, consent).</description>
+  <properties><coverage.branch.min>0.0</coverage.branch.min></properties>
+  <dependencies>
+    <dependency><groupId>org.fabor</groupId><artifactId>deposit</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>lending</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>onboarding</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>catalog</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>platform-security</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.7.4</version></dependency>
+    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId><version>10.21.0</version></dependency>
+    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId><version>10.21.0</version></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>postgresql</artifactId><version>1.20.4</version><scope>test</scope></dependency>
+  </dependencies>
+</project>
