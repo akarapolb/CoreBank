@@ -1,0 +1,35 @@
+# Prometheus alert rules for the ledger. Metric names come from MeteredLedgerStore
+# (Micrometer's Prometheus names: fabor_ledger_append_seconds_*).
+groups:
+  - name: fabor-ledger
+    rules:
+      - alert: LedgerAppendErrorRateHigh
+        expr: |
+          sum(rate(fabor_ledger_append_seconds_count{outcome="error"}[5m]))
+            / clamp_min(sum(rate(fabor_ledger_append_seconds_count[5m])), 1) > 0.001
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "More than 0.1% of ledger appends fail with unexpected errors"
+          runbook: docs/runbooks/ledger-append-errors.md
+      - alert: LedgerAppendLatencyP99High
+        expr: histogram_quantile(0.99, sum by (le) (rate(fabor_ledger_append_seconds_bucket[5m]))) > 0.05
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: "Ledger append p99 above the 50 ms budget"
+          runbook: docs/runbooks/ledger-latency.md
+      - alert: LedgerIntegrityCheckFailed
+        expr: fabor_ledger_integrity_failures > 0
+        for: 1m
+        labels: { severity: page }
+        annotations:
+          summary: "Nightly ledger integrity check found a violation"
+          runbook: docs/runbooks/ledger-integrity.md
+      - alert: LedgerIdempotencyConflictsSpike
+        expr: sum(rate(fabor_ledger_append_seconds_count{outcome="idempotency_conflict"}[10m])) > 1
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "A client keeps reusing idempotency keys with different content"
+          runbook: docs/runbooks/ledger-append-errors.md

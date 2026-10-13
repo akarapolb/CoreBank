@@ -28,6 +28,7 @@
     <module>ledger/ledger-testkit</module>
     <module>ledger/ledger-adapter-persistence</module>
     <module>ledger/ledger-adapter-web</module>
+    <module>ledger/ledger-adapter-metrics</module>
     <module>ledger/ledger-perf</module>
   </modules>
 
