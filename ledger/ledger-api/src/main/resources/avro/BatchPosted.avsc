@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "BatchPosted",
+  "namespace": "org.fabor.ledger.events",
+  "doc": "A balanced batch was committed to the ledger. Emitted through the transactional outbox.",
+  "fields": [
+    {"name": "tenant", "type": "string"},
+    {"name": "batchId", "type": "string"},
+    {"name": "idempotencyKey", "type": "string"},
+    {"name": "valueDate", "type": "string", "doc": "ISO-8601 date, effective time"},
+    {"name": "recordedAt", "type": "string", "doc": "ISO-8601 instant, system time"},
+    {"name": "reverses", "type": "string", "default": "", "doc": "Batch id this batch reverses, or empty"},
+    {"name": "entries", "type": {"type": "array", "items": {
+      "type": "record", "name": "BatchEntry", "fields": [
+        {"name": "account", "type": "string"},
+        {"name": "balanceType", "type": "string"},
+        {"name": "direction", "type": "string"},
+        {"name": "minor", "type": "long"},
+        {"name": "currency", "type": "string"}
+      ]}}}
+  ]
+}

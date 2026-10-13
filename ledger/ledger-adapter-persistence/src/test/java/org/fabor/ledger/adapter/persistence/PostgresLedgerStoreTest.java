@@ -29,7 +29,7 @@ class PostgresLedgerStoreTest extends LedgerStoreConformance {
     @Override
     protected LedgerStore newStore() {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE ledger_entry, ledger_batch");
+            st.execute("TRUNCATE ledger_entry, ledger_outbox, ledger_batch");
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
@@ -45,6 +45,21 @@ class PostgresLedgerStoreTest extends LedgerStoreConformance {
                     .hasMessageContaining("immutable");
             org.assertj.core.api.Assertions.assertThatThrownBy(() -> st.execute("UPDATE ledger_batch SET idem_key='x'"))
                     .hasMessageContaining("immutable");
+        }
+    }
+
+    @org.junit.jupiter.api.Test
+    void outboxHasExactlyOneEventPerBatchEvenOnReplay() throws SQLException {
+        LedgerStore s = newStore();
+        var b = deposit("b1", "k1", java.time.LocalDate.of(2026, 1, 1), 100);
+        s.append(b, T0);
+        s.append(b, T1);
+        try (Connection c = ds.getConnection(); Statement st = c.createStatement();
+             java.sql.ResultSet rs = st.executeQuery("SELECT count(*), min(event_type), min(aggregate_id) FROM ledger_outbox")) {
+            rs.next();
+            org.assertj.core.api.Assertions.assertThat(rs.getLong(1)).isEqualTo(1);
+            org.assertj.core.api.Assertions.assertThat(rs.getString(2)).isEqualTo("BatchPosted");
+            org.assertj.core.api.Assertions.assertThat(rs.getString(3)).isEqualTo("b1");
         }
     }
 }

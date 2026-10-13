@@ -1,0 +1,28 @@
+# Local development stack. Open-source images only; Oracle Free is optional (profile "oracle").
+services:
+  postgres:
+    image: postgres:16
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: fabor }
+    ports: ["5432:5432"]
+  oracle:
+    profiles: ["oracle"]
+    image: gvenzl/oracle-free:23-slim-faststart
+    environment: { ORACLE_PASSWORD: oracle, APP_USER: fabor, APP_USER_PASSWORD: fabor }
+    ports: ["1521:1521"]
+  kafka:
+    image: apache/kafka:3.9.0
+    ports: ["9092:9092"]
+  apicurio:
+    image: apicurio/apicurio-registry:3.0.5
+    ports: ["8081:8080"]
+  connect:
+    image: quay.io/debezium/connect:3.0
+    depends_on: [kafka, postgres]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: fabor-connect
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_status
+    ports: ["8083:8083"]

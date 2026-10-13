@@ -1,0 +1,26 @@
+{
+  "name": "fabor-ledger-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "plugin.name": "pgoutput",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "debezium",
+    "database.password": "${file:/secrets/debezium.properties:password}",
+    "database.dbname": "fabor",
+    "topic.prefix": "fabor.ledger",
+    "table.include.list": "public.ledger_outbox",
+    "tombstones.on.delete": "false",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.table.field.event.id": "id",
+    "transforms.outbox.table.field.event.key": "aggregate_id",
+    "transforms.outbox.table.field.event.type": "event_type",
+    "transforms.outbox.table.field.event.payload": "payload",
+    "transforms.outbox.route.by.field": "event_type",
+    "transforms.outbox.route.topic.replacement": "fabor.ledger.${routedByValue}.v1",
+    "transforms.outbox.table.fields.additional.placement": "tenant:header:tenant",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter"
+  }
+}
