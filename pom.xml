@@ -43,6 +43,7 @@
     <module>lending</module>
     <module>accounting</module>
     <module>decisioning</module>
+    <module>onboarding</module>
     <module>payments</module>
   </modules>
 
