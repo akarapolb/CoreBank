@@ -74,21 +74,24 @@ Idempotency keys are retained so any retry returns the original result. Every po
 
 | Concern | Choice | Why |
 |---|---|---|
-| Domain services | **Kotlin on JVM 21** (Spring Boot or Ktor), virtual threads | Strong typing, exact decimals (`BigDecimal`), huge banking talent pool, mature tooling |
-| Ledger core | Kotlin first; evaluate a **Rust** hot path or **TigerBeetle** only if benchmarks demand it | Avoid premature exotic tech; keep the option open ([ADR-0002](adr/0002-ledger-storage.md)) |
+| Domain services | **Java 21 + Spring Boot 3**, virtual threads | On every bank's approved list, exact decimals (`BigDecimal`), largest banking talent pool ([ADR-0001](adr/0001-language-and-runtime.md)) |
+| Ledger core | Java first; evaluate a **Rust** hot path or **TigerBeetle** only if benchmarks demand it | Avoid premature exotic tech; keep the option open ([ADR-0002](adr/0002-ledger-storage.md)) |
 | Product rules | Typed product DSL (YAML/JSON schema) + **CEL** expressions for bounded logic | Safe, sandboxed, non-Turing-complete, auditable ([ADR-0003](adr/0003-product-definition.md)) |
 | Database | **PostgreSQL 16+** (Aurora/AlloyDB/Cloud SQL or self-managed with Patroni); Citus or app-level sharding for ledger | Serializable transactions, proven, cheap, strong ecosystem |
 | Events | **Kafka** (or Redpanda) with schema registry (Avro/Protobuf) | Durable ordered log, replay, ecosystem |
-| Workflows | **Temporal** | Durable sagas and per-account timers replace batch jobs |
+| Workflows | **Temporal** (Camunda 8 if the bank requires) | Durable sagas and per-account timers replace batch jobs |
 | APIs | gRPC internally, REST/JSON with OpenAPI externally, ISO 20022 for payments | |
 | AI tools | **MCP** (Model Context Protocol) servers generated from OpenAPI, behind the agent gateway | One contract for humans, apps and agents |
 | LLMs | Model-agnostic gateway; latest Claude models as default for agentic work | Swap per use case, per data-residency rule |
 | Analytics | Lakehouse (Iceberg on object storage) + dbt; ClickHouse for operational analytics | |
 | Feature store | Feast or equivalent, online (Redis) + offline (Iceberg) | Same features in training and serving |
-| Platform | Kubernetes, Terraform, Argo CD (GitOps), service mesh (mTLS), OpenTelemetry | |
+| Platform | Kubernetes / Red Hat OpenShift, Terraform, Argo CD (GitOps), service mesh (mTLS), OpenTelemetry | |
 | Secrets/keys | Cloud KMS/HSM, Vault | |
 
 ## Deployment
+
+Every infrastructure dependency sits behind a port so a bank's approved equivalent (OpenShift, EDB/Oracle, Confluent/IBM MQ, bank IAM and HSMs) can be used. See [ADR-0004](adr/0004-bank-stack-compatibility.md).
+
 
 - **Cell-based architecture**: each cell is a full stack (services + ledger shards) serving a subset of tenants/accounts. Cells limit blast radius and are the unit of scaling and of data residency.
 - Active-active across 3 availability zones within a region; synchronous replication for the ledger (RPO = 0); warm standby region for disaster recovery.

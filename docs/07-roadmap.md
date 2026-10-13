@@ -84,4 +84,4 @@ Key early hires: a **core banking architect** who has shipped a ledger, a **lend
 | Regulatory approval timeline | Engage regulator early, IT risk documentation from Phase 0, sandbox participation |
 | AI incidents (wrong advice, unauthorized action) | Delegated authority, policy engine, human-in-the-loop, eval suites, kill switches |
 | Performance at scale | Cell architecture, perf environment from Phase 0, load tests in CI on every ledger change |
-| Talent | Kotlin/Postgres/Kafka are mainstream; avoid niche stacks unless benchmarks force it |
+| Talent and bank IT governance | Java/Spring, PostgreSQL, Kafka are on bank-approved lists; every infrastructure dependency is swappable ([ADR-0004](adr/0004-bank-stack-compatibility.md)) |
