@@ -87,7 +87,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nav[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
 .nav .grow { flex: 1; }
 .badge { font-family: var(--font-data); font-size: 11px; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--crit); color: #fff; font-weight: 500; }
-.side-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--r); background: var(--surface-2); }
+.side-foot { display: flex; color: inherit; text-decoration: none; align-items: center; gap: 10px; padding: 10px; border-radius: var(--r); background: var(--surface-2); }
 .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: linear-gradient(135deg, #F7B267, #F25F5C); color: #fff; flex-shrink: 0; }
 .side-foot div { display: flex; flex-direction: column; line-height: 1.3; font-size: 13px; min-width: 0; }
 .side-foot span { color: var(--muted); font-size: 12px; }
@@ -295,6 +295,38 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } ::view-transition-old(content), ::view-transition-new(content) { animation: none; } }
 
+/* Settings */
+.set-row { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px 32px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.set-row:first-of-type { padding-top: 4px; }
+.set-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.set-row > div:first-child { display: flex; flex-direction: column; gap: 4px; }
+.set-row > div:first-child p { color: var(--muted); font-size: 13px; }
+fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; min-width: 0; }
+.choice { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.choice:hover { border-color: var(--faint); }
+.choice:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.choice input { position: absolute; opacity: 0; pointer-events: none; }
+.choice .cap { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 500; }
+.choice .cap .tick { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; }
+.choice:has(input:checked) .tick { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.choice .tick .ico { width: 12px; height: 12px; stroke-width: 3; opacity: 0; }
+.choice:has(input:checked) .tick .ico { opacity: 1; }
+.choice small { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.pv { height: 96px; border-radius: 10px; padding: 10px; display: grid; grid-template-columns: 26px 1fr; gap: 8px; overflow: hidden; border: 1px solid rgba(127, 127, 127, 0.2); }
+.pv .rail { border-radius: 6px; }
+.pv .body { display: flex; flex-direction: column; gap: 6px; }
+.pv .bar1 { height: 8px; width: 55%; border-radius: 4px; }
+.pv .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; }
+.pv .cards span { border-radius: 6px; }
+.pv.modern-l { background: #F5F6F8; } .pv.modern-l .rail { background: #FFFFFF; } .pv.modern-l .bar1 { background: #3156F5; } .pv.modern-l .cards span { background: #FFFFFF; box-shadow: 0 2px 6px -2px rgba(15, 23, 41, .25); } .pv.modern-l .cards span:first-child { background: linear-gradient(135deg, #3156F5, #0C9A80); }
+.pv.calm-l { background: #F6F6F4; } .pv.calm-l .rail { background: #FFFFFF; border: 1px solid #E6E6E1; } .pv.calm-l .bar1 { background: #4E7078; opacity: .8; } .pv.calm-l .cards span { background: #FFFFFF; border: 1px solid #E6E6E1; } .pv.calm-l .cards span:first-child { background: #EBF0F0; }
+.pv.light { background: #F5F6F8; } .pv.light .rail, .pv.light .cards span { background: #FFFFFF; border: 1px solid #E3E6EB; } .pv.light .bar1 { background: #C9CED6; }
+.pv.dark { background: #0F1116; } .pv.dark .rail, .pv.dark .cards span { background: #1A1E27; border: 1px solid #262B36; } .pv.dark .bar1 { background: #3A4152; }
+.pv.system { background: linear-gradient(115deg, #F5F6F8 50%, #0F1116 50%); } .pv.system .rail { background: #FFFFFF; border: 1px solid #E3E6EB; } .pv.system .bar1 { background: #C9CED6; } .pv.system .cards span { background: rgba(255, 255, 255, .55); border: 1px solid rgba(127, 127, 127, .35); }
+.saved[hidden] { display: none; }
+.saved { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--good); }
+
 /* Calm style: same layout, quieter surface. Flat paper-like panels, one muted slate-teal accent,
    no shadows or gradients, softer status colors, more air, slower and fewer animations. */
 :root[data-style="calm"] {
@@ -339,6 +371,7 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
 [data-style="calm"] .grid { gap: 24px; }
 [data-style="calm"] .nav[aria-current="page"] { background: var(--surface-2); color: var(--fg); }
 [data-style="calm"] .nav[aria-current="page"] .ico { color: var(--accent); }
+[data-style="calm"] .choice:has(input:checked) { box-shadow: none; }
 [data-style="calm"] .msg.me .bubble { background: var(--accent-soft); color: var(--fg); }
 [data-style="calm"] .sev i { background: transparent; border: 1px solid var(--line); }
 [data-style="calm"] .stream-row:first-child { animation: none; }
@@ -359,6 +392,7 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   .side { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 16px; gap: 6px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { padding: 0 8px 0 0; flex-shrink: 0; }
   .brand strong, .ws, .navgroup .label, .side-foot { display: none; }
+  .navgroup[aria-label="Account"] { margin-top: 0 !important; }
   .navgroup { flex-direction: row; flex-shrink: 0; }
   .nav { white-space: nowrap; }
   .top { position: static; padding: 10px 16px; }
@@ -367,6 +401,7 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   .g2, .form { grid-template-columns: minmax(0, 1fr); }
   .batch summary { grid-template-columns: minmax(0, 1fr) auto; }
   .appr { grid-template-columns: minmax(0, 1fr); }
+  .set-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .appr .act { align-items: flex-start; }
   .toasts { left: 16px; right: 16px; }
 }
@@ -395,6 +430,7 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 </svg>
 
@@ -417,10 +453,13 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
       <a class="nav" href="#architecture" data-view="architecture"><svg class="ico"><use href="#i-arch"/></svg><span class="grow">Architecture</span></a>
       <a class="nav" href="#modules" data-view="modules"><svg class="ico"><use href="#i-modules"/></svg><span class="grow">Modules</span></a>
     </nav>
-    <div class="side-foot">
+    <nav class="navgroup" aria-label="Account" style="margin-top:auto">
+      <a class="nav" href="#settings" data-view="settings"><svg class="ico"><use href="#i-gear"/></svg><span class="grow">Settings</span></a>
+    </nav>
+    <a class="side-foot" href="#settings" aria-label="Your profile and settings">
       <span class="avatar" aria-hidden="true">PC</span>
       <div><strong>Ploy Chaiyaporn</strong><span>Operations checker</span></div>
-    </div>
+    </a>
   </aside>
 
   <div class="main">
@@ -430,10 +469,6 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
       <button class="search" type="button" id="openPalette" commandfor="palette" command="show-modal"><svg class="ico"><use href="#i-search"/></svg><span>Search or jump to…</span><kbd>⌘K</kbd></button>
       <span class="pill">Business date <strong>13 Oct 2026</strong></span>
       <span class="chip good">Ledger balanced</span>
-      <div class="seg" role="group" aria-label="Interface style">
-        <button type="button" data-style-set="modern" aria-pressed="true">Modern</button>
-        <button type="button" data-style-set="calm" aria-pressed="false">Calm</button>
-      </div>
       <div class="seg icon" role="group" aria-label="Theme">
         <button type="button" data-theme-set="light" aria-pressed="false" title="Light"><svg class="ico"><use href="#i-sun"/></svg></button>
         <button type="button" data-theme-set="system" aria-pressed="true" title="System"><svg class="ico"><use href="#i-system"/></svg></button>
@@ -929,6 +964,40 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
           </ol>
           <p class="note">Enforced by ArchUnit tests and the Maven Enforcer plugin in every build.</p>
         </div>
+      </div>
+    </section>
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings" aria-labelledby="h-settings" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Ploy Chaiyaporn · Operations checker</span>
+          <h1 id="h-settings">Settings</h1>
+          <p>Choose how the console looks for you. Changes apply immediately and only affect your own view.</p>
+        </div>
+        <span class="saved" id="savedNote" hidden><svg class="ico"><use href="#i-check"/></svg>Saved</span>
+      </div>
+      <div class="panel">
+        <h2>Appearance</h2>
+        <div>
+          <div class="set-row">
+            <div><h3>Interface style</h3><p>Modern is brighter and more energetic. Calm is flatter and quieter, for long working days.</p></div>
+            <fieldset class="choices" aria-label="Interface style">
+              <label class="choice"><span class="pv modern-l" aria-hidden="true"><span class="rail"></span><span class="body"><span class="bar1"></span><span class="cards"><span></span><span></span><span></span></span></span></span><input type="radio" name="style" value="modern" id="st-modern" checked><span class="cap">Modern <span class="tick"><svg class="ico"><use href="#i-check"/></svg></span></span><small>Cobalt accent, raised cards, lively motion. Suits dashboards and demos.</small></label>
+              <label class="choice"><span class="pv calm-l" aria-hidden="true"><span class="rail"></span><span class="body"><span class="bar1"></span><span class="cards"><span></span><span></span><span></span></span></span></span><input type="radio" name="style" value="calm" id="st-calm"><span class="cap">Calm <span class="tick"><svg class="ico"><use href="#i-check"/></svg></span></span><small>One muted accent, flat panels, more space, slower motion. Suits operations work.</small></label>
+            </fieldset>
+          </div>
+          <div class="set-row">
+            <div><h3>Theme</h3><p>System follows your computer's light or dark setting.</p></div>
+            <fieldset class="choices" aria-label="Theme">
+              <label class="choice"><span class="pv light" aria-hidden="true"><span class="rail"></span><span class="body"><span class="bar1"></span><span class="cards"><span></span><span></span><span></span></span></span></span><input type="radio" name="theme" value="light" id="th-light"><span class="cap">Light <span class="tick"><svg class="ico"><use href="#i-check"/></svg></span></span></label>
+              <label class="choice"><span class="pv system" aria-hidden="true"><span class="rail"></span><span class="body"><span class="bar1"></span><span class="cards"><span></span><span></span><span></span></span></span></span><input type="radio" name="theme" value="system" id="th-system" checked><span class="cap">System <span class="tick"><svg class="ico"><use href="#i-check"/></svg></span></span></label>
+              <label class="choice"><span class="pv dark" aria-hidden="true"><span class="rail"></span><span class="body"><span class="bar1"></span><span class="cards"><span></span><span></span><span></span></span></span></span><input type="radio" name="theme" value="dark" id="th-dark"><span class="cap">Dark <span class="tick"><svg class="ico"><use href="#i-check"/></svg></span></span></label>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+      <div class="panel flat">
+        <p class="note">In the product, these choices are stored in the user's profile so they follow the user to any device. In this prototype they are kept in this browser only.</p>
       </div>
     </section>
     </div>
@@ -1435,15 +1504,15 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   showArch("ledger");
 
   /* ---------- Routing ---------- */
-  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "architecture", "modules"];
+  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "architecture", "modules", "settings"];
   var current = "overview";
-  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules" };
+  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings" };
   function applyRoute() {
     var h = (location.hash || "").replace("#", "");
     current = VIEWS.indexOf(h) >= 0 ? h : "overview";
     VIEWS.forEach(function (v) { $("#view-" + v).hidden = v !== current; });
     $$(".nav").forEach(function (a) { if (a.getAttribute("data-view") === current) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : "Operate";
+    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : current === "settings" ? "Account" : "Operate";
     $("#crumbPage").textContent = TITLES[current];
     window.scrollTo(0, 0);
   }
@@ -1469,6 +1538,7 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
     if (mode === "system") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", mode);
     $$("[data-theme-set]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-set") === mode)); });
+    var tr = $("#th-" + mode); if (tr) tr.checked = true;
     if (save) { try { localStorage.setItem("corebank-theme", mode); } catch (e) {} }
   }
   $$("[data-theme-set]").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-set"), true); }); });
@@ -1479,25 +1549,28 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
     var apply = function () {
       if (mode === "calm") document.documentElement.setAttribute("data-style", "calm");
       else document.documentElement.removeAttribute("data-style");
-      $$("[data-style-set]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-style-set") === mode)); });
+      var r = $("#st-" + mode); if (r) r.checked = true;
     };
     if (save && document.startViewTransition && !reduce) document.startViewTransition(apply); else apply();
     if (save) { try { localStorage.setItem("corebank-style", mode); } catch (e) {} }
   }
-  $$("[data-style-set]").forEach(function (b) { b.addEventListener("click", function () { setStyle(b.getAttribute("data-style-set"), true); }); });
+  $$("input[name='style']").forEach(function (r) { r.addEventListener("change", function () { setStyle(r.value, true); flashSaved(); }); });
+  $$("input[name='theme']").forEach(function (r) { r.addEventListener("change", function () { setTheme(r.value, true); flashSaved(); }); });
+  var savedTimer;
+  function flashSaved() { var n = $("#savedNote"); n.hidden = false; clearTimeout(savedTimer); savedTimer = setTimeout(function () { n.hidden = true; }, 2000); }
   (function () { var m = null; try { m = localStorage.getItem("corebank-style"); } catch (e) {} if (m === "calm") setStyle("calm", false); })();
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
-  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules" };
+  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear" };
   var COMMANDS = VIEWS.map(function (v) { return { group: "Go to", label: TITLES[v], icon: ICON[v], run: function () { location.hash = v; } }; }).concat([
     { group: "Records", label: "HP-2025-004812 · Napat Srisuk", hint: "Hire purchase", icon: "i-contract", run: function () { location.hash = "contract"; } },
     { group: "Records", label: "Siam Freight Logistics Co., Ltd.", hint: "P-200118", icon: "i-customer", run: function () { location.hash = "customer"; } },
     { group: "Records", label: "TL-2024-000311 · restructure proposal", hint: "APR-1043", icon: "i-approve", run: function () { location.hash = "approvals"; } },
     { group: "Actions", label: "New hire-purchase product", icon: "i-plus", run: function () { location.hash = "studio"; $("#pFamily").value = "HP_USED"; $("#pFamily").dispatchEvent(new Event("change")); } },
     { group: "Actions", label: "Replay AI servicing case", icon: "i-play", run: function () { location.hash = "agents"; } },
-    { group: "Actions", label: "Use Calm style", icon: "i-system", run: function () { setStyle("calm", true); } },
-    { group: "Actions", label: "Use Modern style", icon: "i-system", run: function () { setStyle("modern", true); } },
+    { group: "Actions", label: "Use Calm style", icon: "i-gear", run: function () { setStyle("calm", true); } },
+    { group: "Actions", label: "Use Modern style", icon: "i-gear", run: function () { setStyle("modern", true); } },
     { group: "Actions", label: "Switch to dark theme", icon: "i-moon", run: function () { setTheme("dark", true); } },
     { group: "Actions", label: "Switch to light theme", icon: "i-sun", run: function () { setTheme("light", true); } }
   ]);
