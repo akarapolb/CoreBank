@@ -16,4 +16,5 @@ Decisions that shape Phase 0. Each has a recommended default; the plan is writte
 | 8 | **Cards** | Out of scope, integrate a processor, build | Integrate a processor | Large scope; PCI DSS |
 | 9 | **LLM providers and residency** | Self-hosted open-weight models only, or also commercial model APIs | Open-source gateway; self-hosted OSI-licensed open-weight models by default, commercial APIs optional with PII tokenized | Open-source policy, data residency, quality on Thai-language tasks |
 | 11 | **Open-source policy** | — | **Decided:** open source only, OSI licences, enforced in CI ([ADR-0006](adr/0006-open-source-only.md)) | Bank-licensed infrastructure (e.g. Oracle) stays optional and customer-provided |
+| 12 | **Product and company name** | See naming shortlist | To be chosen; then clear trademarks in TH, SG, EU, US and secure domains | Needed before the open-source launch and the trademark policy takes effect |
 | 10 | **Team and budget** | Lean (~15) vs full (~30+) | ~25–35 for the 20-month plan | Timeline in [07](07-roadmap.md) assumes this |

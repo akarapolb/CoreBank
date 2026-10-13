@@ -86,3 +86,55 @@ Contracts include an annual minimum commitment, so revenue is predictable while 
 - **Pay as you grow:** usage pricing fits virtual banks and fintechs that start small.
 - **No lock-in premium:** open code and open data formats make the bank's exit cost low, which removes a major objection in procurement.
 - **Faster payback:** Master Builder and partner delivery cut implementation cost, the largest part of a core replacement budget.
+
+## 9. Path to unicorn scale
+
+A valuation of $1B or more at today's infrastructure-software multiples (roughly 10–15× ARR) needs about **$70–100M ARR**, or about $50M with growth above 60% and strong expansion. Comparable core banking platforms (for example Thought Machine and Mambu) were reported above $1B in the 2021–22 funding rounds, at higher multiples than today.
+
+### Illustrative mix at about $80M ARR (year 5–6)
+
+| Segment | Typical annual contract | Customers | ARR |
+|---|---|---|---|
+| Virtual banks, fintechs, BNPL, leasing companies | ~$1M | 20 | $20M |
+| Regional and mid-size banks | ~$5M | 8 | $40M |
+| Tier-1 bank, one product line first | ~$20M | 1 | $20M |
+
+### Go-to-market sequence
+
+1. **Beachhead: Thailand, then ASEAN.** Greenfield buyers that decide in months: virtual banks, leasing and hire-purchase companies, digital brands of incumbents. Built-in hire purchase, fleet and floor plan is the wedge.
+2. **Progressive modernization of incumbents.** One product line next to the legacy core (digital savings, SME lending, a leasing book), then the migration factory for the rest.
+3. **Regional expansion:** Singapore, Malaysia, Indonesia, the Philippines, Vietnam, then the Middle East, one jurisdiction pack per market.
+4. **Tier 1 last,** starting with one product line, on the strength of references and audited benchmarks.
+
+### Scaling delivery without a services army
+
+- AI does much of the implementation work: Master Builder and the product copilot configure products, AI proposes migration mappings, the simulator generates tests. Target go-live in **3–6 months** for greenfield instead of 18–24.
+- Certified local partners deliver projects; our services stay below 20% of revenue.
+- The open-source launch with reproducible benchmarks builds a developer-led pipeline inside banks.
+
+### Moat
+
+Correctness record and audited parallel runs; jurisdiction packs maintained with update guarantees; the integration marketplace per market; governed AI that regulators can accept; and expansion from one module to many inside each customer.
+
+### Milestones and funding (indicative)
+
+| Stage | Product (roadmap) | Business proof | Funding |
+|---|---|---|---|
+| Year 0–1 | Phases 0–1, open-source launch with the 10,000/s benchmark | 1–2 design partners; first bank live | Seed / Series A, $5–15M |
+| Year 2 | Phases 2–3, SOC 2 and ISO 27001 | 3–5 live customers, $5–10M ARR, first integrator partners | Series A/B, $30–50M |
+| Year 3–4 | Phase 4, migration factory, multi-region | 15–25 customers in 3+ countries, $25–40M ARR, net retention above 130% | Series B/C, $80–150M |
+| Year 5–6 | Phase 5, billion-account certification | $70–100M ARR, first tier-1 reference, regulator acceptance in 5+ markets | Series C/D at $1B+ valuation |
+
+### Organization
+
+From about 30 to 300–500 people. Product engineering stays the largest group; customer success and partner enablement grow early; regulatory specialists are hired per region; a correctness and reliability group reports to the CTO.
+
+### Top risks
+
+| Risk | Mitigation |
+|---|---|
+| Long bank sales cycles | Start with greenfield and leasing buyers; product-by-product adoption for incumbents |
+| Regulator acceptance | Engage early; IT risk documentation from Phase 0 |
+| A correctness incident | Ledger invariants, property-based tests, parallel runs, chaos testing |
+| Competitor response | Win on time to go live, cost, ASEAN lending depth and governed AI |
+| Running out of funding before references | Raise enough to reach two live banks |

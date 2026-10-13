@@ -151,8 +151,10 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <ol><li><a href="#s7-1">Regulatory map</a></li><li><a href="#s7-2">Control matrix</a></li><li><a href="#s7-3">Model risk</a></li><li><a href="#s7-4">Retention</a></li></ol></li>
     <li><a href="#s8g"><span class="n">8</span>Global benchmark</a>
       <ol><li><a href="#s8-1">Capability check</a></li><li><a href="#s8-2">Against leading platforms</a></li><li><a href="#s8-3">How we win</a></li></ol></li>
-    <li><a href="#s8"><span class="n">9</span>Open items</a></li>
-    <li><a href="#s9"><span class="n">10</span>Glossary</a></li>
+    <li><a href="#s9b"><span class="n">9</span>Business model</a>
+      <ol><li><a href="#s9-1">Open core</a></li><li><a href="#s9-2">Editions and pricing</a></li><li><a href="#s9-3">Unit economics</a></li><li><a href="#s9-4">Path to scale</a></li></ol></li>
+    <li><a href="#s8"><span class="n">10</span>Open items</a></li>
+    <li><a href="#s9"><span class="n">11</span>Glossary</a></li>
   </ol>
 </nav>
 
@@ -1053,8 +1055,87 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 </section>
 
 <!-- 8 -->
+<!-- 9 business -->
+<section class="part" id="s9b">
+  <h2><span class="n">9</span>Business model</h2>
+  <p>The core is open source; banks pay for accountability, current regulatory content, managed operations and speed. Detail in <code>docs/13-business-model.md</code> and ADR-0009. Prices are hypotheses to validate with design partners.</p>
+
+  <h3 id="s9-1"><span class="n">9.1</span>Open core</h3>
+  <p>Code under Apache 2.0, documentation under CC BY 4.0, contributions by DCO sign-off, trademark protected. Open source from the end of Phase 0, with the published benchmark. Features never move from open to commercial, and no paid part is needed for the ledger to be correct or for a bank to export its data.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Open (Apache 2.0)</th><th>Commercial</th></tr></thead>
+    <tbody>
+      <tr><td>Ledger, platform libraries, calculation engines</td><td>Jurisdiction packs with update guarantees</td></tr>
+      <tr><td>Product engine and Master Builder</td><td>Master Builder template libraries per market</td></tr>
+      <tr><td>All domain services incl. leasing, trade, treasury, syndication</td><td>Product copilot and AI agent packs</td></tr>
+      <tr><td>APIs, event schemas, agent tools, SDKs</td><td>Migration factory</td></tr>
+      <tr><td>Single-region reference deployment</td><td>Multi-region and cell operations tooling</td></tr>
+      <tr><td>Generic reference rule pack</td><td>Certified LTS releases, security SLAs, indemnity, managed cloud</td></tr>
+    </tbody>
+  </table></div>
+  <p>Competitors may legally copy the code. Protection comes from what cannot be copied: accountability and regulator relationships, the trademark and certification, regulatory content that changes monthly, speed of the roadmap and the partner ecosystem.</p>
+
+  <h3 id="s9-2"><span class="n">9.2</span>Editions and pricing</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Edition</th><th>For</th><th>Price basis</th></tr></thead>
+    <tbody>
+      <tr><td>Community</td><td>Developers, pilots, small lenders</td><td>Free</td></tr>
+      <tr><td>Enterprise (self-managed)</td><td>Banks running their own infrastructure</td><td>Annual subscription by accounts under management, about $250k to $3M+</td></tr>
+      <tr><td>Cloud (managed, in-country)</td><td>Virtual banks, fintechs, leasing companies</td><td>Platform fee $150k–$1M plus usage, with an annual minimum</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Usage metric (ASEAN, indicative)</th><th class="num">Price</th></tr></thead>
+    <tbody>
+      <tr><td>Deposit account, per active account per month</td><td class="num">$0.03–0.15</td></tr>
+      <tr><td>Loan, lease, hire purchase, per active contract per month</td><td class="num">$0.25–1.00</td></tr>
+      <tr><td>Commercial facility, per month</td><td class="num">$10–50</td></tr>
+      <tr><td>Trade instrument issued</td><td class="num">$15–40</td></tr>
+      <tr><td>Syndicated facility as agent, per year</td><td class="num">$10k–40k</td></tr>
+      <tr><td>Additional jurisdiction pack, per country per year</td><td class="num">$100k–300k</td></tr>
+      <tr><td>AI agent task or AI decision</td><td class="num">$0.02–1.00</td></tr>
+      <tr><td>Product copilot seat, per month</td><td class="num">$500–1,500</td></tr>
+      <tr><td>Migration factory, per programme</td><td class="num">$250k–3M</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Example customer, year 3</th><th class="num">Annual revenue</th></tr></thead>
+    <tbody>
+      <tr><td>Leasing company, 400k contracts, AI collections</td><td class="num">≈ $2.3M</td></tr>
+      <tr><td>Virtual bank, 1.5M accounts and 150k loans, assistant</td><td class="num">≈ $2.4M</td></tr>
+      <tr><td>Regional commercial bank, Enterprise with trade and treasury</td><td class="num">≈ $2.3M</td></tr>
+      <tr><td>Fintech lender on Cloud, year 1</td><td class="num">≈ $0.6M</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s9-3"><span class="n">9.3</span>Unit economics (year 5 targets)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Metric</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue mix</td><td>70% subscriptions and usage · 15% add-ons · 10% services · 5% marketplace</td></tr>
+      <tr><td>Gross margin</td><td>75% or higher</td></tr>
+      <tr><td>Net revenue retention</td><td>125–140%</td></tr>
+      <tr><td>Logo churn</td><td>Below 3% a year</td></tr>
+      <tr><td>Time to go live</td><td>3–6 months greenfield; product by product for incumbents</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="s9-4"><span class="n">9.4</span>Path to scale</h3>
+  <p>About $70–100M ARR supports a $1B+ valuation at current multiples: for example 20 fintech and leasing customers at ~$1M, 8 regional banks at ~$5M and one tier-1 product line at ~$20M.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Stage</th><th>Product</th><th>Business proof</th><th>Funding</th></tr></thead>
+    <tbody>
+      <tr><td>Year 0–1</td><td>Phases 0–1, open-source launch</td><td>1–2 design partners, first bank live</td><td>Seed / Series A, $5–15M</td></tr>
+      <tr><td>Year 2</td><td>Phases 2–3, SOC 2, ISO 27001</td><td>3–5 live customers, $5–10M ARR</td><td>Series A/B, $30–50M</td></tr>
+      <tr><td>Year 3–4</td><td>Phase 4, migration factory, multi-region</td><td>15–25 customers in 3+ countries, $25–40M ARR</td><td>Series B/C, $80–150M</td></tr>
+      <tr><td>Year 5–6</td><td>Phase 5, billion-account certification</td><td>$70–100M ARR, first tier-1 reference</td><td>Series C/D, $1B+ valuation</td></tr>
+    </tbody>
+  </table></div>
+  <div class="flow"><span>Thailand greenfield and leasing</span><i>→</i><span>Incumbents, product by product</span><i>→</i><span>ASEAN, one jurisdiction pack per market</span><i>→</i><span>Middle East</span><i>→</i><span>Tier 1, one product line first</span></div>
+</section>
+
 <section class="part" id="s8">
-  <h2><span class="n">9</span>Open items</h2>
+  <h2><span class="n">10</span>Open items</h2>
   <div class="tbl"><table>
     <thead><tr><th>#</th><th>Item</th><th>Owner</th><th>Needed by</th></tr></thead>
     <tbody>
@@ -1070,7 +1151,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
 
 <!-- 9 -->
 <section class="part" id="s9">
-  <h2><span class="n">10</span>Glossary</h2>
+  <h2><span class="n">11</span>Glossary</h2>
   <div class="tbl"><table>
     <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
     <tbody>
