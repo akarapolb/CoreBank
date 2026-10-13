@@ -452,6 +452,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   <symbol id="i-branch" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="3" y1="21" x2="21" y2="21"/></symbol>
   <symbol id="i-corp" viewBox="0 0 24 24"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 0 1 1 1v11h-6"/><line x1="7" y1="7" x2="11" y2="7"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="7" y1="15" x2="11" y2="15"/></symbol>
   <symbol id="i-swap" viewBox="0 0 24 24"><polyline points="7 4 3 8 7 12"/><line x1="3" y1="8" x2="17" y2="8"/><polyline points="17 12 21 16 17 20"/><line x1="21" y1="16" x2="7" y2="16"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><rect x="2" y="6" width="12" height="10" rx="1"/><path d="M14 9h4l3 3v4h-7"/><circle cx="6.5" cy="17.5" r="2" style="fill:var(--surface)"/><circle cx="17.5" cy="17.5" r="2" style="fill:var(--surface)"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 </svg>
 
@@ -472,6 +473,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       <a class="nav" href="#overview" data-view="overview"><svg class="ico"><use href="#i-overview"/></svg><span class="grow">Overview</span></a>
       <a class="nav" href="#customer" data-view="customer"><svg class="ico"><use href="#i-customer"/></svg><span class="grow">Customer 360</span></a>
       <a class="nav" href="#contract" data-view="contract"><svg class="ico"><use href="#i-contract"/></svg><span class="grow">Contracts</span></a>
+      <a class="nav" href="#assetfin" data-view="assetfin"><svg class="ico"><use href="#i-truck"/></svg><span class="grow">Fleet and floor plan</span></a>
       <a class="nav" href="#studio" data-view="studio"><svg class="ico"><use href="#i-studio"/></svg><span class="grow">Product Studio</span></a>
       <a class="nav" href="#ledger" data-view="ledger"><svg class="ico"><use href="#i-ledger"/></svg><span class="grow">Ledger</span></a>
       <a class="nav" href="#approvals" data-view="approvals"><svg class="ico"><use href="#i-approve"/></svg><span class="grow">Approvals</span><span class="badge" id="apprBadge">0</span></a>
@@ -1000,6 +1002,89 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
         </div>
       </div>
     </section>
+    <!-- ASSET FINANCE: fleet and floor plan -->
+    <section class="view" id="view-assetfin" aria-labelledby="h-af" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Asset finance · hire purchase and leasing</span>
+          <h1 id="h-af">Fleet and floor plan</h1>
+          <p>Fleet: one master agreement per business customer, with a separate hire-purchase schedule for each batch of vehicles. Floor plan: a revolving line for a dealer, drawn vehicle by vehicle and repaid when each one is sold.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-af="fleet" aria-pressed="true">Fleet</button>
+          <button type="button" data-af="floor" aria-pressed="false">Floor plan</button>
+        </div>
+      </div>
+
+      <div id="af-fleet" class="grid" style="gap:20px">
+        <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div class="kpi"><span class="label">Master agreement</span><span class="v" style="font-size:20px">MA-2025-0031</span><span class="d">Siam Freight Logistics · cross-default</span></div>
+          <div class="kpi"><span class="label">Vehicles financed</span><span class="v" id="fUnits"></span><span class="d" id="fSched"></span></div>
+          <div class="kpi"><span class="label">Outstanding / limit</span><span class="v" id="fOut"></span><span class="d" id="fLim"></span></div>
+          <div class="kpi"><span class="label">October invoice</span><span class="v" id="fInv"></span><span class="d">One invoice, VAT per vehicle line</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Schedules under the master agreement</h2><span class="chip">Rates locked at each call-off from the customer's rate card</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Schedule</th><th>Vehicles</th><th class="num">Units</th><th class="num">Financed per unit</th><th>Term · flat</th><th>Started</th><th class="num">Monthly with VAT</th><th class="num">Outstanding</th><th>Cost centre</th></tr></thead>
+            <tbody id="fTable"></tbody>
+          </table></div>
+        </div>
+        <div class="grid g-wide">
+          <div class="panel">
+            <h2>Call off more vehicles</h2>
+            <form class="form" id="fForm" onsubmit="return false">
+              <div class="field"><label for="fModel">Vehicle</label>
+                <select id="fModel">
+                  <option value="Isuzu FTR 6-wheel reefer|2950000">Isuzu FTR 6-wheel reefer · ฿2,950,000</option>
+                  <option value="Hino 500 FG 6-wheel|2600000">Hino 500 FG 6-wheel · ฿2,600,000</option>
+                  <option value="Isuzu D-Max Spark pickup|560000">Isuzu D-Max Spark pickup · ฿560,000</option>
+                </select></div>
+              <div class="field"><label for="fCount">Units</label><input id="fCount" type="number" min="1" step="1" value="6"></div>
+              <div class="field"><label for="fDown">Down payment, %</label><input id="fDown" type="number" min="0" max="50" step="5" value="15"></div>
+              <div class="field"><label for="fTerm">Term</label><select id="fTerm"><option value="48">48 months · flat 3.10%</option><option value="60" selected>60 months · flat 3.25%</option><option value="72">72 months · flat 3.45%</option></select></div>
+              <div class="field"><label for="fCC">Cost centre</label><select id="fCC"><option>CC-210 Cold chain</option><option>CC-120 Line haul</option><option>CC-300 Last mile</option></select></div>
+              <div class="field check"><input id="fCoterm" type="checkbox"><label for="fCoterm">Co-terminate with the latest schedule</label></div>
+            </form>
+            <div class="result" id="fResult"></div>
+            <div class="row"><button class="btn primary" id="fAdd" type="button"><svg class="ico"><use href="#i-plus"/></svg><span>Create schedule</span></button></div>
+          </div>
+          <div class="panel">
+            <h2>How fleet works in the core</h2>
+            <ul class="rules">
+              <li>The master agreement is a parent arrangement; each schedule is a child with its own rate, term, VAT and EIR.</li>
+              <li>Each vehicle has its own asset record and title, so one truck can be paid off, substituted or repossessed alone.</li>
+              <li>Billing is consolidated: one invoice and one payment, allocated across schedules by the waterfall.</li>
+              <li>Cross-default: if any schedule reaches 90 days past due, every schedule moves to TFRS 9 stage 3.</li>
+              <li>Each call-off uses the master facility in the limit tree, so the limit check is atomic.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="af-floor" class="grid" style="gap:20px" hidden>
+        <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div class="kpi"><span class="label">Dealer</span><span class="v" style="font-size:20px">Bangna Motors</span><span class="d">Line FP-2026-0007 · OEM repurchase guarantee</span></div>
+          <div class="kpi"><span class="label">Units in stock</span><span class="v" id="pUnits"></span><span class="d" id="pMix"></span></div>
+          <div class="kpi"><span class="label">Outstanding / line</span><span class="v" id="pOut"></span><span class="d" id="pLim"></span></div>
+          <div class="kpi"><span class="label">Due this month</span><span class="v" id="pDue"></span><span class="d">Interest plus curtailments</span></div>
+        </div>
+        <div class="panel" id="sotAlert" style="background:var(--agent-soft);border-color:transparent;box-shadow:none">
+          <div class="row"><span class="chip agent">AI alert · possible sold out of trust</span><span class="muted" style="font-size:12px">Matched against vehicle registration and insurance feeds</span></div>
+          <p><strong>VIN MR0BA3CD7P0412287</strong> (Fortuner Legender) was registered to a retail buyer on 9 Oct 2026 but is still financed on the floor plan. The dealer has not repaid it.</p>
+          <div class="row"><button class="btn" id="sotAudit" type="button">Open stock audit</button><span class="note">Agreement allows 48 hours from sale to repayment.</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Financed units</h2><span class="chip">Free period paid by the OEM · then 5.50% p.a. · curtailment 10% at 120 days, 25% at 180, all at 270</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>VIN</th><th>Model</th><th>Type</th><th class="num">Financed</th><th class="num">Days</th><th>Status</th><th class="num">Interest this month</th><th class="num">Curtailment due</th><th></th></tr></thead>
+            <tbody id="pTable"></tbody>
+          </table></div>
+          <p class="note">Each unit is a drawdown on the dealer line, paid straight to the distributor and secured by the vehicle's registration book, which the bank holds. Selling a unit with retail hire purchase from this bank repays it automatically from the retail payout.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- BRANCH (retail) -->
     <section class="view" id="view-branch" aria-labelledby="h-branch" hidden>
       <div class="view-head">
@@ -1285,9 +1370,9 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
   /* ---------- Customer facilities ---------- */
   var facilities = [
-    { name: "Group limit · Siam Freight Group", limit: 250e6, used: 164.6e6, child: false },
+    { name: "Group limit · Siam Freight Group", limit: 250e6, used: 139.35e6, child: false },
     { name: "Term loan TL-2024-000311", limit: 120e6, used: 96e6, child: true },
-    { name: "Leasing line · trucks", limit: 80e6, used: 61.4e6, child: true },
+    { name: "Leasing line · fleet MA-2025-0031", limit: 80e6, used: 36.15e6, child: true },
     { name: "Overdraft OD-200118", limit: 30e6, used: 7.2e6, child: true },
     { name: "Trade line", limit: 20e6, used: 0, child: true }
   ];
@@ -1666,9 +1751,9 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   showArch("ledger");
 
   /* ---------- Routing ---------- */
-  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
+  var VIEWS = ["overview", "customer", "contract", "assetfin", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
   var current = "overview";
-  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking" };
+  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking", assetfin: "Fleet and floor plan" };
   function applyRoute() {
     var h = (location.hash || "").replace("#", "");
     current = VIEWS.indexOf(h) >= 0 ? h : "overview";
@@ -1780,7 +1865,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   function renderCredit() {
     var inc = Math.max(0, parseFloat($("#cInc").value) || 0), tenor = parseInt($("#cTenor").value, 10);
     var annualPay = inc * (1 / tenor + 0.035), cf = 73.8 + inc * 0.12, ds = 52.0 + annualPay, dscr = cf / ds;
-    var groupUsed = 164.6 + inc, lvl = 0;
+    var groupUsed = 139.35 + inc, lvl = 0;
     while (inc > LEVELS[lvl][1]) lvl++;
     var c = [];
     c.push([dscr >= 1.25 ? "good" : "crit", dscr >= 1.25 ? "Pass" : "Fail", "Pro forma DSCR " + dscr.toFixed(2) + "x against the 1.25x covenant."]);
@@ -1803,6 +1888,109 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   });
   renderDrawer(); renderMortgage(); renderCredit();
 
+  /* ---------- Asset finance: fleet ---------- */
+  function showAf(which) {
+    $("#af-fleet").hidden = which !== "fleet"; $("#af-floor").hidden = which !== "floor";
+    $$("[data-af]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-af") === which)); });
+  }
+  $$("[data-af]").forEach(function (b) { b.addEventListener("click", function () { showAf(b.getAttribute("data-af")); }); });
+  var FLEET_LIMIT = 80000000, FLAT = { 48: 0.031, 60: 0.0325, 72: 0.0345 };
+  var fleet = [
+    { id: "S-01", model: "Isuzu FVM 6-wheel", units: 12, per: 2082500, n: 60, flat: 0.032, start: new Date(2024, 1, 10), cc: "CC-120 Line haul" },
+    { id: "S-02", model: "Hino 500 FG 6-wheel", units: 10, per: 2210000, n: 60, flat: 0.032, start: new Date(2024, 7, 10), cc: "CC-120 Line haul" },
+    { id: "S-03", model: "Isuzu NLR reefer", units: 8, per: 1402500, n: 48, flat: 0.031, start: new Date(2025, 2, 10), cc: "CC-210 Cold chain" },
+    { id: "S-04", model: "Isuzu D-Max Spark pickup", units: 8, per: 476000, n: 60, flat: 0.0325, start: new Date(2025, 9, 10), cc: "CC-300 Last mile" }
+  ];
+  function fleetCalc(f) {
+    var sch = buildSchedule({ principal: f.per, rate: f.flat, rateType: "FLAT", n: f.n, balloonPct: 0, vat: true, firstDue: addMonths(f.start, 1) });
+    var paid = sch.rows.filter(function (x) { return x.due <= BUSINESS_DATE; }).length;
+    var outPer = paid === 0 ? f.per : sch.rows[paid - 1].bal;
+    return { monthly: r2(sch.rows[0].total * f.units), out: r2(outPer * f.units), inst: sch.rows[0].total, end: addMonths(f.start, f.n), eir: sch.eir };
+  }
+  function renderFleet() {
+    var units = 0, out = 0, inv = 0;
+    $("#fTable").innerHTML = fleet.map(function (f) {
+      var c = fleetCalc(f); units += f.units; out += c.out; inv += c.monthly;
+      return "<tr><td class='mono'>" + f.id + "</td><td>" + esc(f.model) + "</td><td class='num'>" + f.units + "</td><td class='num'>" + fmt(f.per) + "</td><td class='mono'>" + f.n + "m · " + (f.flat * 100).toFixed(2) + "%</td><td class='mono'>" + fdate(f.start) + "</td><td class='num'>" + fmt(c.monthly) + "</td><td class='num'>" + fmt(c.out) + "</td><td>" + esc(f.cc) + "</td></tr>";
+    }).join("");
+    $("#fUnits").textContent = units; $("#fSched").textContent = fleet.length + " schedules";
+    $("#fOut").textContent = "฿" + (out / 1e6).toFixed(1) + "M"; $("#fLim").textContent = "of ฿80.0M · " + (out / FLEET_LIMIT * 100).toFixed(0) + "% used";
+    $("#fInv").textContent = "฿" + fmt0(inv);
+    return out;
+  }
+  function fleetQuote() {
+    var parts = $("#fModel").value.split("|"), price = +parts[1], count = Math.max(1, parseInt($("#fCount").value, 10) || 1);
+    var down = Math.min(50, Math.max(0, parseFloat($("#fDown").value) || 0)) / 100, n = parseInt($("#fTerm").value, 10);
+    var latest = fleet.reduce(function (a, f) { return addMonths(f.start, f.n) > a ? addMonths(f.start, f.n) : a; }, new Date(0));
+    if ($("#fCoterm").checked) { var start = addMonths(BUSINESS_DATE, 0); n = Math.max(12, (latest.getFullYear() - start.getFullYear()) * 12 + latest.getMonth() - start.getMonth()); }
+    var flat = FLAT[n] || FLAT[60];
+    var f = { id: "S-0" + (fleet.length + 1), model: parts[0], units: count, per: r2(price * (1 - down)), n: n, flat: flat, start: BUSINESS_DATE, cc: $("#fCC").value };
+    var c = fleetCalc(f), out = renderFleet(), avail = FLEET_LIMIT - out, need = f.per * count;
+    var ok = need <= avail;
+    $("#fResult").className = "result " + (ok ? "ok" : "warn");
+    $("#fResult").innerHTML = count + " × " + esc(f.model) + ", financed ฿" + fmt0(need) + " over " + n + " months at " + (flat * 100).toFixed(2) + "% flat (" + (c.eir * 100).toFixed(2) + "% effective). Adds <strong>฿" + fmt(c.monthly) + "</strong> a month with VAT." +
+      (ok ? " Within the available ฿" + (avail / 1e6).toFixed(1) + "M." : " Exceeds the available ฿" + (avail / 1e6).toFixed(1) + "M; needs a limit increase (see Corporate banking).");
+    $("#fAdd").disabled = !ok;
+    return ok ? f : null;
+  }
+  $$("#fForm input, #fForm select").forEach(function (el) { el.addEventListener("input", fleetQuote); el.addEventListener("change", fleetQuote); });
+  $("#fAdd").addEventListener("click", function () {
+    var f = fleetQuote(); if (!f) return;
+    fleet.push(f); renderFleet(); fleetQuote();
+    batches.unshift({ id: bid(), time: nowTime(), value: "13 Oct 2026", actor: { type: "SYSTEM", name: "leasing · fleet call-off" }, reason: "Fleet schedule " + f.id + " activated · MA-2025-0031 · paid to dealer", legs: [
+      { acct: "MA-2025-0031/" + f.id, bt: "PRINCIPAL", side: "DR", amt: r2(f.per * f.units), ccy: "THB" },
+      { acct: "GL 2310 Dealer settlement payable", bt: "—", side: "CR", amt: r2(f.per * f.units), ccy: "THB" } ] });
+    renderBatches();
+    toast("Schedule " + f.id + " created · " + f.units + " vehicles");
+  });
+
+  /* ---------- Asset finance: floor plan ---------- */
+  var FP_LINE = 150000000, FP_RATE = 0.055;
+  var units = [
+    { vin: "MR0BA3CD7P0412287", model: "Fortuner Legender", type: "New", amt: 1532000, days: 41, free: 60, sot: true },
+    { vin: "MR0HA3CD1P0409915", model: "Hilux Revo Rocco", type: "New", amt: 1095000, days: 18, free: 60 },
+    { vin: "MR2B29F30P1178203", model: "Yaris Ativ", type: "New", amt: 498000, days: 77, free: 60 },
+    { vin: "MR2K29F30P1170044", model: "Corolla Cross HEV", type: "New", amt: 1089000, days: 126, free: 60 },
+    { vin: "JTMHX3JH5P4019775", model: "Alphard HEV", type: "New", amt: 4120000, days: 188, free: 60 },
+    { vin: "MR0FB3CD8M0371120", model: "Hilux Revo 2021", type: "Used", amt: 512000, days: 64, free: 0 },
+    { vin: "MR2B29F30N1102671", model: "Yaris 2022", type: "Used", amt: 338000, days: 133, free: 0 },
+    { vin: "MR0HA3CD4P0399982", model: "Hilux Champ", type: "Demo", amt: 455000, days: 92, free: 30 }
+  ];
+  function curtailPct(d) { return d >= 270 ? 1 : d >= 180 ? 0.25 : d >= 120 ? 0.10 : 0; }
+  function renderFloor() {
+    var out = 0, due = 0, mix = { New: 0, Used: 0, Demo: 0 }, live = 0;
+    $("#pTable").innerHTML = units.map(function (u, i) {
+      if (u.paid) return "<tr class='paid'><td class='mono'>" + u.vin + "</td><td>" + u.model + "</td><td>" + u.type + "</td><td class='num'>" + fmt(u.amt) + "</td><td class='num'>" + u.days + "</td><td><span class='chip good'>Paid off · " + esc(u.paid) + "</span></td><td class='num'>—</td><td class='num'>—</td><td></td></tr>";
+      live++; mix[u.type]++; out += u.amt;
+      var billable = Math.max(0, Math.min(30, u.days - u.free));
+      var interest = r2(u.amt * FP_RATE * billable / 365);
+      var pct = curtailPct(u.days), crossed = curtailPct(u.days) > curtailPct(u.days - 30), curt = crossed ? r2(u.amt * (pct - curtailPct(u.days - 30))) : 0;
+      due += interest + curt;
+      var st = u.sot ? "<span class='chip agent'>Check: sold?</span>" : u.days <= u.free ? "<span class='chip'>Free period</span>" : curt > 0 ? "<span class='chip warn'>Curtailment " + (pct * 100) + "%</span>" : "<span class='chip acc'>Interest bearing</span>";
+      return "<tr" + (u.sot ? " class='hl'" : "") + "><td class='mono'>" + u.vin + "</td><td>" + u.model + "</td><td>" + u.type + "</td><td class='num'>" + fmt(u.amt) + "</td><td class='num'>" + u.days + "</td><td>" + st + "</td><td class='num'>" + fmt(interest) + "</td><td class='num'>" + (curt ? fmt(curt) : "—") + "</td><td><button class='btn' type='button' data-sell='" + i + "' style='padding:4px 10px;font-size:12.5px;white-space:nowrap'>Record sale</button></td></tr>";
+    }).join("");
+    $("#pUnits").textContent = live; $("#pMix").textContent = mix.New + " new · " + mix.Used + " used · " + mix.Demo + " demo";
+    $("#pOut").textContent = "฿" + (out / 1e6).toFixed(1) + "M"; $("#pLim").textContent = "of ฿150.0M · " + (out / FP_LINE * 100).toFixed(0) + "% used";
+    $("#pDue").textContent = "฿" + fmt0(due);
+    $$("[data-sell]").forEach(function (b) { b.addEventListener("click", function () { sellUnit(+b.getAttribute("data-sell")); }); });
+  }
+  function sellUnit(i) {
+    var u = units[i], ownHp = !u.sot;
+    u.paid = ownHp ? "from retail HP payout" : "dealer repaid";
+    batches.unshift({ id: bid(), time: nowTime(), value: "13 Oct 2026", actor: { type: "SYSTEM", name: "leasing · floor plan" }, reason: "Floor plan payoff " + u.vin + (ownHp ? " · netted from retail HP disbursement" : " · dealer transfer"), legs: [
+      { acct: ownHp ? "GL 2310 Dealer settlement payable (retail HP payout)" : "GL 1190 PromptPay settlement", bt: "—", side: "DR", amt: u.amt, ccy: "THB" },
+      { acct: "FP-2026-0007/" + u.vin.slice(-6), bt: "PRINCIPAL", side: "CR", amt: u.amt, ccy: "THB" } ] });
+    if (u.sot) { u.sot = false; $("#sotAlert").hidden = true; }
+    renderBatches(); renderFloor();
+    toast(u.model + " paid off · ฿" + fmt(u.amt));
+  }
+  $("#sotAudit").addEventListener("click", function () {
+    approvals.unshift({ id: "APR-" + (1080 + approvals.length), title: "Stock audit · Bangna Motors · VIN MR0BA3CD7P0412287", kind: "Audit", maker: "Collections agent", agent: "on behalf of Floor plan desk", detail: "Unit registered to a retail buyer on 9 Oct 2026 and not repaid. Field auditor to sight remaining 7 units within 24 hours; dealer line frozen for new drawdowns until resolved.", status: "PENDING" });
+    renderApprovals(); toast("Stock audit opened and dealer line frozen");
+  });
+  renderFleet(); fleetQuote(); renderFloor();
+
+
   /* ---------- Interface style: Modern or Calm ---------- */
   function setStyle(mode, save) {
     var apply = function () {
@@ -1821,11 +2009,13 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
-  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp" };
+  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp", assetfin: "i-truck" };
   var COMMANDS = VIEWS.map(function (v) { return { group: "Go to", label: TITLES[v], icon: ICON[v], run: function () { location.hash = v; } }; }).concat([
     { group: "Records", label: "HP-2025-004812 · Napat Srisuk", hint: "Hire purchase", icon: "i-contract", run: function () { location.hash = "contract"; } },
     { group: "Records", label: "Siam Freight Logistics Co., Ltd.", hint: "P-200118", icon: "i-customer", run: function () { location.hash = "customer"; } },
     { group: "Records", label: "TL-2024-000311 · restructure proposal", hint: "APR-1043", icon: "i-approve", run: function () { location.hash = "approvals"; } },
+    { group: "Records", label: "MA-2025-0031 · fleet master agreement", hint: "Siam Freight", icon: "i-truck", run: function () { location.hash = "assetfin"; showAf("fleet"); } },
+    { group: "Records", label: "FP-2026-0007 · Bangna Motors floor plan", hint: "Dealer", icon: "i-truck", run: function () { location.hash = "assetfin"; showAf("floor"); } },
     { group: "Switch bank", label: "Demo Virtual Bank", icon: "i-swap", run: function () { setTenant("virtual"); location.hash = "overview"; } },
     { group: "Switch bank", label: "Demo Retail Bank", icon: "i-swap", run: function () { setTenant("retail"); location.hash = "branch"; } },
     { group: "Switch bank", label: "Demo Commercial Bank", icon: "i-swap", run: function () { setTenant("commercial"); location.hash = "corporate"; } },

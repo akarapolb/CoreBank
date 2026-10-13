@@ -10,6 +10,8 @@
 | Mortgage / home loan | LOAN | Annuity, floating with resets, step rates | Teaser rates, collateral, insurance, refinance |
 | Auto hire purchase | ASSET_FINANCE | Annuity from flat rate, balloon | VAT per installment, title retention, repossession |
 | Motorcycle HP | ASSET_FINANCE | Annuity from flat | High volume, field collections |
+| Fleet HP / fleet lease | ASSET_FINANCE (master agreement) | One schedule per call-off; annuity from flat or effective | Consolidated billing, per-vehicle title, cross-default, co-terminus option |
+| Floor plan (dealer inventory) | FLOOR_PLAN | Per-unit drawdown, interest after free period, aging curtailments, bullet on sale | OEM subvention, stock audits, sold-out-of-trust control |
 | Finance lease (equipment) | LEASE | Annuity, residual value | IFRS 16 lessor: net investment in lease |
 | Operating lease | LEASE | Rental | Asset on lessor books, depreciation, maintenance |
 | Title loan (vehicle-backed) | LOAN | Annuity or bullet | Collateral registry integration |
@@ -76,9 +78,50 @@ Leasing-specific capabilities:
 - **Lessor accounting (IFRS 16 / TFRS 16)**: finance lease recognized as net investment in the lease with finance income at the implicit rate; operating lease keeps the asset on books with straight-line rental income and depreciation.
 - **Tax**: VAT on installments by due date; tax invoices issued per installment; handling of VAT on repossession and resale.
 - **Insurance**: policy linkage, financed premiums, renewal tracking, claims as payments to the contract.
-- **Dealer channel**: dealer onboarding, subvention/commission (amortized via EIR), floor-plan financing (later).
+- **Dealer channel**: dealer onboarding, subvention/commission (amortized via EIR), floor-plan financing (see below).
 - **Repossession and remarketing**: legal notice timelines per jurisdiction, field agent assignment, storage costs, auction proceeds allocation, deficiency claim.
 - **Title management**: title retained by lessor until full payment; registry transfer workflow at payoff.
+
+## Fleet hire purchase and leasing
+
+For business customers financing many vehicles over time.
+
+**Structure.** A **master agreement** is a parent arrangement holding the commercial terms: facility limit, rate card by term and vehicle class, fees, insurance requirements, cross-default and reporting covenants. Each **call-off** creates a **schedule**: a child arrangement for a batch of vehicles with its own rate (locked from the rate card at call-off), term, schedule, VAT and EIR. Each vehicle is an **asset** under its schedule with its own title, insurance and registration.
+
+```
+MasterAgreement MA-2025-0031 (limit ฿80M, rate card, cross-default)
+ ├─ Schedule S-01  12 × Isuzu FVM   60m  flat 3.20%  ── Asset × 12 (VIN, title, insurance, cost centre)
+ ├─ Schedule S-02  10 × Hino 500    60m  flat 3.20%  ── Asset × 10
+ └─ Schedule S-03   8 × Isuzu NLR   48m  flat 3.10%  ── Asset × 8
+```
+
+| Capability | Behavior |
+|---|---|
+| Call-off | Draws on the master facility atomically; rate from the rate card valid on the call-off date; dealer paid directly |
+| Consolidated billing | One invoice per billing cycle across all schedules, with a VAT line per vehicle; one payment allocated across schedules by the master waterfall (oldest due first) |
+| Co-terminus | Optional: a new schedule's term is set to end with an existing schedule, so the whole fleet matures together |
+| Per-vehicle events | Early payoff, substitution (replace a written-off vehicle), transfer between cost centres, repossession of one vehicle, without touching the others |
+| Cross-default | A default on any schedule triggers default status, collections and TFRS 9 stage 3 on every schedule under the master agreement |
+| Fleet services (optional) | Maintenance, tyres, insurance and telematics as separately priced service lines on full-service operating leases; pass-through to providers |
+| Reporting | Cost-centre and driver allocation, fleet age and mileage, exposure by vehicle class |
+
+## Floor plan (dealer inventory) financing
+
+A revolving line that funds a dealer's stock, vehicle by vehicle.
+
+**Structure.** The **dealer line** is a revolving facility (with sub-limits for new, used and demo units). Each vehicle the dealer receives from the distributor is a **unit drawdown**, paid straight to the distributor and secured by the vehicle itself; the bank holds the registration book. A unit is repaid in full when the vehicle is sold.
+
+| Capability | Behavior |
+|---|---|
+| Interest | Daily on each unit after an **interest-free period** (typically 30–90 days for new units), which the OEM pays as subvention; used units bear interest from day one; rate may tier by unit age |
+| Curtailment | Scheduled principal reductions as a unit ages, configured per product (example: 10% at 120 days, 25% at 180, the rest at 270) |
+| Payoff on sale | Dealer must repay within an agreed window (example: 48 hours). When the retail buyer finances the car with the same bank, the floor-plan unit is **repaid automatically by netting the retail HP disbursement** |
+| Billing | Monthly dealer statement of interest and curtailments due, per unit |
+| Stock audits | Periodic physical audits (VIN sighting) scheduled per dealer risk; results recorded per unit |
+| Sold out of trust (SOT) | AI matches vehicle registration, insurance and retail-finance events against financed VINs; a sold-but-unpaid unit raises an alert, opens an audit and can freeze new drawdowns |
+| Risk mitigants | OEM repurchase agreements, dealer guarantees, deposit margins; aging and SOT feed the dealer's risk grade |
+
+Accounting: units are drawdowns on a revolving credit arrangement; OEM-paid interest is interest income from the OEM, not the dealer; curtailments reduce the unit's principal; ECL is assessed at dealer level.
 
 ## IFRS 9 / TFRS 9 expected credit loss
 

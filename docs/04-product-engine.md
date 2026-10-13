@@ -80,8 +80,12 @@ accounting:
 
 | Block | Options |
 |---|---|
-| **Family** | Deposit, term deposit, loan, revolving credit, overdraft, lease (finance/operating), hire purchase, BNPL |
-| **Disbursement** | Single, tranches/drawdowns, revolving, direct-to-dealer/merchant, to escrow |
+| **Family** | Deposit, term deposit, loan, revolving credit, overdraft, lease (finance/operating), hire purchase, BNPL, floor plan |
+| **Structure** | Single contract, or master agreement with child schedules (fleet), or revolving line with per-unit drawdowns (floor plan); cross-default and co-terminus flags |
+| **Disbursement** | Single, tranches/drawdowns, revolving, per-unit (floor plan), direct-to-dealer/merchant/distributor, to escrow, netted against another arrangement (floor plan payoff from retail HP) |
+| **Curtailment** | Age-based principal reductions (days → % of original), payoff-on-sale window |
+| **Interest-free period** | Days free, who pays (customer, dealer, OEM), income recognition of subvention |
+| **Billing** | Per contract, or consolidated across a master agreement or dealer line |
 | **Rate** | Flat, fixed, floating (base + spread, reset frequency, floor/cap), stepped, promotional, tiered (deposits), relationship-based |
 | **Schedule method** | Annuity (equal installment), equal principal, bullet, balloon, interest-only then amortizing, step-up/step-down, seasonal/skip months, custom upload, annuity-from-flat |
 | **Frequency** | Daily, weekly, bi-weekly, monthly, quarterly, semi-annual, annual, at maturity |

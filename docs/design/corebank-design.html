@@ -138,7 +138,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <ol>
     <li><a href="#s1"><span class="n">1</span>Introduction</a></li>
     <li><a href="#s2"><span class="n">2</span>Functional design</a>
-      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li><li><a href="#s2-4">Retail bank</a></li><li><a href="#s2-5">Commercial bank</a></li><li><a href="#s2-6">Segment readiness</a></li></ol></li>
+      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li><li><a href="#s2-4">Retail bank</a></li><li><a href="#s2-5">Commercial bank</a></li><li><a href="#s2-6">Segment readiness</a></li><li><a href="#s2-7">Fleet and floor plan</a></li></ol></li>
     <li><a href="#s3"><span class="n">3</span>Module design</a>
       <ol><li><a href="#s3-1">Services</a></li><li><a href="#s3-2">Modules and rules</a></li><li><a href="#s3-3">APIs and events</a></li></ol></li>
     <li><a href="#s4"><span class="n">4</span>Architecture</a>
@@ -219,7 +219,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
     <div class="card"><h4>Products</h4><ul><li>Product definition from building blocks</li><li>Simulation and golden tests</li><li>Pricing tables and risk-based pricing</li><li>Maker-checker publishing, versioning</li></ul></div>
     <div class="card"><h4>Deposits</h4><ul><li>Savings, current, term, pockets</li><li>Tiered interest, withholding tax</li><li>Sweeps, overdraft, dormancy</li><li>Holds and available balance</li></ul></div>
     <div class="card"><h4>Lending</h4><ul><li>Origination and decisioning</li><li>Schedules: annuity, flat, balloon, stepped</li><li>Accrual, billing, allocation, aging</li><li>Restructuring, holidays, write-off</li></ul></div>
-    <div class="card"><h4>Leasing and hire purchase</h4><ul><li>Asset register and title</li><li>Residual value, VAT, tax invoices</li><li>Insurance, dealer subvention</li><li>Repossession and remarketing</li></ul></div>
+    <div class="card"><h4>Leasing and hire purchase</h4><ul><li>Retail, fleet and floor plan</li><li>Asset register and title</li><li>Residual value, VAT, tax invoices</li><li>Insurance, dealer subvention</li><li>Repossession and remarketing</li></ul></div>
     <div class="card"><h4>Commercial</h4><ul><li>Facility trees and group exposure</li><li>Collateral valuation and LTV</li><li>Covenant tests and breaches</li><li>Multi-currency and FX</li></ul></div>
     <div class="card"><h4>Ledger and accounting</h4><ul><li>Double-entry posting engine</li><li>Sub-ledger to GL, daily reconciliation</li><li>TFRS 9 EIR and ECL</li><li>TFRS 16 lessor accounting</li></ul></div>
     <div class="card"><h4>Collections</h4><ul><li>Delinquency buckets and strategies</li><li>Promises to pay</li><li>Field and agent assignment</li><li>Recoveries</li></ul></div>
@@ -259,6 +259,12 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">FR-LSE-02</td><td>Keep an asset register with title status, insurance and residual value.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
       <tr><td class="id">FR-LSE-03</td><td>Quote early settlement using the jurisdiction's rebate rule.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
       <tr><td class="id">FR-LSE-04</td><td>Run repossession and remarketing with jurisdiction notice timelines.</td><td><span class="tag p1">Should</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-05</td><td>Hold fleet master agreements with a rate card, and create a child schedule per call-off with its own rate, term, VAT and EIR.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-06</td><td>Bill all schedules under a master agreement on one invoice and allocate one payment across them.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-07</td><td>Propagate default from any schedule to all schedules under the same master agreement (cross-default).</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-08</td><td>Finance dealer stock per vehicle on a revolving line with an OEM-paid interest-free period and age-based curtailments.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-09</td><td>Repay a floor-plan unit automatically when the bank finances its retail sale, by netting the retail HP payout.</td><td><span class="tag p0">Must</span></td><td>2</td></tr>
+      <tr><td class="id">FR-LSE-10</td><td>Detect sold-out-of-trust units from registration and insurance data, open a stock audit and optionally freeze the dealer line.</td><td><span class="tag p1">Should</span></td><td>2</td></tr>
       <tr><td class="id">FR-COM-01</td><td>Check facility limits atomically at drawdown across the facility tree.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
       <tr><td class="id">FR-COM-02</td><td>Test covenants on schedule and open a breach workflow on failure.</td><td><span class="tag p1">Should</span></td><td>3</td></tr>
       <tr><td class="id">FR-ACC-01</td><td>Map every posting to the GL and reconcile sub-ledger to GL to zero daily.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
@@ -331,12 +337,32 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
     <tbody>
       <tr><td>0 · months 0–3</td><td>Ledger only</td><td>Ledger only</td><td>Ledger only</td><td>Ledger only</td></tr>
       <tr><td>1 · months 3–9</td><td><span class="tag ok">Launch-ready</span></td><td>Digital products</td><td>SME deposits</td><td>—</td></tr>
-      <tr><td>2 · months 9–14</td><td>Adds BNPL, HP</td><td>Adds auto HP</td><td>—</td><td><span class="tag ok">Launch-ready</span></td></tr>
+      <tr><td>2 · months 9–14</td><td>Adds BNPL, HP</td><td>Adds auto HP</td><td>—</td><td><span class="tag ok">Launch-ready</span> incl. fleet and floor plan</td></tr>
       <tr><td>3 · months 14–20</td><td>Adds SME lending</td><td>Branch, mortgages: <span class="tag ok">new-bank ready</span></td><td><span class="tag ok">Launch-ready</span></td><td>Adds equipment leasing</td></tr>
-      <tr><td>4 · months 20–30</td><td>Embedded finance</td><td>Migration toolkit: <span class="tag ok">incumbent ready</span></td><td>Pooling, trade, syndication</td><td>Floor plan</td></tr>
+      <tr><td>4 · months 20–30</td><td>Embedded finance</td><td>Migration toolkit: <span class="tag ok">incumbent ready</span></td><td>Pooling, trade, syndication</td><td>Full-service fleet leasing</td></tr>
     </tbody>
   </table></div>
   <div class="callout">An incumbent retail or commercial bank can adopt CoreBank one product at a time from Phase 3 (for example new digital savings or SME leasing first), with the remaining books migrated in Phase 4.</div>
+
+  <h3 id="s2-7"><span class="n">2.7</span>Fleet and floor plan</h3>
+  <p>Hire purchase covers three shapes of business. They share the schedule, VAT, title and accounting engines, and differ in how contracts are grouped and repaid.</p>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Retail HP</th><th>Fleet HP and leasing</th><th>Floor plan</th></tr></thead>
+    <tbody>
+      <tr><td>Customer</td><td>Individual or SME</td><td>Business with many vehicles</td><td>Car dealer</td></tr>
+      <tr><td>Structure</td><td>One contract, one vehicle</td><td>Master agreement → schedule per call-off → asset per vehicle</td><td>Revolving dealer line → drawdown per vehicle (VIN)</td></tr>
+      <tr><td>Pricing</td><td>Flat or effective rate per contract</td><td>Rate card in the master, locked at each call-off</td><td>OEM-paid free period, then daily interest; may tier by age</td></tr>
+      <tr><td>Repayment</td><td>Monthly installments</td><td>Monthly installments per schedule, one consolidated invoice</td><td>Curtailments as the unit ages; full payoff when sold</td></tr>
+      <tr><td>Risk controls</td><td>Title retained, insurance</td><td>Cross-default across schedules, master limit</td><td>Registration book held, stock audits, sold-out-of-trust alerts, OEM repurchase</td></tr>
+      <tr><td>Typical term</td><td>12–84 months</td><td>36–72 months per schedule</td><td>Up to 270 days per unit</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Fleet call-off</h4>
+  <div class="flow"><span>Customer orders vehicles</span><i>→</i><span>Rate from master rate card</span><i>→</i><span>Atomic check on master limit</span><i>→</i><span>Create schedule (optionally co-terminus)</span><i>→</i><span>Register each vehicle and title</span><i>→</i><span>Pay dealer</span><i>→</i><span>Added to consolidated invoice</span></div>
+  <h4>Floor plan unit, from delivery to sale</h4>
+  <div class="flow"><span>Distributor delivers car to dealer</span><i>→</i><span>Unit drawdown, paid to distributor</span><i>→</i><span>Bank holds registration book</span><i>→</i><span>Free period (OEM pays)</span><i>→</i><span>Interest and curtailments as it ages</span><i>→</i><span>Sold: payoff within 48 h, or netted from the bank's retail HP payout</span></div>
+  <div class="flow"><span class="alt">Registered or insured to a buyer but not repaid → sold-out-of-trust alert → stock audit → freeze new drawdowns</span></div>
+  <p>Both are built on the arrangement hierarchy (a parent with child arrangements and an optional consolidated billing account) and on product-engine blocks for structure, per-unit disbursement, curtailment, interest-free periods and consolidated billing. Detail is in <code>docs/05-lending-and-leasing.md</code>.</p>
 </section>
 
 <!-- 3 -->
@@ -351,7 +377,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="mono">product-catalog</td><td>Product definitions, pricing tables, fee schedules</td><td>Product, ProductVersion, RateTable</td></tr>
       <tr><td class="mono">deposit</td><td>Deposit arrangements and their lifecycle</td><td>DepositArrangement, InterestTier</td></tr>
       <tr><td class="mono">lending</td><td>Loan and credit-line contracts, schedules</td><td>LoanArrangement, Schedule, Delinquency</td></tr>
-      <tr><td class="mono">leasing</td><td>Lease and hire-purchase contracts, assets</td><td>LeaseArrangement, Asset, InsurancePolicy</td></tr>
+      <tr><td class="mono">leasing</td><td>Lease and hire-purchase contracts, fleet master agreements, floor-plan dealer lines, assets</td><td>LeaseArrangement, MasterAgreement, Schedule, DealerLine, UnitDrawdown, Asset, StockAudit</td></tr>
       <tr><td class="mono">limits-collateral</td><td>Facilities, exposure, collateral, covenants</td><td>Facility, Collateral, Valuation, Covenant</td></tr>
       <tr><td class="mono">ledger</td><td>Accounts, postings, balances, holds</td><td>LedgerAccount, PostingBatch, Balance, Hold</td></tr>
       <tr><td class="mono">accounting</td><td>GL mapping, reconciliation, ECL, period close</td><td>GlMapping, GlEntry, EclRun</td></tr>
@@ -462,7 +488,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
     <tbody>
       <tr><td class="mono">ledger</td><td class="mono">PostBatch · ReverseBatch · PlaceHold · ReleaseHold · GetBalances(asOf)</td><td class="mono">PostingBatchCommitted · HoldPlaced</td></tr>
       <tr><td class="mono">lending</td><td class="mono">CreateLoan · Disburse · Repay · Restructure · QuoteSettlement</td><td class="mono">LoanActivated · InstallmentBilled · DelinquencyChanged · LoanClosed</td></tr>
-      <tr><td class="mono">leasing</td><td class="mono">CreateLease · RegisterAsset · Activate · Terminate · Repossess</td><td class="mono">HpContractActivated · VatInvoiceIssued · AssetRepossessed</td></tr>
+      <tr><td class="mono">leasing</td><td class="mono">CreateLease · RegisterAsset · Activate · Terminate · Repossess · CallOffSchedule · DrawUnit · RecordUnitSale · RecordStockAudit</td><td class="mono">HpContractActivated · VatInvoiceIssued · AssetRepossessed · ScheduleCalledOff · UnitCurtailmentDue · UnitSoldOutOfTrust</td></tr>
       <tr><td class="mono">product-catalog</td><td class="mono">DraftProduct · Simulate · SubmitForApproval · Publish</td><td class="mono">ProductVersionPublished</td></tr>
       <tr><td class="mono">limits-collateral</td><td class="mono">Reserve · Utilize · Release · Revalue · TestCovenant</td><td class="mono">LimitBreached · CovenantBreached</td></tr>
       <tr><td class="mono">party</td><td class="mono">Onboard · UpdateKyc · RecordConsent</td><td class="mono">PartyOnboarded · KycExpired · ConsentChanged</td></tr>

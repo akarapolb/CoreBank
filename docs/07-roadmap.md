@@ -36,6 +36,9 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 - Hire purchase (auto, motorcycle), finance lease, operating lease
 - Annuity-from-flat, balloon/residual, EIR income recognition, VAT per installment, tax invoices
 - Asset register, insurance linkage, dealer channel and subvention
+- Fleet hire purchase and leasing: master agreements, call-off schedules, consolidated billing, cross-default, co-terminus
+- Floor plan financing: dealer lines, per-unit drawdowns, OEM interest-free periods, curtailments, payoff on sale (netted from retail HP), stock audits, sold-out-of-trust alerts
+- The dealer and fleet facilities from limits-collateral (a subset of the Phase 3 limit tree) are pulled forward into this phase
 - Early settlement with regulatory rebate formulas
 - Collections v1 + AI propensity models; repossession and remarketing workflows
 - IFRS 9 ECL engine v1 and IFRS 16 lessor accounting

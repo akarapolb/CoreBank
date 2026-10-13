@@ -38,6 +38,16 @@ DRAFT → PENDING_APPROVAL → APPROVED → ACTIVE ⇄ SUSPENDED
                     MATURED / PAID_OFF / TERMINATED / WRITTEN_OFF → CLOSED
 ```
 
+Arrangements can form a hierarchy through `parent_arrangement_id`:
+
+| Pattern | Parent | Children |
+|---|---|---|
+| Fleet | Master agreement (terms, limit, rate card, cross-default) | Schedules, one per call-off, each with its own assets |
+| Floor plan | Dealer line (revolving, sub-limits by unit type) | Unit drawdowns, one per VIN |
+| Commercial | Facility | Drawdowns, loans, leases under the facility |
+
+A parent can carry a **billing account** so that all children are invoiced and paid together; allocation across children follows the parent's waterfall. Delinquency and default can be propagated from a child to its siblings (cross-default).
+
 Lending adds delinquency status (`CURRENT`, `DPD_1_30`, `DPD_31_60`, `DPD_61_90`, `NPL_90+`) and IFRS 9 stage (`1`, `2`, `3`, `POCI`) as orthogonal attributes, not states.
 
 ## Ledger
