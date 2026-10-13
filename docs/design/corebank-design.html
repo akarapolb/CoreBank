@@ -138,7 +138,7 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
   <ol>
     <li><a href="#s1"><span class="n">1</span>Introduction</a></li>
     <li><a href="#s2"><span class="n">2</span>Functional design</a>
-      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li></ol></li>
+      <ol><li><a href="#s2-1">Capability map</a></li><li><a href="#s2-2">Key processes</a></li><li><a href="#s2-3">Requirements</a></li><li><a href="#s2-4">Retail bank</a></li><li><a href="#s2-5">Commercial bank</a></li><li><a href="#s2-6">Segment readiness</a></li></ol></li>
     <li><a href="#s3"><span class="n">3</span>Module design</a>
       <ol><li><a href="#s3-1">Services</a></li><li><a href="#s3-2">Modules and rules</a></li><li><a href="#s3-3">APIs and events</a></li></ol></li>
     <li><a href="#s4"><span class="n">4</span>Architecture</a>
@@ -266,9 +266,77 @@ svg .act { fill: var(--accent-soft); stroke: var(--accent); }
       <tr><td class="id">FR-AI-01</td><td>Return a credit decision with reason codes for every adverse outcome.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-AI-02</td><td>Score fraud on the posting path within 30 ms, with a rule-based fallback.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
       <tr><td class="id">FR-AI-03</td><td>Let agents act only through tools, within delegated authority, with every call audited.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-RTL-01</td><td>Post teller cash deposits and withdrawals in real time against a teller drawer that is a ledger account.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-RTL-02</td><td>Reprice floating-rate mortgages at reset dates, by changing either the installment or the term, with advance notice.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-RTL-03</td><td>Run standing orders and direct debits on the account's own timer with retry and failure rules.</td><td><span class="tag p0">Must</span></td><td>1</td></tr>
+      <tr><td class="id">FR-RTL-04</td><td>Migrate an incumbent bank's books product by product, with parallel run and reconciliation.</td><td><span class="tag p0">Must</span></td><td>4</td></tr>
+      <tr><td class="id">FR-COM-03</td><td>Route credit applications to the approver whose authority covers the amount and any exceptions.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-COM-04</td><td>Run zero-balancing and target-balancing sweeps across a corporate group with intercompany records.</td><td><span class="tag p1">Should</span></td><td>3</td></tr>
+      <tr><td class="id">FR-COM-05</td><td>Accept bulk payment files, validate each item and release only after the client's own dual authorization.</td><td><span class="tag p0">Must</span></td><td>3</td></tr>
+      <tr><td class="id">FR-COM-06</td><td>Deliver statements to client ERPs as camt.053 and MT940.</td><td><span class="tag p1">Should</span></td><td>3</td></tr>
       <tr><td class="id">FR-UX-01</td><td>Offer Modern and Calm interface styles and light, dark or system theme per user.</td><td><span class="tag p2">Could</span></td><td>1</td></tr>
     </tbody>
   </table></div>
+
+  <h3 id="s2-4"><span class="n">2.4</span>Retail bank design</h3>
+  <p>A retail bank runs the same core as a virtual bank, plus branches, cash, mortgages and the need to migrate from an existing core without a big-bang cut-over.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Area</th><th>How CoreBank handles it</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td>Products</td><td>Savings, current, fixed and step-up term deposits, children's and senior accounts, personal loans, home loans, auto hire purchase, overdraft, credit cards through a processor</td><td>1–3</td></tr>
+      <tr><td>Channels</td><td>Mobile and internet banking, branch counter, ATM and CDM through the switch, call centre, agent banking</td><td>1–3</td></tr>
+      <tr><td>Branch and teller</td><td>Teller drawers and vaults are ledger accounts; counter transactions post in real time; drawer limits and vault sweeps; supervisor overrides as maker-checker; end-of-day cash count reconciles to the ledger</td><td>3</td></tr>
+      <tr><td>Cash and AML</td><td>Cash transactions above the reporting threshold raise an AMLO report automatically; ID check captured at the counter</td><td>3</td></tr>
+      <tr><td>Home loans</td><td>Floating rates as MRR or MLR plus or minus a spread, teaser periods, reset dates, refinance and retention offers, mortgage insurance, collateral with title deed and LTV</td><td>3</td></tr>
+      <tr><td>Payments</td><td>PromptPay, standing orders, direct debit, bill payment, cheque clearing through ICAS via an adapter</td><td>1–3</td></tr>
+      <tr><td>Servicing</td><td>Statements, certificates, dormant accounts, deceased-customer handling, complaints with SLAs</td><td>3</td></tr>
+      <tr><td>Migration</td><td>Product mapping, balance and history migration, parallel run with daily reconciliation, cut-over by product or by branch</td><td>4</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Branch cash deposit</h4>
+  <div class="flow"><span>Customer at counter</span><i>→</i><span>ID check</span><i>→</i><span>Teller enters amount</span><i>→</i><span class="alt">Over ฿2M: supervisor override + AMLO report</span><i>→</i><span>Post: Dr teller drawer, Cr customer account</span><i>→</i><span>Receipt and SMS</span></div>
+
+  <h3 id="s2-5"><span class="n">2.5</span>Commercial bank design</h3>
+  <p>Commercial banking adds relationship structure: groups of companies, facility trees, credit committees, covenants and cash management for clients who run their own treasury.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Area</th><th>How CoreBank handles it</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td>Clients</td><td>Business party with directors, beneficial owners and group hierarchy; KYB documents; group exposure computed over the relationship graph</td><td>1–3</td></tr>
+      <tr><td>Credit process</td><td>Credit application with financial spreading, risk grade, RM copilot memo draft, authority matrix routing by amount and exception, conditions precedent before first drawdown</td><td>3</td></tr>
+      <tr><td>Products</td><td>Term loans with grace and equal-principal schedules, revolving credit, overdraft, invoice and supply-chain finance, equipment leasing, multi-currency accounts</td><td>3</td></tr>
+      <tr><td>Limits and collateral</td><td>Facility trees from group to product sub-limit, atomic check at drawdown, collateral valuation and haircuts, guarantees, LTV monitoring</td><td>3</td></tr>
+      <tr><td>Covenants</td><td>Financial and reporting covenants tested on schedule; figures extracted from submitted statements by AI and confirmed by the RM; breach workflow</td><td>3</td></tr>
+      <tr><td>Pricing</td><td>Relationship pricing across products, fee tables per client, pricing exceptions with approval</td><td>3</td></tr>
+      <tr><td>Cash management</td><td>Zero and target balancing sweeps, notional pooling (later), virtual accounts for receivables matching, bulk and payroll payments with client dual authorization</td><td>3–4</td></tr>
+      <tr><td>Client connectivity</td><td>Corporate portal, host-to-host files, APIs for ERPs, statements as camt.053 and MT940</td><td>3</td></tr>
+      <tr><td>Trade and syndication</td><td>Trade finance and syndicated loans integrated from specialist systems first; native support considered in Phase 4</td><td>4</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Credit application to drawdown</h4>
+  <div class="flow"><span>RM opens application</span><i>→</i><span>Spreading and risk grade</span><i>→</i><span>AI memo draft, RM edits</span><i>→</i><span>Route by authority matrix</span><i>→</i><span>Approve with conditions</span><i>→</i><span>Set up facility tree and collateral</span><i>→</i><span>Drawdown with atomic limit check</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Authority level (example)</th><th>Approves up to</th></tr></thead>
+    <tbody>
+      <tr><td>Branch credit head</td><td class="num">฿10M</td></tr>
+      <tr><td>Senior credit officer</td><td class="num">฿50M</td></tr>
+      <tr><td>Credit committee</td><td class="num">฿200M</td></tr>
+      <tr><td>Board credit committee</td><td class="num">Above ฿200M</td></tr>
+    </tbody>
+  </table></div>
+  <p>Amounts are configured per tenant. Covenant or policy exceptions move an application up one level.</p>
+
+  <h3 id="s2-6"><span class="n">2.6</span>Segment readiness by phase</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Phase</th><th>Virtual bank</th><th>Retail bank</th><th>Commercial bank</th><th>Leasing company</th></tr></thead>
+    <tbody>
+      <tr><td>0 · months 0–3</td><td>Ledger only</td><td>Ledger only</td><td>Ledger only</td><td>Ledger only</td></tr>
+      <tr><td>1 · months 3–9</td><td><span class="tag ok">Launch-ready</span></td><td>Digital products</td><td>SME deposits</td><td>—</td></tr>
+      <tr><td>2 · months 9–14</td><td>Adds BNPL, HP</td><td>Adds auto HP</td><td>—</td><td><span class="tag ok">Launch-ready</span></td></tr>
+      <tr><td>3 · months 14–20</td><td>Adds SME lending</td><td>Branch, mortgages: <span class="tag ok">new-bank ready</span></td><td><span class="tag ok">Launch-ready</span></td><td>Adds equipment leasing</td></tr>
+      <tr><td>4 · months 20–30</td><td>Embedded finance</td><td>Migration toolkit: <span class="tag ok">incumbent ready</span></td><td>Pooling, trade, syndication</td><td>Floor plan</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">An incumbent retail or commercial bank can adopt CoreBank one product at a time from Phase 3 (for example new digital savings or SME leasing first), with the remaining books migrated in Phase 4.</div>
 </section>
 
 <!-- 3 -->

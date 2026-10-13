@@ -49,6 +49,8 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 - Multi-currency accounts and FX postings
 - Cash management basics: sweeps, pooling (notional later), bulk payments
 - RM copilot, covenant extraction from financial statements, credit memo drafting
+- Credit application workflow with authority matrix routing; bulk and payroll payments with client dual authorization; camt.053 and MT940 statements
+- Retail bank extensions: branch and teller (drawers and vaults as ledger accounts, supervisor overrides), floating-rate home loans with resets, cheque clearing adapter
 - Regulatory reporting data marts
 
 **Exit criteria:** commercial pilot customer live; limit checks atomic under concurrent drawdowns; regulatory return dry-runs accepted.

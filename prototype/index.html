@@ -295,6 +295,24 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } ::view-transition-old(content), ::view-transition-new(content) { animation: none; } }
 
+[hidden] { display: none !important; }
+/* Tenant switcher */
+.ws-wrap { position: relative; }
+button.ws { width: 100%; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+button.ws:hover { border-color: var(--faint); }
+.ws-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.ws-menu .label { padding: 6px 8px 4px; }
+.ws-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; text-align: left; }
+.ws-menu button:hover, .ws-menu button[aria-current="true"] { background: var(--accent-soft); }
+.ws-menu button strong { font-size: 13px; font-weight: 600; }
+.ws-menu button span { font-size: 12px; color: var(--muted); }
+.mat td.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.mat tr.on td { background: var(--accent-soft); }
+.mat tr.on td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.result { font-size: 13px; padding: 10px 12px; border-radius: var(--r); background: var(--surface-2); }
+.result.ok { background: var(--good-soft); color: var(--good); }
+.result.warn { background: var(--warn-soft); color: var(--warn); }
+
 /* Settings */
 .set-row { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px 32px; padding: 20px 0; border-bottom: 1px solid var(--line); }
 .set-row:first-of-type { padding-top: 4px; }
@@ -391,7 +409,7 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   .shell { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 16px; gap: 6px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { padding: 0 8px 0 0; flex-shrink: 0; }
-  .brand strong, .ws, .navgroup .label, .side-foot { display: none; }
+  .brand strong, .ws-wrap, .navgroup .label, .side-foot { display: none; }
   .navgroup[aria-label="Account"] { margin-top: 0 !important; }
   .navgroup { flex-direction: row; flex-shrink: 0; }
   .nav { white-space: nowrap; }
@@ -431,13 +449,24 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   <symbol id="i-pause" viewBox="0 0 24 24"><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="3" y1="21" x2="21" y2="21"/></symbol>
+  <symbol id="i-corp" viewBox="0 0 24 24"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 0 1 1 1v11h-6"/><line x1="7" y1="7" x2="11" y2="7"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="7" y1="15" x2="11" y2="15"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><polyline points="7 4 3 8 7 12"/><line x1="3" y1="8" x2="17" y2="8"/><polyline points="17 12 21 16 17 20"/><line x1="21" y1="16" x2="7" y2="16"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 </svg>
 
 <div class="shell">
   <aside class="side" aria-label="Modules">
     <div class="brand"><span class="logo" aria-hidden="true">C</span><strong>CoreBank</strong></div>
-    <div class="ws"><span class="dot" aria-hidden="true"></span><div><strong>Demo Virtual Bank</strong><span>TH01 · THB · SIT</span></div></div>
+    <div class="ws-wrap">
+      <button class="ws" type="button" id="wsBtn" aria-haspopup="true" aria-expanded="false" aria-controls="wsMenu"><span class="dot" aria-hidden="true"></span><div><strong id="wsName">Demo Virtual Bank</strong><span id="wsSub">TH01 · Digital only</span></div><svg class="ico" style="width:16px;height:16px;margin-left:auto"><use href="#i-swap"/></svg></button>
+      <div class="ws-menu" id="wsMenu" hidden>
+        <span class="label">Switch bank</span>
+        <button type="button" data-tenant="virtual"><strong>Demo Virtual Bank</strong><span>Digital only · TH01</span></button>
+        <button type="button" data-tenant="retail"><strong>Demo Retail Bank</strong><span>412 branches · TH02</span></button>
+        <button type="button" data-tenant="commercial"><strong>Demo Commercial Bank</strong><span>38 business centres · TH03</span></button>
+      </div>
+    </div>
     <nav class="navgroup" aria-label="Operate">
       <div class="label">Operate</div>
       <a class="nav" href="#overview" data-view="overview"><svg class="ico"><use href="#i-overview"/></svg><span class="grow">Overview</span></a>
@@ -447,6 +476,11 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
       <a class="nav" href="#ledger" data-view="ledger"><svg class="ico"><use href="#i-ledger"/></svg><span class="grow">Ledger</span></a>
       <a class="nav" href="#approvals" data-view="approvals"><svg class="ico"><use href="#i-approve"/></svg><span class="grow">Approvals</span><span class="badge" id="apprBadge">0</span></a>
       <a class="nav" href="#agents" data-view="agents"><svg class="ico"><use href="#i-agent"/></svg><span class="grow">AI agents</span></a>
+    </nav>
+    <nav class="navgroup" aria-label="Segment" id="segNav" hidden>
+      <div class="label" id="segLabel">Retail banking</div>
+      <a class="nav" href="#branch" data-view="branch" data-seg="retail"><svg class="ico"><use href="#i-branch"/></svg><span class="grow">Branch and teller</span></a>
+      <a class="nav" href="#corporate" data-view="corporate" data-seg="commercial"><svg class="ico"><use href="#i-corp"/></svg><span class="grow">Corporate banking</span></a>
     </nav>
     <nav class="navgroup" aria-label="Blueprint">
       <div class="label">Blueprint</div>
@@ -487,9 +521,9 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><span class="label">Deposits</span><span class="v">฿48.21bn</span><span class="d"><span class="delta up">+1.8%</span> 412,880 accounts</span><svg class="spk" data-spk="up" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-        <div class="kpi"><span class="label">Loans and leases</span><span class="v">฿31.74bn</span><span class="d"><span class="delta up">+2.6%</span> 96,415 contracts</span><svg class="spk" data-spk="up" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-        <div class="kpi"><span class="label">NPL ratio</span><span class="v">2.14%</span><span class="d"><span class="delta down">+0.07 pt</span> Stage 3 · TFRS 9</span><svg class="spk" data-spk="npl" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+        <div class="kpi"><span class="label">Deposits</span><span class="v" id="kDep">฿48.21bn</span><span class="d"><span class="delta up">+1.8%</span> <span id="kDepD">412,880 accounts</span></span><svg class="spk" data-spk="up" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+        <div class="kpi"><span class="label">Loans and leases</span><span class="v" id="kLoan">฿31.74bn</span><span class="d"><span class="delta up">+2.6%</span> <span id="kLoanD">96,415 contracts</span></span><svg class="spk" data-spk="up" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+        <div class="kpi"><span class="label">NPL ratio</span><span class="v" id="kNpl">2.14%</span><span class="d"><span class="delta down">+0.07 pt</span> Stage 3 · TFRS 9</span><svg class="spk" data-spk="npl" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="kpi"><span class="label">Postings today</span><span class="v"><span id="kpiPostings">3,841,220</span></span><span class="d">Σ debit = Σ credit</span><svg class="spk" data-spk="flat" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="kpi"><span class="label">Posting p99</span><span class="v">18 ms</span><span class="d"><span class="delta up">−3 ms</span> target &lt; 50 ms</span><svg class="spk" data-spk="down" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
         <div class="kpi"><span class="label">Sub-ledger vs GL</span><span class="v">0.00</span><span class="d">Reconciled 13 Oct 06:00</span><svg class="spk" data-spk="zero" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
@@ -966,6 +1000,134 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
         </div>
       </div>
     </section>
+    <!-- BRANCH (retail) -->
+    <section class="view" id="view-branch" aria-labelledby="h-branch" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Demo Retail Bank · Branch 0123 Silom · Teller window 4</span>
+          <h1 id="h-branch">Branch and teller</h1>
+          <p>Counter transactions post to the same ledger as the app, in real time. The teller drawer is itself a ledger account, so cash is always reconciled.</p>
+        </div>
+        <span class="chip good">Drawer balanced</span>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <h2>Cash deposit</h2>
+          <form class="form" id="tellerForm" onsubmit="return false">
+            <div class="field"><label for="tAcct">Customer account</label>
+              <select id="tAcct">
+                <option value="SAV-0201-55812 · Somsri J.">SAV-0201-55812 · Somsri J. · savings</option>
+                <option value="CUR-0201-10077 · Baan Kafe Co., Ltd.">CUR-0201-10077 · Baan Kafe Co., Ltd. · current</option>
+                <option value="SAV-0201-90233 · Preecha N.">SAV-0201-90233 · Preecha N. · savings</option>
+              </select></div>
+            <div class="field"><label for="tAmt">Amount, THB</label><input id="tAmt" type="number" min="1" step="0.01" value="45000"></div>
+            <div class="field"><label for="tRef">Depositor reference</label><input id="tRef" value="Daily takings"></div>
+            <div class="field"><label for="tId">Depositor ID checked</label><select id="tId"><option>Thai national ID card</option><option>Passport</option></select></div>
+          </form>
+          <div class="row"><button class="btn primary" id="tPost" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Post deposit</span></button><span class="note">Deposits over ฿2,000,000 need a supervisor override. Cash over ฿2,000,000 is also reported to AMLO.</span></div>
+          <div class="result" id="tResult" hidden></div>
+        </div>
+        <div class="panel">
+          <h2>Teller drawer · window 4</h2>
+          <dl class="kv" id="drawer"></dl>
+          <div class="bar" style="grid-column:auto"><span id="drawerBar" style="width:0%"></span></div>
+          <p class="note" id="drawerNote"></p>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="panel">
+          <div class="panel-head"><h2>Home loan HL-2024-001907</h2><span class="chip acc">Floating · MRR − 1.50%</span></div>
+          <dl class="kv">
+            <dt>Borrower</dt><dd>Preecha and Malee N. (joint)</dd>
+            <dt>Collateral</dt><dd>Townhouse, Bang Kapi · title deed 88213 · LTV 78%</dd>
+            <dt>Outstanding</dt><dd class="mono">3,214,500.00</dd>
+            <dt>Remaining term</dt><dd class="mono">262 months</dd>
+          </dl>
+          <div class="form">
+            <div class="field"><label for="mMrr">Bank MRR, % per year</label><input id="mMrr" type="number" step="0.05" min="0" value="6.95"></div>
+            <div class="field"><label for="mMode">On rate change</label><select id="mMode"><option value="pay">Change installment</option><option value="term">Keep installment, change term</option></select></div>
+          </div>
+          <div class="result" id="mResult"></div>
+          <p class="note">MRR was 7.30% at the last reset. A change applies from the next reset date, 1 Nov 2026, and the customer is notified 30 days ahead.</p>
+        </div>
+        <div class="panel">
+          <h2>Standing orders · Somsri J.</h2>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>To</th><th class="num">Amount</th><th>Schedule</th><th>Next run</th></tr></thead>
+            <tbody>
+              <tr><td>Rent · Lumpini Place juristic</td><td class="num">12,500.00</td><td>Monthly, day 1</td><td class="mono">1 Nov 2026</td></tr>
+              <tr><td>Savings pocket · Japan trip</td><td class="num">3,000.00</td><td>Monthly, day 25</td><td class="mono">25 Oct 2026</td></tr>
+              <tr><td>Life insurance premium</td><td class="num">4,820.00</td><td>Yearly, 15 Jan</td><td class="mono">15 Jan 2027</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note">Standing orders run on the account's own timer, like interest accrual. If funds are short, the order retries at 14:00 and then follows the product's failure rule.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CORPORATE (commercial) -->
+    <section class="view" id="view-corporate" aria-labelledby="h-corp" hidden>
+      <div class="view-head">
+        <div>
+          <span class="eyebrow">Demo Commercial Bank · Business centre Sathorn · RM Wanida K.</span>
+          <h1 id="h-corp">Corporate banking</h1>
+          <p>Credit applications routed by authority, cash management for corporate groups, and bulk payments, all on the same core as retail.</p>
+        </div>
+      </div>
+      <div class="grid g-wide">
+        <div class="panel">
+          <div class="panel-head"><h2>Credit application CA-2026-0412</h2><span class="chip">Siam Freight Logistics · grade 5</span></div>
+          <p>Increase the leasing line to finance new trucks for a 3-year contract with a cold-chain customer.</p>
+          <div class="form">
+            <div class="field"><label for="cInc">Requested increase, THB million</label><input id="cInc" type="number" min="1" step="1" value="40"></div>
+            <div class="field"><label for="cTenor">Lease tenor</label><select id="cTenor"><option value="5">5 years</option><option value="4">4 years</option><option value="3">3 years</option></select></div>
+          </div>
+          <div class="checks" id="cChecks"></div>
+          <h3>Approval authority</h3>
+          <div class="tbl-wrap"><table class="mat">
+            <thead><tr><th>Level</th><th>Approves up to</th><th>Who</th></tr></thead>
+            <tbody id="cMatrix"></tbody>
+          </table></div>
+          <div class="row"><button class="btn primary" id="cRoute" type="button"><svg class="ico"><use href="#i-check"/></svg><span>Route for approval</span></button><span class="note" id="cRouteNote"></span></div>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="panel" style="background:var(--agent-soft);border-color:transparent;box-shadow:none">
+            <div class="row"><span class="chip agent">RM copilot draft</span><span class="muted" style="font-size:12px">From Q2 2026 statements, bureau and account history</span></div>
+            <ul class="rules">
+              <li>Revenue up 11% year on year; fuel cost pressure cut margin 2.1 points.</li>
+              <li>Cold-chain contract covers 62% of the new trucks' capacity for 3 years.</li>
+              <li>Leasing repayments on time for 38 months; no overdraft excess in 12 months.</li>
+              <li>Watch: Debt/EBITDA 3.1x against a 3.5x covenant.</li>
+            </ul>
+            <p class="note">A draft for the RM to edit. The decision stays with the approvers.</p>
+          </div>
+          <div class="panel">
+            <h2>Bulk payment file</h2>
+            <dl class="kv">
+              <dt>File</dt><dd class="mono">PAY-20261013-0091 · payroll</dd>
+              <dt>Items</dt><dd class="mono">412 · ฿8,642,350.00</dd>
+              <dt>Validation</dt><dd>410 valid · 2 rejected (closed accounts)</dd>
+              <dt>Status</dt><dd id="bulkStatus"><span class="chip warn">Waiting for second authorizer</span></dd>
+            </dl>
+            <div class="row"><button class="btn" id="bulkAuth" type="button">Authorize as second signer</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Liquidity sweep · Siam Freight Group</h2><span class="chip">Zero balancing · daily 17:00 and when any account exceeds ฿5M</span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Account</th><th>Company</th><th class="num">Before</th><th class="num">Sweep</th><th class="num">After</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CUR-0090-55100</td><td>Siam Freight Logistics (header)</td><td class="num">12,480,200.00</td><td class="num">+4,935,700.00</td><td class="num">17,415,900.00</td></tr>
+            <tr><td class="mono">CUR-0090-55101</td><td>SF Cold Chain Co., Ltd.</td><td class="num">3,720,450.00</td><td class="num">−3,720,450.00</td><td class="num">0.00</td></tr>
+            <tr><td class="mono">CUR-0090-55102</td><td>SF Warehousing Co., Ltd.</td><td class="num">2,018,900.00</td><td class="num">−2,018,900.00</td><td class="num">0.00</td></tr>
+            <tr><td class="mono">CUR-0090-55103</td><td>SF Customs Broker Co., Ltd.</td><td class="num">−803,650.00</td><td class="num">+803,650.00</td><td class="num">0.00</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">Each sweep is one balanced posting batch with intercompany loan records for transfer pricing. Statements go to the group's ERP as camt.053 and MT940.</p>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings" aria-labelledby="h-settings" hidden>
       <div class="view-head">
@@ -1504,15 +1666,17 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   showArch("ledger");
 
   /* ---------- Routing ---------- */
-  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "architecture", "modules", "settings"];
+  var VIEWS = ["overview", "customer", "contract", "studio", "ledger", "approvals", "agents", "branch", "corporate", "architecture", "modules", "settings"];
   var current = "overview";
-  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings" };
+  var TITLES = { overview: "Overview", customer: "Customer 360", contract: "Contracts", studio: "Product Studio", ledger: "Ledger", approvals: "Approvals", agents: "AI agents", architecture: "Architecture", modules: "Modules", settings: "Settings", branch: "Branch and teller", corporate: "Corporate banking" };
   function applyRoute() {
     var h = (location.hash || "").replace("#", "");
     current = VIEWS.indexOf(h) >= 0 ? h : "overview";
     VIEWS.forEach(function (v) { $("#view-" + v).hidden = v !== current; });
     $$(".nav").forEach(function (a) { if (a.getAttribute("data-view") === current) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : current === "settings" ? "Account" : "Operate";
+    $("#crumbGroup").textContent = current === "architecture" || current === "modules" ? "Blueprint" : current === "settings" ? "Account" : current === "branch" ? "Retail banking" : current === "corporate" ? "Commercial banking" : "Operate";
+    var need = current === "branch" ? "retail" : current === "corporate" ? "commercial" : null;
+    if (need && tenant !== need) setTenant(need, true);
     $("#crumbPage").textContent = TITLES[current];
     window.scrollTo(0, 0);
   }
@@ -1544,6 +1708,101 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
   $$("[data-theme-set]").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-set"), true); }); });
   (function () { var m = null; try { m = localStorage.getItem("corebank-theme"); } catch (e) {} if (m === "light" || m === "dark") setTheme(m, false); else if (document.documentElement.getAttribute("data-theme")) setTheme(document.documentElement.getAttribute("data-theme"), false); })();
 
+
+  /* ---------- Tenants: virtual, retail, commercial ---------- */
+  var TENANTS = {
+    virtual: { name: "Demo Virtual Bank", sub: "TH01 · Digital only", dep: "฿48.21bn", depD: "412,880 accounts", loan: "฿31.74bn", loanD: "96,415 contracts", npl: "2.14%", seg: null },
+    retail: { name: "Demo Retail Bank", sub: "TH02 · 412 branches", dep: "฿612.40bn", depD: "6.2M accounts", loan: "฿488.90bn", loanD: "1.94M contracts", npl: "3.02%", seg: "Retail banking" },
+    commercial: { name: "Demo Commercial Bank", sub: "TH03 · 38 business centres", dep: "฿905.70bn", depD: "84,300 accounts", loan: "฿1.12tn", loanD: "21,640 facilities", npl: "2.71%", seg: "Commercial banking" }
+  };
+  var tenant = "virtual";
+  function setTenant(t, quiet) {
+    tenant = t; var d = TENANTS[t];
+    $("#wsName").textContent = d.name; $("#wsSub").textContent = d.sub;
+    $("#kDep").textContent = d.dep; $("#kDepD").textContent = d.depD; $("#kLoan").textContent = d.loan; $("#kLoanD").textContent = d.loanD; $("#kNpl").textContent = d.npl;
+    $("#segNav").hidden = !d.seg; if (d.seg) $("#segLabel").textContent = d.seg;
+    $$("#segNav [data-seg]").forEach(function (a) { a.hidden = a.getAttribute("data-seg") !== t; });
+    $$("[data-tenant]").forEach(function (b) { b.setAttribute("aria-current", String(b.getAttribute("data-tenant") === t)); });
+    closeWs();
+    if (!quiet) toast("Switched to " + d.name);
+  }
+  function closeWs() { $("#wsMenu").hidden = true; $("#wsBtn").setAttribute("aria-expanded", "false"); }
+  $("#wsBtn").addEventListener("click", function (e) { e.stopPropagation(); var m = $("#wsMenu"); m.hidden = !m.hidden; this.setAttribute("aria-expanded", String(!m.hidden)); });
+  $$("[data-tenant]").forEach(function (b) { b.addEventListener("click", function () { var t = b.getAttribute("data-tenant"); setTenant(t); location.hash = t === "retail" ? "branch" : t === "commercial" ? "corporate" : "overview"; }); });
+  document.addEventListener("click", function (e) { if (!e.target.closest(".ws-wrap")) closeWs(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeWs(); });
+
+  /* ---------- Retail: teller ---------- */
+  var drawer = { open: 500000, cin: 186400, cout: 92250, limit: 1500000 };
+  function renderDrawer() {
+    var cur = drawer.open + drawer.cin - drawer.cout, pct = Math.min(100, cur / drawer.limit * 100);
+    $("#drawer").innerHTML = "<dt>Opened 08:30</dt><dd class='num'>" + fmt(drawer.open) + "</dd><dt>Cash in</dt><dd class='num'>" + fmt(drawer.cin) + "</dd><dt>Cash out</dt><dd class='num'>" + fmt(drawer.cout) + "</dd><dt><strong>In drawer</strong></dt><dd class='num'><strong>" + fmt(cur) + "</strong></dd>";
+    $("#drawerBar").style.width = pct.toFixed(1) + "%";
+    $("#drawerBar").className = pct >= 80 ? "warn" : "";
+    $("#drawerNote").textContent = pct >= 80 ? "Above 80% of the ฿1,500,000 drawer limit. Sweep excess cash to the vault." : "Drawer limit ฿1,500,000. The drawer is ledger account GL 1010-0123-04.";
+  }
+  $("#tPost").addEventListener("click", function () {
+    var amt = r2(parseFloat($("#tAmt").value) || 0), acct = $("#tAcct").value, res = $("#tResult");
+    res.hidden = false;
+    if (amt <= 0) { res.className = "result warn"; res.textContent = "Enter an amount above zero."; return; }
+    if (amt > 2000000) {
+      res.className = "result warn"; res.textContent = "Needs a supervisor override. Sent to Approvals; the cash stays in the suspense tray until approved.";
+      approvals.unshift({ id: "APR-" + (1060 + approvals.length), title: "Supervisor override · cash deposit ฿" + fmt(amt), kind: "Override", maker: "Teller 4 · Branch 0123", agent: null, detail: "Cash deposit above ฿2,000,000 to " + acct + ". AMLO cash transaction report will be filed.", status: "PENDING" });
+      renderApprovals(); toast("Override request sent to Approvals"); return;
+    }
+    drawer.cin += amt; renderDrawer();
+    batches.unshift({ id: bid(), time: nowTime(), value: "13 Oct 2026", actor: { type: "HUMAN", name: "Teller 4 · Branch 0123 Silom" }, reason: "Cash deposit · " + ($("#tRef").value || "counter"), legs: [
+      { acct: "GL 1010-0123-04 Teller drawer · Silom", bt: "—", side: "DR", amt: amt, ccy: "THB" },
+      { acct: acct, bt: "PRINCIPAL", side: "CR", amt: amt, ccy: "THB" } ] });
+    renderBatches();
+    res.className = "result ok"; res.textContent = "Posted ฿" + fmt(amt) + " to " + acct + ". Receipt printed and SMS sent. See it in Ledger.";
+    toast("Cash deposit posted · ฿" + fmt(amt));
+  });
+  function renderMortgage() {
+    var mrr = Math.max(0, parseFloat($("#mMrr").value) || 0) / 100, oldRate = 0.073 - 0.015, newRate = Math.max(0, mrr - 0.015);
+    var P = 3214500, n = 262;
+    var pay = function (r) { var m = r / 12; return m === 0 ? P / n : P * m / (1 - Math.pow(1 + m, -n)); };
+    var oldPay = r2(pay(oldRate)), newPay = r2(pay(newRate)), el = $("#mResult");
+    if ($("#mMode").value === "pay") {
+      var diff = r2(newPay - oldPay);
+      el.className = "result " + (diff <= 0 ? "ok" : "warn");
+      el.innerHTML = "Rate " + (oldRate * 100).toFixed(2) + "% → <strong>" + (newRate * 100).toFixed(2) + "%</strong>. Installment ฿" + fmt(oldPay) + " → <strong>฿" + fmt(newPay) + "</strong> (" + (diff <= 0 ? "" : "+") + fmt(diff) + " a month).";
+    } else {
+      var m = newRate / 12, months = m === 0 ? Math.ceil(P / oldPay) : Math.ceil(-Math.log(1 - P * m / oldPay) / Math.log(1 + m));
+      el.className = "result " + (months <= n ? "ok" : "warn");
+      el.innerHTML = isFinite(months) ? "Rate " + (oldRate * 100).toFixed(2) + "% → <strong>" + (newRate * 100).toFixed(2) + "%</strong>. Installment stays ฿" + fmt(oldPay) + "; term " + n + " → <strong>" + months + " months</strong>." : "At this rate the current installment no longer covers interest. Choose Change installment.";
+    }
+  }
+  $("#mMrr").addEventListener("input", renderMortgage); $("#mMode").addEventListener("change", renderMortgage);
+
+  /* ---------- Commercial: credit application ---------- */
+  var LEVELS = [["Branch credit head", 10, "Nattapong S."], ["Senior credit officer", 50, "Kanokwan R."], ["Credit committee", 200, "Weekly, Thursday"], ["Board credit committee", Infinity, "Monthly"]];
+  function renderCredit() {
+    var inc = Math.max(0, parseFloat($("#cInc").value) || 0), tenor = parseInt($("#cTenor").value, 10);
+    var annualPay = inc * (1 / tenor + 0.035), cf = 73.8 + inc * 0.12, ds = 52.0 + annualPay, dscr = cf / ds;
+    var groupUsed = 164.6 + inc, lvl = 0;
+    while (inc > LEVELS[lvl][1]) lvl++;
+    var c = [];
+    c.push([dscr >= 1.25 ? "good" : "crit", dscr >= 1.25 ? "Pass" : "Fail", "Pro forma DSCR " + dscr.toFixed(2) + "x against the 1.25x covenant."]);
+    c.push([groupUsed <= 250 ? "good" : "warn", groupUsed <= 250 ? "Pass" : "Check", "Group exposure ฿" + groupUsed.toFixed(1) + "M against a ฿250M group limit" + (groupUsed <= 250 ? "." : "; the group limit must be raised too.")]);
+    c.push(["good", "Pass", "New trucks are collateral with title retained; loan to value 85% at a ฿" + (inc / 0.85).toFixed(1) + "M purchase price."]);
+    $("#cChecks").innerHTML = c.map(function (x) { return "<div><span class='chip " + x[0] + "'>" + x[1] + "</span><span>" + x[2] + "</span></div>"; }).join("");
+    $("#cMatrix").innerHTML = LEVELS.map(function (L, i) { return "<tr class='" + (i === lvl ? "on" : "") + "'><td>" + L[0] + "</td><td class='num'>" + (isFinite(L[1]) ? "฿" + L[1] + "M" : "Above ฿200M") + "</td><td>" + L[2] + "</td></tr>"; }).join("");
+    $("#cRouteNote").textContent = "Goes to " + LEVELS[lvl][0].toLowerCase() + (dscr < 1.25 ? ", flagged as a covenant exception." : ".");
+    return { inc: inc, lvl: lvl, dscr: dscr };
+  }
+  $("#cInc").addEventListener("input", renderCredit); $("#cTenor").addEventListener("change", renderCredit);
+  $("#cRoute").addEventListener("click", function () {
+    var r = renderCredit();
+    approvals.unshift({ id: "APR-" + (1070 + approvals.length), title: "Credit application CA-2026-0412 · leasing line +฿" + r.inc + "M", kind: "Credit", maker: "Wanida K. · RM", agent: null, detail: "Siam Freight Logistics. Pro forma DSCR " + r.dscr.toFixed(2) + "x. Routed to " + LEVELS[r.lvl][0] + ".", status: "PENDING" });
+    renderApprovals(); toast("CA-2026-0412 routed to " + LEVELS[r.lvl][0]);
+  });
+  $("#bulkAuth").addEventListener("click", function () {
+    $("#bulkStatus").innerHTML = "<span class='chip good'>Authorized · releasing 410 payments</span>";
+    this.disabled = true; toast("Payroll file authorized · 410 payments released");
+  });
+  renderDrawer(); renderMortgage(); renderCredit();
+
   /* ---------- Interface style: Modern or Calm ---------- */
   function setStyle(mode, save) {
     var apply = function () {
@@ -1562,11 +1821,14 @@ fieldset.choices { border: 0; margin: 0; padding: 0; display: grid; grid-templat
 
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
-  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear" };
+  var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules", settings: "i-gear", branch: "i-branch", corporate: "i-corp" };
   var COMMANDS = VIEWS.map(function (v) { return { group: "Go to", label: TITLES[v], icon: ICON[v], run: function () { location.hash = v; } }; }).concat([
     { group: "Records", label: "HP-2025-004812 · Napat Srisuk", hint: "Hire purchase", icon: "i-contract", run: function () { location.hash = "contract"; } },
     { group: "Records", label: "Siam Freight Logistics Co., Ltd.", hint: "P-200118", icon: "i-customer", run: function () { location.hash = "customer"; } },
     { group: "Records", label: "TL-2024-000311 · restructure proposal", hint: "APR-1043", icon: "i-approve", run: function () { location.hash = "approvals"; } },
+    { group: "Switch bank", label: "Demo Virtual Bank", icon: "i-swap", run: function () { setTenant("virtual"); location.hash = "overview"; } },
+    { group: "Switch bank", label: "Demo Retail Bank", icon: "i-swap", run: function () { setTenant("retail"); location.hash = "branch"; } },
+    { group: "Switch bank", label: "Demo Commercial Bank", icon: "i-swap", run: function () { setTenant("commercial"); location.hash = "corporate"; } },
     { group: "Actions", label: "New hire-purchase product", icon: "i-plus", run: function () { location.hash = "studio"; $("#pFamily").value = "HP_USED"; $("#pFamily").dispatchEvent(new Event("change")); } },
     { group: "Actions", label: "Replay AI servicing case", icon: "i-play", run: function () { location.hash = "agents"; } },
     { group: "Actions", label: "Use Calm style", icon: "i-gear", run: function () { setStyle("calm", true); } },
