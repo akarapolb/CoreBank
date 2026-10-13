@@ -9,8 +9,9 @@ The ledger needs atomic multi-leg postings, strict consistency, RPO = 0, ≥ 10k
 
 ## Decision
 
-- Store postings and balance projections in **PostgreSQL** with `SERIALIZABLE` or carefully designed row-level locking on balance rows, synchronous replication across AZs.
-- **Shard by account** (application-level shard routing, or Citus). Keep the accounts of one arrangement on one shard so most postings are single-shard transactions.
+- Store postings and balance projections in a relational database, **PostgreSQL by default** (Oracle certified; see [ADR-0005](0005-multi-database-support.md)), with synchronous replication across AZs.
+- Concurrency via `READ COMMITTED` plus explicit `SELECT … FOR UPDATE` on balance rows in ascending account-id order. We do not rely on `SERIALIZABLE`, because its semantics differ across engines.
+- **Shard by account** (application-level shard routing, so it works on every supported database). Keep the accounts of one arrangement on one shard so most postings are single-shard transactions.
 - Cross-shard transfers use reserve → commit through clearing accounts, orchestrated as a saga, so each step is a local transaction that balances.
 - Mitigate hot accounts (e.g. a bank's internal settlement account) with **sub-account striping** and periodic sweeps.
 - **Benchmark gate**: at the end of Phase 0, if PostgreSQL cannot meet targets with reasonable hardware, evaluate **TigerBeetle** as the balance/transfer engine behind the same ledger API.

@@ -8,12 +8,13 @@ Durations assume the team in the last section. Each phase has exit criteria; we 
 
 - Monorepo, CI/CD, GitOps, environments (dev, test, staging, perf), observability, secrets
 - Platform libraries: money, currency, calendars, day counts, rounding, idempotency, outbox, tenancy
+- Persistence layer: jOOQ dialects, Liquibase, `LedgerStore` SPI with PostgreSQL and Oracle implementations, conformance suite, Testcontainers CI matrix
 - Ledger service: posting batches, balance types, holds, reversals, bitemporal balances, multi-currency
 - Party service (basic) and product catalog skeleton with schema validation
 - Contract-first APIs (OpenAPI/Protobuf) and event schemas
 - Agent gateway skeleton: read-only tools auto-generated from OpenAPI, audit log
 
-**Exit criteria:** property-based tests prove ledger invariants under concurrency; 10k postings/s at p99 < 50 ms in the perf environment; full balance rebuild from postings matches projections; chaos test (kill a DB primary) loses no committed posting.
+**Exit criteria:** property-based tests prove ledger invariants under concurrency; 10k postings/s at p99 < 50 ms on PostgreSQL in the perf environment, with an Oracle baseline recorded; full balance rebuild from postings matches projections; chaos test (kill a DB primary) loses no committed posting.
 
 ## Phase 1 — Retail MVP for a virtual bank (months 3–9)
 

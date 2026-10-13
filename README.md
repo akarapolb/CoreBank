@@ -30,5 +30,5 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 06 | [AI-native layer](docs/06-ai-native.md) | Agent tool layer, AI use cases, guardrails, model risk management |
 | 07 | [Roadmap](docs/07-roadmap.md) | Phases, milestones, exit criteria, team |
 | 08 | [Security, risk and compliance](docs/08-security-and-compliance.md) | Security architecture, regulatory mapping, audit |
-| ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md) |
+| ADR | [Architecture decision records](docs/adr/) | Key decisions and their trade-offs, incl. [bank stack compatibility](docs/adr/0004-bank-stack-compatibility.md) and [multi-database support](docs/adr/0005-multi-database-support.md) |
 | — | [Open decisions](docs/09-open-decisions.md) | Choices that need the founders' input before Phase 0 |

@@ -39,21 +39,21 @@
 
 | Service | Responsibility | Store |
 |---|---|---|
-| **party** | Customers (individual, business), relationships, group hierarchies, KYC/AML status, consents | PostgreSQL |
-| **product-catalog** | Versioned product definitions, pricing tables, fee schedules, approval workflow | PostgreSQL |
+| **party** | Customers (individual, business), relationships, group hierarchies, KYC/AML status, consents | RDBMS |
+| **product-catalog** | Versioned product definitions, pricing tables, fee schedules, approval workflow | RDBMS |
 | **pricing** | Rate resolution (base rate + spread + relationship adjustments), risk-based pricing hook | in-memory + catalog |
-| **deposit** | Deposit account lifecycle, interest, sweeps, overdraft, dormancy | PostgreSQL |
-| **lending** | Loan contracts, schedules, accrual, billing, repayment allocation, restructuring | PostgreSQL |
-| **leasing** | Lease/HP contracts, asset register, residual value, VAT, insurance, termination, repossession | PostgreSQL |
-| **limits-collateral** | Facility trees, exposure, collateral valuation, LTV, guarantees, covenants | PostgreSQL |
-| **ledger** | Posting engine, balances, holds/reservations, FX, bitemporal history | PostgreSQL (sharded) — see [ADR-0002](adr/0002-ledger-storage.md) |
+| **deposit** | Deposit account lifecycle, interest, sweeps, overdraft, dormancy | RDBMS |
+| **lending** | Loan contracts, schedules, accrual, billing, repayment allocation, restructuring | RDBMS |
+| **leasing** | Lease/HP contracts, asset register, residual value, VAT, insurance, termination, repossession | RDBMS |
+| **limits-collateral** | Facility trees, exposure, collateral valuation, LTV, guarantees, covenants | RDBMS |
+| **ledger** | Posting engine, balances, holds/reservations, FX, bitemporal history | RDBMS (sharded) — see [ADR-0002](adr/0002-ledger-storage.md) |
 | **scheduler** | Per-account timers for accrual, billing, maturity, aging (no batch) | Temporal / durable timers |
-| **accounting** | Posting-to-GL mapping, sub-ledger to GL reconciliation, period close, IFRS 9/16 entries | PostgreSQL + warehouse |
-| **collections** | Delinquency buckets, strategies, promises-to-pay, agent assignment | PostgreSQL |
-| **agent-gateway** | Exposes service APIs as AI tools, enforces policy and delegated authority, records AI actions | PostgreSQL |
+| **accounting** | Posting-to-GL mapping, sub-ledger to GL reconciliation, period close, IFRS 9/16 entries | RDBMS + warehouse |
+| **collections** | Delinquency buckets, strategies, promises-to-pay, agent assignment | RDBMS |
+| **agent-gateway** | Exposes service APIs as AI tools, enforces policy and delegated authority, records AI actions | RDBMS |
 | **ai-decisioning** | Credit scoring, fraud, AML, collections propensity, model serving and monitoring | Model registry + feature store |
 
-Each service owns its data. Cross-service consistency uses **sagas** in the workflow engine and the **transactional outbox** pattern for events. Only the ledger moves money.
+"RDBMS" means PostgreSQL by default or any certified database ([ADR-0005](adr/0005-multi-database-support.md)). Each service owns its data. Cross-service consistency uses **sagas** in the workflow engine and the **transactional outbox** pattern for events. Only the ledger moves money.
 
 ## The posting path (the heart)
 
@@ -77,7 +77,7 @@ Idempotency keys are retained so any retry returns the original result. Every po
 | Domain services | **Java 21 + Spring Boot 3**, virtual threads | On every bank's approved list, exact decimals (`BigDecimal`), largest banking talent pool ([ADR-0001](adr/0001-language-and-runtime.md)) |
 | Ledger core | Java first; evaluate a **Rust** hot path or **TigerBeetle** only if benchmarks demand it | Avoid premature exotic tech; keep the option open ([ADR-0002](adr/0002-ledger-storage.md)) |
 | Product rules | Typed product DSL (YAML/JSON schema) + **CEL** expressions for bounded logic | Safe, sandboxed, non-Turing-complete, auditable ([ADR-0003](adr/0003-product-definition.md)) |
-| Database | **PostgreSQL 16+** (Aurora/AlloyDB/Cloud SQL or self-managed with Patroni); Citus or app-level sharding for ledger | Serializable transactions, proven, cheap, strong ecosystem |
+| Database | **PostgreSQL 16+ by default** (EDB, Aurora, AlloyDB, Azure, or self-managed with Patroni); **Oracle 19c/23ai certified**; SQL Server and Db2 on demand. jOOQ + a per-database `LedgerStore`, Liquibase migrations, app-level sharding | Portable without losing hot-path tuning ([ADR-0005](adr/0005-multi-database-support.md)) |
 | Events | **Kafka** (or Redpanda) with schema registry (Avro/Protobuf) | Durable ordered log, replay, ecosystem |
 | Workflows | **Temporal** (Camunda 8 if the bank requires) | Durable sagas and per-account timers replace batch jobs |
 | APIs | gRPC internally, REST/JSON with OpenAPI externally, ISO 20022 for payments | |
@@ -116,6 +116,7 @@ Every infrastructure dependency sits behind a port so a bank's approved equivale
 ```
 corebank/
   platform/            # shared libs: money, calendars, day-count, idempotency, outbox, tenancy
+  platform/persistence # dialect adapters, LedgerStore SPI + per-DB impls, conformance suite
   services/
     party/ product-catalog/ pricing/ deposit/ lending/ leasing/
     limits-collateral/ ledger/ accounting/ collections/

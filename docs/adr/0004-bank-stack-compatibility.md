@@ -15,7 +15,7 @@ Build only on **mainstream, commercially supported** components, and put every i
 |---|---|---|---|
 | Language/runtime | Java 21, Spring Boot 3 | Red Hat build of OpenJDK, Oracle JDK, IBM Semeru | n/a |
 | Container platform | Kubernetes | **Red Hat OpenShift**, EKS/AKS/GKE, VMware Tanzu | Helm charts + OpenShift-compatible manifests (non-root, restricted SCC) |
-| Ledger/OLTP database | PostgreSQL 16+ | **EDB Postgres Advanced** (commercial support), **Oracle 19c/23ai** (Phase 4 certification) | Repository layer with SQL kept portable; ledger behind its own API |
+| Ledger/OLTP database | PostgreSQL 16+ | **EDB Postgres Advanced** (commercial support), **Oracle 19c/23ai** (certified from Phase 0), SQL Server / Db2 on demand | jOOQ + per-database `LedgerStore` ([ADR-0005](0005-multi-database-support.md)) |
 | Messaging/events | Kafka | **Confluent Platform**, Red Hat AMQ Streams; **IBM MQ** adapter for legacy integration | Event publisher/consumer ports |
 | Workflow / durable timers | Temporal (self-hosted or Temporal Cloud) | **Camunda 8** if Temporal is not approved | Workflow port; per-account scheduler can fall back to DB-backed timers |
 | Cache | Redis | Redis Enterprise, Valkey | Cache port |
@@ -46,4 +46,4 @@ Keeping to mainstream components does not cost performance, because posting-path
 ## Consequences
 
 - Passes bank architecture review with standard components, and bank teams can run it with skills they already have.
-- Certifying a second database (Oracle) and second workflow engine costs effort; we do it only when a signed customer requires it.
+- Oracle runs in CI from Phase 0 ([ADR-0005](0005-multi-database-support.md)). Other alternatives (second workflow engine, SQL Server, Db2) are certified only when a signed customer requires them.
