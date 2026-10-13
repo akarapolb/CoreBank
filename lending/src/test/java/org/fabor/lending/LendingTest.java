@@ -1,0 +1,283 @@
+package org.fabor.lending;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Set;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.constraints.IntRange;
+import net.jqwik.api.constraints.LongRange;
+import org.fabor.engine.product.ProductDefinition;
+import org.fabor.engine.product.ProductLoader;
+import org.fabor.ledger.application.InsufficientFundsException;
+import org.fabor.ledger.application.LedgerService;
+import org.fabor.ledger.domain.AccountId;
+import org.fabor.ledger.domain.BalanceType;
+import org.fabor.ledger.testkit.InMemoryLedgerStore;
+import org.fabor.lending.Waterfall.Component;
+import org.fabor.platform.money.Currency;
+import org.fabor.platform.money.Money;
+import org.fabor.platform.tenancy.TenantId;
+import org.fabor.platform.time.BusinessCalendar;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class LendingTest {
+    static final TenantId T = new TenantId("bank-a");
+    static final LocalDate D0 = LocalDate.of(2026, 1, 15);
+    private LedgerService ledger;
+    private LoanService svc;
+    private ProductDefinition product;
+
+    static String yaml() throws IOException {
+        try (var in = LendingTest.class.getResourceAsStream("/personal-loan.yaml")) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @BeforeEach
+    void setUp() throws IOException {
+        wire(yaml());
+    }
+
+    private void wire(String y) {
+        product = ProductLoader.parse(y);
+        ledger = new LedgerService(new InMemoryLedgerStore(), Clock.fixed(Instant.parse("2026-12-31T00:00:00Z"), ZoneOffset.UTC));
+        svc = new LoanService(T, ledger, new LoanRepo.InMemory(), (c, v) -> c.equals(product.product()) && v == 1 ? product : null,
+                BusinessCalendar.monToFri(Set.of()));
+        // the customer has a funded deposit account
+        ledger.post(fund("seed", 20_000_000));
+    }
+
+    private org.fabor.ledger.domain.PostingBatch fund(String ref, long minor) {
+        return org.fabor.ledger.domain.PostingBatch.of(T, new org.fabor.ledger.domain.BatchId(ref),
+                new org.fabor.platform.tenancy.IdempotencyKey(ref), D0.minusDays(30), List.of(
+                        new org.fabor.ledger.domain.Entry(new AccountId("gl:cash"), BalanceType.SETTLED,
+                                org.fabor.ledger.domain.Direction.DEBIT, Money.ofMinor(minor, Currency.THB)),
+                        new org.fabor.ledger.domain.Entry(new AccountId("dep:D1"), BalanceType.SETTLED,
+                                org.fabor.ledger.domain.Direction.CREDIT, Money.ofMinor(minor, Currency.THB))));
+    }
+
+    private long bal(AccountId a) {
+        return ledger.balance(T, a, BalanceType.SETTLED, Currency.THB, LocalDate.of(2030, 1, 1)).minor();
+    }
+
+    private Loan open() {
+        return svc.disburse("L1", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+    }
+
+    @Test
+    void disbursementPaysNetOfFeeAndBooksPrincipal() {
+        Loan l = open();
+        assertThat(l.instalments()).hasSize(12);
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-10_000_000);      // asset: debit balance
+        assertThat(bal(new AccountId("dep:D1"))).isEqualTo(20_000_000 + 10_000_000 - 100_000);
+        assertThat(bal(LoanService.FEE_INCOME)).isEqualTo(100_000);
+        assertThatThrownBy(this::open).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.disburse("L2", "p", "NOPE", 1, Money.of(BigDecimal.TEN, Currency.THB), 12, D0, "D1"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void billingRecognisesInterestOnTheDueDate() {
+        open();
+        LocalDate due1 = LocalDate.of(2026, 2, 16); // 15 Feb is a Sunday: following business day
+        assertThatThrownBy(() -> svc.bill("L1", 1, due1.minusDays(1))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.bill("L1", 2, LocalDate.of(2026, 4, 1))).isInstanceOf(IllegalStateException.class);
+        Loan l = svc.bill("L1", 1, due1);
+        assertThat(l.instalments().get(0).billed()).isTrue();
+        assertThat(bal(LoanService.interestAcct("L1"))).isEqualTo(-150_000);          // 100,000 x 1.5%
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(150_000);
+        svc.bill("L1", 1, due1); // retry: no double booking
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(150_000);
+    }
+
+    @Test
+    void repaymentFollowsWaterfallAndClosesTheLoan() {
+        open();
+        LocalDate d = LocalDate.of(2026, 2, 16);
+        svc.bill("L1", 1, d);
+        Loan l = svc.repay("L1", "p1", Money.ofMinor(916_800, Currency.THB), d);
+        assertThat(l.instalments().get(0).settled()).isTrue();
+        assertThat(l.instalments().get(0).interestPaid()).isEqualTo(150_000);
+        assertThat(l.instalments().get(0).principalPaid()).isEqualTo(766_800);
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-10_000_000 + 766_800);
+        // retry with the same reference does not double pay
+        svc.repay("L1", "p1", Money.ofMinor(916_800, Currency.THB), d);
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-10_000_000 + 766_800);
+        // paying more than is due is refused (early settlement has its own path)
+        assertThatThrownBy(() -> svc.repay("L1", "p2", Money.ofMinor(1, Currency.THB), d)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void fullLifeLeavesLoanAccountsAtZeroAndStatusClosed() {
+        Loan opened = open();
+        Loan l = opened;
+        for (Loan.Instalment i : opened.instalments()) {
+            svc.bill("L1", i.number(), i.dueDate());
+            l = svc.repay("L1", "m" + i.number(), Money.ofMinor(i.principalDue() + i.interestDue(), Currency.THB), i.dueDate());
+        }
+        assertThat(l.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(1_001_599); // matches the schedule's total interest
+        assertThat(svc.settlementQuote("L1", LocalDate.of(2027, 2, 1)).isZero()).isTrue();
+    }
+
+    @Test
+    void latePenaltyAccruesDailyOnceAndIsPaidFirst() {
+        open();
+        LocalDate due = LocalDate.of(2026, 2, 16);
+        svc.bill("L1", 1, due);
+        svc.accrueDaily("L1", due); // not yet late
+        assertThat(bal(LoanService.penaltyAcct("L1"))).isZero();
+        Loan l = svc.accrueDaily("L1", due.plusDays(1));
+        assertThat(l.instalments().get(0).penaltyAccrued()).isEqualTo(367); // 0.04% of 9,168.00 = 3.6672
+        svc.accrueDaily("L1", due.plusDays(1)); // same day again: nothing new
+        assertThat(bal(LoanService.penaltyAcct("L1"))).isEqualTo(-367);
+        svc.accrueDaily("L1", due.plusDays(2));
+        assertThat(svc.dpd("L1", due.plusDays(2))).isEqualTo(2);
+        // a payment of the instalment alone no longer clears it: penalty (734) comes first in the waterfall
+        Loan after = svc.repay("L1", "late", Money.ofMinor(916_800, Currency.THB), due.plusDays(2));
+        var i1 = after.instalments().get(0);
+        assertThat(i1.penaltyOutstanding()).isZero();
+        assertThat(i1.interestOutstanding()).isZero();
+        assertThat(i1.principalOutstanding()).isEqualTo(734); // the penalty took 734 of the payment
+        assertThat(i1.settled()).isFalse();
+        assertThat(bal(LoanService.PENALTY_INCOME)).isEqualTo(734);
+    }
+
+    @Test
+    void ninetyDaysPastDueStopsIncomeRecognition() {
+        open();
+        LocalDate due1 = LocalDate.of(2026, 2, 16);
+        svc.bill("L1", 1, due1);
+        Loan l = svc.accrueDaily("L1", due1.plusDays(89));
+        assertThat(l.status()).isEqualTo(Loan.Status.ACTIVE);
+        l = svc.accrueDaily("L1", due1.plusDays(90));
+        assertThat(l.status()).isEqualTo(Loan.Status.NON_ACCRUAL);
+        // the next instalment's interest now goes to suspense, not income
+        LocalDate due2 = l.instalments().get(1).dueDate();
+        long incomeBefore = bal(LoanService.INTEREST_INCOME);
+        svc.bill("L1", 2, due2);
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(incomeBefore);
+        assertThat(bal(LoanService.INTEREST_SUSPENSE)).isPositive();
+    }
+
+    @Test
+    void earlySettlementClosesTheLoanAndStopsFutureInterest() {
+        open();
+        LocalDate d = LocalDate.of(2026, 2, 16);
+        svc.bill("L1", 1, d);
+        svc.repay("L1", "p1", Money.ofMinor(916_800, Currency.THB), d);
+        Money quote = svc.settlementQuote("L1", d);
+        assertThat(quote.minor()).isEqualTo(10_000_000 - 766_800); // remaining principal only
+        Loan closed = svc.settle("L1", "s1", d);
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        // total interest recognised is only what was billed
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(150_000);
+        // settling again is a no-op
+        assertThat(svc.settle("L1", "s2", d).status()).isEqualTo(Loan.Status.CLOSED);
+    }
+
+    @Test
+    void repaymentFromAnEmptyDepositAccountIsRefused() throws IOException {
+        wire(yaml());
+        svc = new LoanService(T, ledger, new LoanRepo.InMemory(), (c, v) -> product, BusinessCalendar.monToFri(Set.of()));
+        svc.disburse("L9", "p", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("10000"), Currency.THB), 6, D0, "EMPTY");
+        LocalDate due = LocalDate.of(2026, 2, 16);
+        long balance = bal(new AccountId("dep:EMPTY"));
+        ledger.post(org.fabor.ledger.domain.PostingBatch.of(T, new org.fabor.ledger.domain.BatchId("drain"),
+                new org.fabor.platform.tenancy.IdempotencyKey("drain"), D0, List.of(
+                        new org.fabor.ledger.domain.Entry(new AccountId("dep:EMPTY"), BalanceType.SETTLED,
+                                org.fabor.ledger.domain.Direction.DEBIT, Money.ofMinor(balance, Currency.THB)),
+                        new org.fabor.ledger.domain.Entry(new AccountId("gl:cash"), BalanceType.SETTLED,
+                                org.fabor.ledger.domain.Direction.CREDIT, Money.ofMinor(balance, Currency.THB)))));
+        svc.bill("L9", 1, due);
+        assertThatThrownBy(() -> svc.repay("L9", "x", Money.ofMinor(100, Currency.THB), due))
+                .isInstanceOf(InsufficientFundsException.class);
+        assertThatThrownBy(() -> svc.dpd("none", D0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // ---- waterfall
+    @Test
+    void waterfallOrdersByInstalmentThenComponent() {
+        List<Component> order = List.of(Component.FEES, Component.PENALTY, Component.VAT, Component.INTEREST, Component.PRINCIPAL);
+        List<Waterfall.Due> dues = List.of(
+                new Waterfall.Due(2, Component.PRINCIPAL, 500), new Waterfall.Due(1, Component.PRINCIPAL, 300),
+                new Waterfall.Due(1, Component.INTEREST, 100), new Waterfall.Due(1, Component.PENALTY, 20),
+                new Waterfall.Due(2, Component.INTEREST, 50), new Waterfall.Due(3, Component.FEES, 0));
+        Waterfall.Result r = Waterfall.allocate(450, dues, order);
+        assertThat(r.allocations()).extracting(a -> a.instalment() + ":" + a.component() + ":" + a.amount())
+                .containsExactly("1:PENALTY:20", "1:INTEREST:100", "1:PRINCIPAL:300", "2:INTEREST:30");
+        assertThat(r.unallocated()).isZero();
+        assertThat(r.total(Component.PRINCIPAL)).isEqualTo(300);
+        assertThat(Waterfall.allocate(10_000, dues, order).unallocated()).isEqualTo(10_000 - 970);
+        assertThat(Waterfall.allocate(0, dues, order).allocations()).isEmpty();
+        // a component missing from the product's order is never paid
+        assertThat(Waterfall.allocate(1000, dues, List.of(Component.PRINCIPAL)).total(Component.INTEREST)).isZero();
+        assertThatThrownBy(() -> Waterfall.allocate(-1, dues, order)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(Component.fromName("VAT_DUE")).isEqualTo(Component.VAT);
+        assertThat(Component.fromName("FEES_DUE")).isEqualTo(Component.FEES);
+        assertThatThrownBy(() -> Component.fromName("MAGIC")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Property
+    void waterfallNeverOverAllocates(@ForAll @LongRange(min = 0, max = 100_000) long payment,
+                                     @ForAll @IntRange(min = 0, max = 5000) int a, @ForAll @IntRange(min = 0, max = 5000) int b,
+                                     @ForAll @IntRange(min = 0, max = 5000) int c) {
+        List<Waterfall.Due> dues = List.of(new Waterfall.Due(1, Component.INTEREST, a), new Waterfall.Due(1, Component.PRINCIPAL, b),
+                new Waterfall.Due(2, Component.PRINCIPAL, c));
+        Waterfall.Result r = Waterfall.allocate(payment, dues, List.of(Component.INTEREST, Component.PRINCIPAL));
+        long allocated = r.allocations().stream().mapToLong(Waterfall.Allocation::amount).sum();
+        assertThat(allocated + r.unallocated()).isEqualTo(payment);
+        assertThat(allocated).isLessThanOrEqualTo((long) a + b + c);
+    }
+
+    @Test
+    void zeroRateProductWithoutFeesOrDelinquencyRules() throws IOException {
+        String y = yaml().replace("rate: 0.18", "rate: 0").replaceAll("(?s)fees:.*?repayment_waterfall:", "repayment_waterfall:")
+                .replaceAll("(?s)delinquency:.*?accounting:", "accounting:");
+        wire(y);
+        Loan l = svc.disburse("Z1", "p", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("12000"), Currency.THB), 6, D0, "D1");
+        assertThat(bal(LoanService.FEE_INCOME)).isZero();
+        assertThat(l.instalments().get(0).interestDue()).isZero();
+        LocalDate due = l.instalments().get(0).dueDate();
+        svc.bill("Z1", 1, due);
+        assertThat(bal(LoanService.INTEREST_INCOME)).isZero();
+        Loan late = svc.accrueDaily("Z1", due.plusDays(200));      // no penalty rule, no non-accrual rule
+        assertThat(late.status()).isEqualTo(Loan.Status.ACTIVE);
+        assertThat(late.instalments().get(0).penaltyAccrued()).isZero();
+        // a paid instalment is skipped by accrual and has no days past due
+        svc.repay("Z1", "p1", Money.ofMinor(l.instalments().get(0).principalDue(), Currency.THB), due.plusDays(200));
+        assertThat(svc.dpd("Z1", due.plusDays(300))).isZero();
+        assertThat(svc.accrueDaily("Z1", due.plusDays(300)).instalments().get(0).penaltyAccrued()).isZero();
+    }
+
+    @Test
+    void settlementClearsPenaltyInterestAndPrincipalTogether() {
+        open();
+        LocalDate due = LocalDate.of(2026, 2, 16);
+        svc.bill("L1", 1, due);
+        svc.accrueDaily("L1", due.plusDays(1));
+        svc.accrueDaily("L1", due.plusDays(2));
+        assertThat(svc.settlementQuote("L1", due.plusDays(2)).minor()).isEqualTo(10_000_000 + 150_000 + 734);
+        Loan closed = svc.settle("L1", "payoff", due.plusDays(2));
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.penaltyAcct("L1"))).isZero();
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+    }
+}
