@@ -1,7 +1,7 @@
 <title>CoreBank Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&display=swap">
 <style>
 /* Layout: modern operator console. Icon rail with workspace switcher, frosted command bar, soft elevated cards on a cool canvas. */
 :root {
@@ -295,6 +295,59 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } ::view-transition-old(content), ::view-transition-new(content) { animation: none; } }
 
+/* Calm style: same layout, quieter surface. Flat paper-like panels, one muted slate-teal accent,
+   no shadows or gradients, softer status colors, more air, slower and fewer animations. */
+:root[data-style="calm"] {
+  --bg: #F6F6F4; --surface: #FFFFFF; --surface-2: #F1F1EE; --surface-3: #E6E6E2; --line: #E6E6E1;
+  --fg: #2A2E31; --muted: #6E7377; --faint: #9A9FA2;
+  --accent: #4E7078; --accent-ink: #FFFFFF; --accent-soft: #EBF0F0; --money: #5C8574; --money-soft: #EAF1EC; --s2: #B9C9CC;
+  --agent: #9C6F55; --agent-soft: #F4EDE7; --good: #567F62; --good-soft: #EBF2EC; --warn: #93773D; --warn-soft: #F5F0E2; --crit: #A65A55; --crit-soft: #F6EAE8;
+  --shadow: none; --shadow-lg: 0 16px 48px -16px rgba(42, 46, 49, 0.22); --glass: rgba(246, 246, 244, 0.86);
+  --font-ui: "Public Sans", "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Public Sans", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --r: 8px; --r-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-style="calm"]:not([data-theme="light"]) {
+    --bg: #151719; --surface: #1A1D1F; --surface-2: #202326; --surface-3: #282C2F; --line: #2A2E31; --fg: #D7DBDC; --muted: #939A9E; --faint: #6E7579;
+    --accent: #93B3B9; --accent-ink: #151719; --accent-soft: #22302F; --money: #8DB8A5; --money-soft: #1E2B26; --s2: #3D5357;
+    --agent: #CFA085; --agent-soft: #2E2520; --good: #8DB89A; --good-soft: #1E2A21; --warn: #CDB27A; --warn-soft: #2C2719; --crit: #D49690; --crit-soft: #2F2120;
+    --shadow: none; --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.6); --glass: rgba(21, 23, 25, 0.86); color-scheme: dark;
+  }
+}
+:root[data-style="calm"][data-theme="dark"] {
+  --bg: #151719; --surface: #1A1D1F; --surface-2: #202326; --surface-3: #282C2F; --line: #2A2E31; --fg: #D7DBDC; --muted: #939A9E; --faint: #6E7579;
+  --accent: #93B3B9; --accent-ink: #151719; --accent-soft: #22302F; --money: #8DB8A5; --money-soft: #1E2B26; --s2: #3D5357;
+  --agent: #CFA085; --agent-soft: #2E2520; --good: #8DB89A; --good-soft: #1E2A21; --warn: #CDB27A; --warn-soft: #2C2719; --crit: #D49690; --crit-soft: #2F2120;
+  --shadow: none; --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.6); --glass: rgba(21, 23, 25, 0.86); color-scheme: dark;
+}
+[data-style="calm"] body { line-height: 1.6; }
+[data-style="calm"] h1 { font-weight: 500; letter-spacing: -0.015em; }
+[data-style="calm"] h2, [data-style="calm"] h3 { font-weight: 500; }
+[data-style="calm"] .logo, [data-style="calm"] .avatar { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
+[data-style="calm"] .bar > span { background: var(--accent); }
+[data-style="calm"] .bar > span.warn { background: var(--warn); }
+[data-style="calm"] .btn.primary { box-shadow: none; }
+[data-style="calm"] .btn.primary:hover { filter: none; opacity: .92; }
+[data-style="calm"] .badge { background: var(--surface-3); color: var(--fg); }
+[data-style="calm"] .iconbtn .pip { background: var(--accent); }
+[data-style="calm"] .chip::before { opacity: .55; }
+[data-style="calm"] .kpi .v { font-weight: 500; letter-spacing: -0.02em; }
+[data-style="calm"] .delta.up, [data-style="calm"] .delta.down { background: var(--surface-2); }
+[data-style="calm"] .panel, [data-style="calm"] .kpi { padding: 22px; }
+[data-style="calm"] .view { gap: 24px; padding-top: 32px; }
+[data-style="calm"] .grid { gap: 24px; }
+[data-style="calm"] .nav[aria-current="page"] { background: var(--surface-2); color: var(--fg); }
+[data-style="calm"] .nav[aria-current="page"] .ico { color: var(--accent); }
+[data-style="calm"] .msg.me .bubble { background: var(--accent-soft); color: var(--fg); }
+[data-style="calm"] .sev i { background: transparent; border: 1px solid var(--line); }
+[data-style="calm"] .stream-row:first-child { animation: none; }
+[data-style="calm"] .toast { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
+[data-style="calm"] ::view-transition-new(content) { animation-duration: .35s; animation-name: vt-fade; }
+[data-style="calm"] ::view-transition-old(content) { animation-name: vt-fade-out; }
+@keyframes vt-fade { from { opacity: 0; } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+
 /* Responsive */
 @media (max-width: 1180px) {
   .g-wide, .g-side, .g3 { grid-template-columns: minmax(0, 1fr); }
@@ -377,6 +430,10 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
       <button class="search" type="button" id="openPalette" commandfor="palette" command="show-modal"><svg class="ico"><use href="#i-search"/></svg><span>Search or jump to…</span><kbd>⌘K</kbd></button>
       <span class="pill">Business date <strong>13 Oct 2026</strong></span>
       <span class="chip good">Ledger balanced</span>
+      <div class="seg" role="group" aria-label="Interface style">
+        <button type="button" data-style-set="modern" aria-pressed="true">Modern</button>
+        <button type="button" data-style-set="calm" aria-pressed="false">Calm</button>
+      </div>
       <div class="seg icon" role="group" aria-label="Theme">
         <button type="button" data-theme-set="light" aria-pressed="false" title="Light"><svg class="ico"><use href="#i-sun"/></svg></button>
         <button type="button" data-theme-set="system" aria-pressed="true" title="System"><svg class="ico"><use href="#i-system"/></svg></button>
@@ -1336,7 +1393,8 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function setStreamBtn() { $("#streamToggle span").textContent = streamOn ? "Pause" : "Resume"; $("#streamToggle use").setAttribute("href", streamOn ? "#i-pause" : "#i-play"); }
   if (reduce) { streamOn = false; setStreamBtn(); }
-  setInterval(function () { if (streamOn && !document.hidden && current === "overview") pushStream(); }, 1400);
+  var tick = 0;
+  setInterval(function () { tick++; var calm = document.documentElement.getAttribute("data-style") === "calm"; if (streamOn && !document.hidden && current === "overview" && (!calm || tick % 3 === 0)) pushStream(); }, 1400);
   $("#streamToggle").addEventListener("click", function () { streamOn = !streamOn; setStreamBtn(); });
 
   /* ---------- Architecture detail ---------- */
@@ -1416,6 +1474,19 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
   $$("[data-theme-set]").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-set"), true); }); });
   (function () { var m = null; try { m = localStorage.getItem("corebank-theme"); } catch (e) {} if (m === "light" || m === "dark") setTheme(m, false); else if (document.documentElement.getAttribute("data-theme")) setTheme(document.documentElement.getAttribute("data-theme"), false); })();
 
+  /* ---------- Interface style: Modern or Calm ---------- */
+  function setStyle(mode, save) {
+    var apply = function () {
+      if (mode === "calm") document.documentElement.setAttribute("data-style", "calm");
+      else document.documentElement.removeAttribute("data-style");
+      $$("[data-style-set]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-style-set") === mode)); });
+    };
+    if (save && document.startViewTransition && !reduce) document.startViewTransition(apply); else apply();
+    if (save) { try { localStorage.setItem("corebank-style", mode); } catch (e) {} }
+  }
+  $$("[data-style-set]").forEach(function (b) { b.addEventListener("click", function () { setStyle(b.getAttribute("data-style-set"), true); }); });
+  (function () { var m = null; try { m = localStorage.getItem("corebank-style"); } catch (e) {} if (m === "calm") setStyle("calm", false); })();
+
   /* ---------- Command palette ---------- */
   var pal = $("#palette"), palInput = $("#palInput"), palList = $("#palList"), palSel = 0, palItems = [];
   var ICON = { overview: "i-overview", customer: "i-customer", contract: "i-contract", studio: "i-studio", ledger: "i-ledger", approvals: "i-approve", agents: "i-agent", architecture: "i-arch", modules: "i-modules" };
@@ -1425,6 +1496,8 @@ dialog.palette::backdrop { background: rgba(10, 12, 17, 0.35); -webkit-backdrop-
     { group: "Records", label: "TL-2024-000311 · restructure proposal", hint: "APR-1043", icon: "i-approve", run: function () { location.hash = "approvals"; } },
     { group: "Actions", label: "New hire-purchase product", icon: "i-plus", run: function () { location.hash = "studio"; $("#pFamily").value = "HP_USED"; $("#pFamily").dispatchEvent(new Event("change")); } },
     { group: "Actions", label: "Replay AI servicing case", icon: "i-play", run: function () { location.hash = "agents"; } },
+    { group: "Actions", label: "Use Calm style", icon: "i-system", run: function () { setStyle("calm", true); } },
+    { group: "Actions", label: "Use Modern style", icon: "i-system", run: function () { setStyle("modern", true); } },
     { group: "Actions", label: "Switch to dark theme", icon: "i-moon", run: function () { setTheme("dark", true); } },
     { group: "Actions", label: "Switch to light theme", icon: "i-sun", run: function () { setTheme("light", true); } }
   ]);
