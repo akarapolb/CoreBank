@@ -42,6 +42,7 @@ Any lending product, including **leasing and hire purchase**, is built from conf
 | 12 | [Trade finance, treasury and syndication](docs/12-trade-treasury-syndication.md) | Native LCs and guarantees, treasury operations, syndicated lending as lender and agent |
 | 13 | [Business and revenue model](docs/13-business-model.md) | Editions, price metrics, add-ons, services, example customers, unit economics |
 | 14 | [Engineering plan](docs/14-engineering-plan.md) ([HTML](docs/design/fabor-os-engineering-plan.html)) | Team topology, hiring, Phase 0 sprint plan, epics by phase, ways of working, CI/CD, testing, metrics |
+| Plan | [Master plan](plan/) ([Excel](plan/Fabor_OS_Master_Plan_WBS_Gantt.xlsx), [Word table](plan/Fabor_OS_Master_Plan_Gantt_table.docx), [Word Gantt](plan/Fabor_OS_Master_Plan_Gantt_detailed.docx)) | Whole programme over 42 months: 6 phases, 86 activities, milestones MS1–MS6, WBS and Gantt; source in `plan/plan.json` |
 | SDD | [Design reference (HTML)](docs/design/fabor-os-design.html) | Software design document: functional, module, architecture, infrastructure, security and compliance design |
 | — | [HTML prototype](prototype/index.html) | Clickable back-office console: overview, Master Builder, Customer 360, contracts, fleet and floor plan, trade finance, treasury, syndication, branch and teller, corporate banking, Product Studio, ledger, approvals, AI agents, settings, architecture and module diagrams |
 | Brand | [Brand mark](brand/index.html) | Logo, meaning, concepts, colours, sizes and usage rules |

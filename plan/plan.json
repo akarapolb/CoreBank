@@ -1,0 +1,639 @@
+{
+ "project": {
+  "title": "Fabor OS Master Plan",
+  "subtitle": "Programme plan · Phases 0–5 · 42 months · engineering, AI, compliance, go-to-market and funding",
+  "org": "Fabor · The Financial and Banking Operator",
+  "total_weeks": 42,
+  "font": "Calibri"
+ },
+ "milestones": [
+  {
+   "week": 3,
+   "label": "MS1 Launch"
+  },
+  {
+   "week": 9,
+   "label": "MS2 Pilot"
+  },
+  {
+   "week": 14,
+   "label": "MS3 Leasing live"
+  },
+  {
+   "week": 20,
+   "label": "MS4 Commercial"
+  },
+  {
+   "week": 30,
+   "label": "MS5 Migration"
+  },
+  {
+   "week": 42,
+   "label": "MS6 Global"
+  }
+ ],
+ "phases": [
+  {
+   "id": 1,
+   "name": "Phase 0 · Foundations",
+   "color": "5B8DB8",
+   "sections": [
+    {
+     "name": "Programme and company",
+     "tasks": [
+      {
+       "name": "Founding team: architect, ledger lead, platform lead",
+       "start": 1,
+       "end": 2
+      },
+      {
+       "name": "Seed funding close",
+       "start": 1,
+       "end": 3
+      },
+      {
+       "name": "Name and logo trademark search and filing",
+       "start": 1,
+       "end": 3
+      },
+      {
+       "name": "Design partner shortlist and LOIs",
+       "start": 1,
+       "end": 3
+      }
+     ]
+    },
+    {
+     "name": "Delivery platform",
+     "tasks": [
+      {
+       "name": "Monorepo, Maven modules, CI with licence gate and SBOM",
+       "start": 1,
+       "end": 1
+      },
+      {
+       "name": "Dev, SIT and performance environments",
+       "start": 1,
+       "end": 2
+      },
+      {
+       "name": "Observability stack and runbook template",
+       "start": 2,
+       "end": 3
+      }
+     ]
+    },
+    {
+     "name": "Platform kernel and ledger",
+     "tasks": [
+      {
+       "name": "Money, calendars, day counts, tenancy libraries",
+       "start": 1,
+       "end": 2
+      },
+      {
+       "name": "Ledger domain on PostgreSQL with conformance suite",
+       "start": 2,
+       "end": 2
+      },
+      {
+       "name": "Oracle LedgerStore, outbox, Debezium, Kafka",
+       "start": 2,
+       "end": 3
+      },
+      {
+       "name": "Group commit, sharding, hot accounts",
+       "start": 3,
+       "end": 3
+      },
+      {
+       "name": "Benchmark 10k/s and chaos tests",
+       "start": 3,
+       "end": 3
+      }
+     ]
+    },
+    {
+     "name": "Open source launch",
+     "tasks": [
+      {
+       "name": "Agent gateway skeleton with read-only tools",
+       "start": 3,
+       "end": 3
+      },
+      {
+       "name": "Public repository, docs, governance, benchmark report",
+       "start": 3,
+       "end": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "name": "Phase 1 · Retail and virtual bank MVP",
+   "color": "3F6FA3",
+   "sections": [
+    {
+     "name": "Product engine",
+     "tasks": [
+      {
+       "name": "Product DSL, CEL, schedule and interest engines",
+       "start": 4,
+       "end": 6
+      },
+      {
+       "name": "Simulator and golden tests",
+       "start": 5,
+       "end": 7
+      },
+      {
+       "name": "Master Builder and maker-checker publishing",
+       "start": 6,
+       "end": 8
+      },
+      {
+       "name": "Partitioned time-wheel scheduler (ADR-0007)",
+       "start": 4,
+       "end": 6
+      }
+     ]
+    },
+    {
+     "name": "Banking services",
+     "tasks": [
+      {
+       "name": "Party, KYC status, consents",
+       "start": 4,
+       "end": 5
+      },
+      {
+       "name": "Deposits: savings, current, term, pockets, WHT",
+       "start": 5,
+       "end": 7
+      },
+      {
+       "name": "Personal and nano loans",
+       "start": 6,
+       "end": 8
+      },
+      {
+       "name": "GL mapping and daily reconciliation",
+       "start": 6,
+       "end": 8
+      }
+     ]
+    },
+    {
+     "name": "Integration and channels",
+     "tasks": [
+      {
+       "name": "PromptPay and QR, eKYC, credit bureau",
+       "start": 5,
+       "end": 8
+      },
+      {
+       "name": "Onboarding and origination workflows",
+       "start": 6,
+       "end": 8
+      },
+      {
+       "name": "Back-office console v1",
+       "start": 6,
+       "end": 9
+      },
+      {
+       "name": "Reference mobile app",
+       "start": 7,
+       "end": 9
+      }
+     ]
+    },
+    {
+     "name": "AI",
+     "tasks": [
+      {
+       "name": "Credit decisioning with reason codes",
+       "start": 6,
+       "end": 8
+      },
+      {
+       "name": "Document intelligence",
+       "start": 6,
+       "end": 8
+      },
+      {
+       "name": "Fraud scoring on posting path, sanctions screening",
+       "start": 7,
+       "end": 9
+      },
+      {
+       "name": "Customer assistant (read and servicing requests)",
+       "start": 7,
+       "end": 9
+      }
+     ]
+    },
+    {
+     "name": "Scale, security and compliance",
+     "tasks": [
+      {
+       "name": "Scale-out test 100k/s across 10 cells",
+       "start": 8,
+       "end": 9
+      },
+      {
+       "name": "PII vault, PDPA consent, audit log",
+       "start": 5,
+       "end": 8
+      },
+      {
+       "name": "Penetration test and IT risk assessment",
+       "start": 8,
+       "end": 9
+      },
+      {
+       "name": "Regulator sandbox engagement",
+       "start": 6,
+       "end": 9
+      }
+     ]
+    },
+    {
+     "name": "Business",
+     "tasks": [
+      {
+       "name": "Design partner contract signed",
+       "start": 4,
+       "end": 6
+      },
+      {
+       "name": "Series A funding",
+       "start": 7,
+       "end": 9
+      },
+      {
+       "name": "Staff pilot and 30 days of zero-difference reconciliation",
+       "start": 9,
+       "end": 9
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "name": "Phase 2 · Asset finance and leasing",
+   "color": "2E5496",
+   "sections": [
+    {
+     "name": "Hire purchase and leasing",
+     "tasks": [
+      {
+       "name": "HP: annuity from flat, EIR, balloon, VAT, e-Tax invoices",
+       "start": 10,
+       "end": 12
+      },
+      {
+       "name": "Finance and operating leases (TFRS 16)",
+       "start": 11,
+       "end": 13
+      },
+      {
+       "name": "Asset register, title, insurance, dealer channel",
+       "start": 10,
+       "end": 12
+      },
+      {
+       "name": "Early settlement rebates",
+       "start": 12,
+       "end": 13
+      }
+     ]
+    },
+    {
+     "name": "Fleet and floor plan",
+     "tasks": [
+      {
+       "name": "Fleet master agreements, call-offs, consolidated billing",
+       "start": 11,
+       "end": 13
+      },
+      {
+       "name": "Floor plan lines, curtailments, payoff on sale",
+       "start": 12,
+       "end": 14
+      },
+      {
+       "name": "Sold-out-of-trust AI alerts, stock audits",
+       "start": 13,
+       "end": 14
+      }
+     ]
+    },
+    {
+     "name": "Risk and accounting",
+     "tasks": [
+      {
+       "name": "Collections v1 and propensity models",
+       "start": 11,
+       "end": 13
+      },
+      {
+       "name": "Repossession and remarketing workflows",
+       "start": 12,
+       "end": 14
+      },
+      {
+       "name": "TFRS 9 ECL engine v1",
+       "start": 12,
+       "end": 14
+      }
+     ]
+    },
+    {
+     "name": "Proof and certification",
+     "tasks": [
+      {
+       "name": "Parallel run on 100k-contract book",
+       "start": 13,
+       "end": 14
+      },
+      {
+       "name": "SOC 2 Type I and ISO 27001 readiness",
+       "start": 10,
+       "end": 14
+      },
+      {
+       "name": "First leasing customer go-live",
+       "start": 14,
+       "end": 14
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "name": "Phase 3 · Commercial, trade, treasury",
+   "color": "1F7A6B",
+   "sections": [
+    {
+     "name": "Commercial banking",
+     "tasks": [
+      {
+       "name": "Limits, collateral, covenants, group exposure",
+       "start": 15,
+       "end": 17
+      },
+      {
+       "name": "Credit applications with authority matrix",
+       "start": 15,
+       "end": 17
+      },
+      {
+       "name": "SME term loans, revolving credit, overdraft",
+       "start": 16,
+       "end": 18
+      },
+      {
+       "name": "Cash management: sweeps, bulk payments, statements",
+       "start": 17,
+       "end": 19
+      }
+     ]
+    },
+    {
+     "name": "Retail bank extensions",
+     "tasks": [
+      {
+       "name": "Branch and teller",
+       "start": 16,
+       "end": 18
+      },
+      {
+       "name": "Floating-rate home loans",
+       "start": 17,
+       "end": 19
+      }
+     ]
+    },
+    {
+     "name": "Trade, treasury, syndication foundations",
+     "tasks": [
+      {
+       "name": "Contingent ledger, guarantees, sight import LCs",
+       "start": 16,
+       "end": 19
+      },
+      {
+       "name": "Currency positions, rates, customer FX, nostro, FTP",
+       "start": 16,
+       "end": 19
+      },
+      {
+       "name": "RFR engine and syndication lender role",
+       "start": 17,
+       "end": 20
+      }
+     ]
+    },
+    {
+     "name": "Scale and accounting",
+     "tasks": [
+      {
+       "name": "Multi-GAAP books, regulatory data marts",
+       "start": 17,
+       "end": 20
+      },
+      {
+       "name": "Billion-account test",
+       "start": 19,
+       "end": 20
+      }
+     ]
+    },
+    {
+     "name": "Business",
+     "tasks": [
+      {
+       "name": "Series B funding",
+       "start": 18,
+       "end": 20
+      },
+      {
+       "name": "Commercial pilot customer live",
+       "start": 20,
+       "end": 20
+      },
+      {
+       "name": "SOC 2 Type II, ISO 27001 certification",
+       "start": 15,
+       "end": 20
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "name": "Phase 4 · Scale and platform",
+   "color": "C77F2E",
+   "sections": [
+    {
+     "name": "SaaS and global platform",
+     "tasks": [
+      {
+       "name": "Tenant onboarding automation, per-tenant cells",
+       "start": 21,
+       "end": 24
+      },
+      {
+       "name": "Multi-region active-active (ADR-0008)",
+       "start": 23,
+       "end": 30
+      },
+      {
+       "name": "Migration factory and parallel-run tooling",
+       "start": 21,
+       "end": 26
+      }
+     ]
+    },
+    {
+     "name": "Markets",
+     "tasks": [
+      {
+       "name": "Full LC lifecycle, collections, SCF, AI document checks",
+       "start": 21,
+       "end": 26
+      },
+      {
+       "name": "FX and money-market deals, revaluation, LCR and NSFR, CLS",
+       "start": 22,
+       "end": 27
+      },
+      {
+       "name": "Syndication agent: drawdowns, distribution, transfers",
+       "start": 24,
+       "end": 29
+      }
+     ]
+    },
+    {
+     "name": "AI and products",
+     "tasks": [
+      {
+       "name": "Collections agents, product copilot GA, dynamic pricing",
+       "start": 21,
+       "end": 27
+      },
+      {
+       "name": "Embedded finance and BNPL partner APIs",
+       "start": 25,
+       "end": 30
+      }
+     ]
+    },
+    {
+     "name": "Expansion",
+     "tasks": [
+      {
+       "name": "Singapore and Malaysia jurisdiction packs",
+       "start": 24,
+       "end": 30
+      },
+      {
+       "name": "Integrator partner programme",
+       "start": 21,
+       "end": 24
+      },
+      {
+       "name": "First incumbent migration in parallel run",
+       "start": 27,
+       "end": 30
+      },
+      {
+       "name": "Series C funding",
+       "start": 28,
+       "end": 30
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "name": "Phase 5 · Global bank",
+   "color": "4E8C3F",
+   "sections": [
+    {
+     "name": "Global capabilities",
+     "tasks": [
+      {
+       "name": "Indonesia, Hong Kong, Middle East packs",
+       "start": 31,
+       "end": 38
+      },
+      {
+       "name": "EU, UK, US jurisdiction packs",
+       "start": 35,
+       "end": 42
+      },
+      {
+       "name": "Islamic banking product blocks",
+       "start": 32,
+       "end": 38
+      },
+      {
+       "name": "Cross-border, cross-currency pooling",
+       "start": 33,
+       "end": 39
+      }
+     ]
+    },
+    {
+     "name": "Markets depth",
+     "tasks": [
+      {
+       "name": "Digital trade: eUCP, electronic bills of lading",
+       "start": 33,
+       "end": 39
+      },
+      {
+       "name": "Hedge accounting, IRRBB data",
+       "start": 34,
+       "end": 40
+      },
+      {
+       "name": "Security agent, multi-currency revolving with swingline",
+       "start": 36,
+       "end": 41
+      }
+     ]
+    },
+    {
+     "name": "Certification and references",
+     "tasks": [
+      {
+       "name": "Billion-account certification and region failover drills",
+       "start": 31,
+       "end": 36
+      },
+      {
+       "name": "Tier-1 reference programme",
+       "start": 36,
+       "end": 42
+      },
+      {
+       "name": "$70–100M ARR and unicorn-scale round",
+       "start": 40,
+       "end": 42
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
