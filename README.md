@@ -10,7 +10,7 @@
 **The Financial and Banking Operator.** An AI-native core banking platform for **retail**, **commercial (SME and corporate)** and **virtual (digital-only) banks**.
 Any lending product, including **leasing and hire purchase**, is built from configuration, not code.
 
-> Status: **Phase 0, Sprint S0 under way**. The blueprint is in `docs/`; code starts with `platform/` (money and time kernel). Build with `mvn verify` (Java 21, Maven 3.9). See the [roadmap](docs/07-roadmap.md) and [coding standards](docs/coding-standards.md).
+> Status: **Phase 0, Sprint S0 under way**. The blueprint is in `docs/`; code so far: `platform/` (money, time, tenancy) and `ledger/` (domain, store SPI, in-memory and PostgreSQL stores, shared conformance suite). Build with `mvn verify` (Java 21, Maven 3.9); set `FABOR_PG_URL` to also run the PostgreSQL tests. See the [roadmap](docs/07-roadmap.md) and [coding standards](docs/coding-standards.md).
 
 ## What "unicorn grade" means here
 

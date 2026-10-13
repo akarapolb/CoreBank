@@ -25,6 +25,7 @@
     <module>ledger/ledger-domain</module>
     <module>ledger/ledger-application</module>
     <module>ledger/ledger-testkit</module>
+    <module>ledger/ledger-adapter-persistence</module>
   </modules>
 
   <properties>

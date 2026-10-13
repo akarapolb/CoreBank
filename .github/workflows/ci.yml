@@ -11,6 +11,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fabor
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -19,6 +28,10 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Build, unit, property and architecture tests
+        env:
+          FABOR_PG_URL: jdbc:postgresql://localhost:5432/fabor
+          FABOR_PG_USER: postgres
+          FABOR_PG_PASSWORD: postgres
         run: mvn -B -ntp verify
       - name: DCO sign-off check
         if: github.event_name == 'pull_request'
