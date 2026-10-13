@@ -10,18 +10,14 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.postgresql.ds.PGSimpleDataSource;
 
-/** Runs the shared conformance suite on PostgreSQL. Set FABOR_PG_URL, FABOR_PG_USER, FABOR_PG_PASSWORD. */
+/** Runs the shared conformance suite on PostgreSQL (FABOR_PG_URL, or Testcontainers when Docker is present). */
 class PostgresLedgerStoreTest extends LedgerStoreConformance {
     private static PGSimpleDataSource ds;
 
     @BeforeAll
     static void migrate() {
-        String url = System.getenv("FABOR_PG_URL");
-        Assumptions.assumeTrue(url != null, "FABOR_PG_URL not set; skipping PostgreSQL tests");
-        ds = new PGSimpleDataSource();
-        ds.setUrl(url);
-        ds.setUser(System.getenv().getOrDefault("FABOR_PG_USER", "postgres"));
-        ds.setPassword(System.getenv().getOrDefault("FABOR_PG_PASSWORD", ""));
+        ds = PgSupport.dataSource();
+        Assumptions.assumeTrue(ds != null, "No PostgreSQL: set FABOR_PG_URL or run Docker; skipping");
         Flyway.configure().dataSource(ds).locations("classpath:db/migration/postgresql").cleanDisabled(false)
                 .load().migrate();
     }
