@@ -41,3 +41,7 @@ fabor:
   grpc-port: ${FABOR_GRPC_PORT:9090}
   group-commit: ${FABOR_GROUP_COMMIT:true}
   scheduler-enabled: ${FABOR_SCHEDULER:true}
+  console:
+    client-id: ${FABOR_CONSOLE_CLIENT_ID:}
+    authorization-endpoint: ${FABOR_CONSOLE_AUTHORIZE_URL:}
+    token-endpoint: ${FABOR_CONSOLE_TOKEN_URL:}

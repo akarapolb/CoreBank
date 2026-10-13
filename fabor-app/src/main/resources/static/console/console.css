@@ -40,3 +40,5 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); f
 .issue-ERROR { color: var(--danger); font-weight: 600; }
 .issue-WARNING { color: var(--muted); }
 @media (max-width: 600px) { .auth { width: 100%; } .auth label { flex: 1 1 140px; } }
+.who { color: var(--muted); font-size: 13px; }
+[hidden] { display: none !important; }

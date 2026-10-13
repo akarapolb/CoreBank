@@ -37,10 +37,11 @@ class SecurityConfig implements WebMvcConfigurer {
 
     @Bean
     @Order(2)
-    SecurityFilterChain api(HttpSecurity http, FaborProperties props) throws Exception {
+    SecurityFilterChain api(HttpSecurity http, FaborProperties props, ConsoleProperties console) throws Exception {
         http.csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
-                        "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'")));
+                        "default-src 'self'; img-src 'self' data:; connect-src 'self' " + console.tokenOrigin()
+                                + "; frame-ancestors 'none'; base-uri 'none'")));
         if (props.tokenMode()) {
             http.authorizeHttpRequests(a -> a.anyRequest().permitAll());
         } else {

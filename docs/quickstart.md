@@ -46,3 +46,15 @@ java -jar fabor-app/target/fabor-app-0.1.0-SNAPSHOT.jar         # API :8080, met
 ```
 
 Open `http://localhost:8080/console/`, enter an actor name and the token, and use the Products tab to publish a product through the four approvals. `scripts/console-smoke.js` drives the same flow in headless Chromium.
+
+### Browser sign-in (OIDC, authorization code with PKCE)
+
+```bash
+node scripts/mock-idp.js 18090 &                      # development identity provider (a real Keycloak in production)
+export SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:18090
+export FABOR_CONSOLE_CLIENT_ID=fabor-console FABOR_CONSOLE_AUTHORIZE_URL=http://localhost:18090/authorize FABOR_CONSOLE_TOKEN_URL=http://localhost:18090/token
+java -jar fabor-app/target/fabor-app-0.1.0-SNAPSHOT.jar     # without FABOR_AUTH_MODE: OIDC
+NODE_PATH=$(npm root -g) node scripts/console-oidc-smoke.js
+```
+
+In Keycloak, create a public client with the console URL as redirect URI, PKCE S256 required, and your console origin as a web origin (the browser calls the token endpoint directly).

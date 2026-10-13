@@ -52,14 +52,114 @@ document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('cli
 }));
 
 // ---- auth
-$('actor').value = store.get('actor');
-$('token').value = store.get('token');
-$('auth').addEventListener('submit', (e) => {
-  e.preventDefault();
-  store.set('actor', $('actor').value.trim());
-  store.set('token', $('token').value.trim());
-  say('Credentials set for this tab', true);
-});
+// Two ways in. OIDC (default in production): authorization code flow with PKCE as a public client; the access token
+// stays in sessionStorage and is sent as a bearer token. Token mode (development): paste a token and an actor name.
+const REDIRECT = location.origin + '/console/index.html';
+
+function b64url(bytes) {
+  let s = '';
+  bytes.forEach((b) => { s += String.fromCharCode(b); });
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function randomString(n) {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return b64url(a);
+}
+async function challengeFor(verifier) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return b64url(new Uint8Array(digest));
+}
+function claims(jwt) {
+  try {
+    return JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch (e) {
+    return {};
+  }
+}
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/console/config.json');
+    return r.ok ? await r.json() : { mode: 'token' };
+  } catch (e) {
+    return { mode: 'token' };
+  }
+}
+
+async function startLogin(cfg) {
+  const verifier = randomString(48);
+  const state = randomString(16);
+  store.set('pkce_verifier', verifier);
+  store.set('pkce_state', state);
+  const params = new URLSearchParams({
+    response_type: 'code', client_id: cfg.clientId, redirect_uri: REDIRECT, scope: cfg.scope, state,
+    code_challenge: await challengeFor(verifier), code_challenge_method: 'S256',
+  });
+  location.assign(cfg.authorizationEndpoint + (cfg.authorizationEndpoint.includes('?') ? '&' : '?') + params);
+}
+
+async function finishLogin(cfg, code, state) {
+  const expected = store.get('pkce_state');
+  const verifier = store.get('pkce_verifier');
+  store.set('pkce_state', '');
+  store.set('pkce_verifier', '');
+  history.replaceState(null, '', '/console/index.html');          // the code must not stay in the address bar
+  if (!expected || state !== expected || !verifier) {
+    say('Sign-in rejected: the response did not match this browser session', false);
+    return;
+  }
+  const res = await fetch(cfg.tokenEndpoint, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: REDIRECT, client_id: cfg.clientId, code_verifier: verifier }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    say('Sign-in failed: ' + (data.error_description || data.error || res.status), false);
+    return;
+  }
+  store.set('token', data.access_token);
+  store.set('expires', String(Date.now() + (Number(data.expires_in) || 300) * 1000));
+  say('Signed in', true);
+}
+
+function showSession(cfg) {
+  const who = $('who');
+  const token = store.get('token');
+  const exp = Number(store.get('expires') || 0);
+  const signedIn = cfg.mode === 'oidc' && token && (!exp || exp > Date.now());
+  if (cfg.mode === 'oidc' && token && exp && exp <= Date.now()) {
+    store.set('token', '');
+    say('Your session expired. Sign in again.', false);
+  }
+  $('auth').hidden = cfg.mode === 'oidc';
+  $('signin').hidden = cfg.mode !== 'oidc' || signedIn;
+  $('signout').hidden = !signedIn;
+  const c = signedIn ? claims(token) : {};
+  who.textContent = signedIn ? 'Signed in as ' + (c.preferred_username || c.sub || 'unknown') : '';
+}
+
+(async () => {
+  const cfg = await loadConfig();
+  $('actor').value = store.get('actor');
+  $('token').value = cfg.mode === 'oidc' ? '' : store.get('token');
+  $('auth').addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.set('actor', $('actor').value.trim());
+    store.set('token', $('token').value.trim());
+    say('Credentials set for this tab', true);
+  });
+  $('signin').addEventListener('click', () => startLogin(cfg));
+  $('signout').addEventListener('click', () => { store.set('token', ''); store.set('expires', ''); showSession(cfg); say('Signed out', true); });
+  const q = new URLSearchParams(location.search);
+  if (cfg.mode === 'oidc' && q.get('code')) {
+    await finishLogin(cfg, q.get('code'), q.get('state'));
+  } else if (q.get('error')) {
+    history.replaceState(null, '', '/console/index.html');
+    say('Sign-in was not completed: ' + q.get('error'), false);
+  }
+  showSession(cfg);
+})();
 
 // ---- products
 function esc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }

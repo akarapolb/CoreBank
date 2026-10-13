@@ -10,6 +10,9 @@
 <body>
 <header class="top">
   <div class="brand"><span class="mark" aria-hidden="true">F</span> Fabor OS <small>Console</small></div>
+  <div class="auth"><span id="who" class="who" aria-live="polite"></span>
+    <button id="signin" class="primary" type="button" hidden>Sign in</button>
+    <button id="signout" type="button" hidden>Sign out</button></div>
   <form id="auth" class="auth" autocomplete="off">
     <label>Actor <input id="actor" placeholder="your name" aria-label="Actor name (development token mode only)"></label>
     <label>Token <input id="token" type="password" placeholder="bearer token" aria-label="Bearer token"></label>
