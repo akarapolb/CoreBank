@@ -206,8 +206,11 @@ class FaborAppTest {
         assertThat(((Map) myLoans.get(0)).get("id")).isEqualTo("LN-APP1");
         HttpHeaders other = headers("P2", MediaType.APPLICATION_JSON);
         other.set("X-Party", "P2");
-        assertThat(http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(other), List.class).getStatusCode())
-                .isEqualTo(HttpStatus.FORBIDDEN);                                                  // no such customer profile
+        ResponseEntity<List> othersLoans = http.exchange("/api/v1/me/loans", HttpMethod.GET, new HttpEntity<>(other), List.class);
+        assertThat(othersLoans.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(othersLoans.getBody()).isEmpty();                                              // sees none of P1's loans
+        assertThat(http.exchange("/api/v1/me", HttpMethod.GET, new HttpEntity<>(other), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);                                                  // and has no profile
         HttpHeaders none = headers("x", MediaType.APPLICATION_JSON);
         assertThat(http.exchange("/api/v1/me", HttpMethod.GET, new HttpEntity<>(none), Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);                                                  // login not linked to a customer
