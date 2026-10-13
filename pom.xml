@@ -33,6 +33,8 @@
     <module>ledger/ledger-adapter-web</module>
     <module>ledger/ledger-adapter-metrics</module>
     <module>ledger/ledger-perf</module>
+    <module>scheduler/scheduler-core</module>
+    <module>scheduler/scheduler-adapter-persistence</module>
     <module>agent-gateway</module>
     <module>simulator</module>
   </modules>
