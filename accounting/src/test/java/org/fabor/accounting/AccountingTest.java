@@ -138,6 +138,18 @@ class AccountingTest {
     }
 
     @Test
+    void assetFinanceChartAddsFloorPlanToTheLeaseChart() {
+        GlMapping m = GlMapping.assetFinanceV1();
+        assertThat(m.name()).isEqualTo("asset_finance_v1");
+        assertThat(m.map("fp:FP-1:VIN1:principal").code()).isEqualTo("1350");
+        assertThat(m.map("fp:FP-1:VIN1:interest").code()).isEqualTo("1360");
+        assertThat(m.map("gl:oem-subvention-receivable").code()).isEqualTo("1370");
+        assertThat(m.map("lease:F1:net-investment").code()).isEqualTo("1400");   // the lease chart is included
+        assertThat(m.map("dep:Z").code()).isEqualTo("2100");                     // and the retail chart
+        assertThatThrownBy(() -> GlMapping.leaseTfrs16V1().map("fp:FP-1:VIN1:principal")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void otherTenantsAreNotMixedIn() {
         bookSomeActivity();
         outbox.forEach(projection::apply);

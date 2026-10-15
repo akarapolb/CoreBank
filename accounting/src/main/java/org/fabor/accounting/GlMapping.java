@@ -66,18 +66,33 @@ public final class GlMapping {
      * payable, finance and rental income and depreciation expense.
      */
     public static GlMapping leaseTfrs16V1() {
-        return retailRules(named("lease_tfrs16_v1"))
+        return leaseRules(retailRules(named("lease_tfrs16_v1"))).build();
+    }
+
+    /**
+     * The lease chart plus floor plan financing: floor plan principal and interest receivable per unit, and the
+     * manufacturer's subvention receivable.
+     */
+    public static GlMapping assetFinanceV1() {
+        return leaseRules(retailRules(named("asset_finance_v1")))
+                .rule("fp:.*:.*:principal", "1350", "Floor plan receivable", GlAccount.Type.ASSET)
+                .rule("fp:.*:.*:interest", "1360", "Floor plan interest receivable", GlAccount.Type.ASSET)
+                .rule("gl:oem-subvention-receivable", "1370", "Manufacturer subvention receivable", GlAccount.Type.ASSET)
+                .build();
+    }
+
+    private static Builder leaseRules(Builder b) {
+        return b
                 .rule("lease:.*:net-investment", "1400", "Net investment in finance leases", GlAccount.Type.ASSET)
                 .rule("lease:.*:rent-receivable", "1410", "Operating lease rent receivable", GlAccount.Type.ASSET)
                 .rule("lease:.*:accrued-rent", "1420", "Accrued (deferred) rent, net", GlAccount.Type.ASSET)
+                .rule("gl:dealer-commission-deferred", "1430", "Deferred dealer commission", GlAccount.Type.ASSET)
                 .rule("gl:leased-assets", "1500", "Assets under operating leases", GlAccount.Type.ASSET)
                 .rule("gl:accumulated-depreciation", "1590", "Accumulated depreciation, leased assets", GlAccount.Type.ASSET)
                 .rule("gl:supplier-payable", "2200", "Supplier payable", GlAccount.Type.LIABILITY)
-                .rule("gl:dealer-commission-deferred", "1430", "Deferred dealer commission", GlAccount.Type.ASSET)
                 .rule("gl:finance-income", "4400", "Finance lease income", GlAccount.Type.INCOME)
                 .rule("gl:rental-income", "4410", "Operating lease rental income", GlAccount.Type.INCOME)
-                .rule("gl:depreciation-expense", "5200", "Depreciation, leased assets", GlAccount.Type.EXPENSE)
-                .build();
+                .rule("gl:depreciation-expense", "5200", "Depreciation, leased assets", GlAccount.Type.EXPENSE);
     }
 
     private static Builder retailRules(Builder b) {

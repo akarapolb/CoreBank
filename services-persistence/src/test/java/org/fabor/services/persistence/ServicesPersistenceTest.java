@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, fp_unit, fp_curtailment, fp_unit_terms, fp_line, "
                     + "catalog_draft, catalog_version");
         }
     }
@@ -241,6 +241,44 @@ class ServicesPersistenceTest {
         assertThat(leases.find("LS1").orElseThrow().status()).isEqualTo(org.fabor.lending.Lease.Status.COMPLETED);
         assertThat(leases.idsByParty("P-LEASE")).containsExactly("LS1");
         assertThat(leases.idsByParty("nobody")).isEmpty();
+    }
+
+    @Test
+    void floorPlanLineTermsAndUnitsRoundTrip() {
+        var repo = new JdbcFloorPlanRepo(ds, T);
+        assertThat(repo.findLine("FP-1")).isEmpty();
+        var line = new org.fabor.lending.FloorPlanLine("FP-1", "DLR-1", "THB", 100_000_000, new java.math.BigDecimal("0.09"), 2, "DLR",
+                java.util.Map.of(
+                        org.fabor.lending.FloorPlanLine.UnitType.NEW, new org.fabor.lending.FloorPlanLine.UnitTerms(80_000_000, 60),
+                        org.fabor.lending.FloorPlanLine.UnitType.USED, new org.fabor.lending.FloorPlanLine.UnitTerms(40_000_000, 0)),
+                List.of(new org.fabor.lending.FloorPlanLine.Step(120, 10), new org.fabor.lending.FloorPlanLine.Step(180, 25),
+                        new org.fabor.lending.FloorPlanLine.Step(270, 100)),
+                org.fabor.lending.FloorPlanLine.Status.ACTIVE, LocalDate.of(2026, 1, 15));
+        repo.saveLine(line);
+        var found = repo.findLine("FP-1").orElseThrow();
+        assertThat(found.terms()).isEqualTo(line.terms());
+        assertThat(found.curtailments()).isEqualTo(line.curtailments());
+        assertThat(found.annualRate()).isEqualByComparingTo("0.09");
+        assertThat(found.requiredPercent(200)).isEqualTo(25);
+        // a status change saves without duplicating terms or steps
+        repo.saveLine(line.withStatus(org.fabor.lending.FloorPlanLine.Status.FROZEN));
+        assertThat(repo.findLine("FP-1").orElseThrow().status()).isEqualTo(org.fabor.lending.FloorPlanLine.Status.FROZEN);
+        assertThat(repo.findLine("FP-1").orElseThrow().terms()).hasSize(2);
+
+        var unit = new org.fabor.lending.FloorPlanUnit("FP-1", "VIN1", org.fabor.lending.FloorPlanLine.UnitType.NEW, 50_000_000, 0,
+                LocalDate.of(2026, 1, 15), LocalDate.of(2026, 1, 15), 0, 0, 0, null, org.fabor.lending.FloorPlanUnit.Status.OPEN);
+        repo.saveUnit(unit);
+        assertThat(repo.findUnit("FP-1", "VIN1")).contains(unit);
+        var later = unit.withAccrual(LocalDate.of(2026, 4, 15), 369_863, 739_726).withSale(LocalDate.of(2026, 4, 15))
+                .withPayment(369_863, 50_000_000);
+        repo.saveUnit(later);
+        assertThat(repo.findUnit("FP-1", "VIN1")).contains(later);
+        assertThat(later.status()).isEqualTo(org.fabor.lending.FloorPlanUnit.Status.PAID);
+        repo.saveUnit(new org.fabor.lending.FloorPlanUnit("FP-1", "VIN0", org.fabor.lending.FloorPlanLine.UnitType.USED, 1_000_000, 0,
+                LocalDate.of(2026, 1, 10), LocalDate.of(2026, 1, 10), 0, 0, 0, null, org.fabor.lending.FloorPlanUnit.Status.OPEN));
+        assertThat(repo.units("FP-1")).extracting(org.fabor.lending.FloorPlanUnit::unitId).containsExactly("VIN0", "VIN1");
+        assertThat(repo.units("none")).isEmpty();
+        assertThat(repo.findUnit("FP-1", "none")).isEmpty();
     }
 
     @Test

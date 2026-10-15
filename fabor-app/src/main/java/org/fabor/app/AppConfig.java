@@ -30,6 +30,8 @@ import org.fabor.assets.AssetService;
 import org.fabor.assets.DealerRepo;
 import org.fabor.assets.DealerService;
 import org.fabor.lending.Lease;
+import org.fabor.lending.FloorPlanRepo;
+import org.fabor.lending.FloorPlanService;
 import org.fabor.lending.LeaseRepo;
 import org.fabor.lending.LeaseService;
 import org.fabor.lending.Loan;
@@ -53,6 +55,7 @@ import org.fabor.services.persistence.JdbcConsentStore;
 import org.fabor.services.persistence.JdbcDepositRepo;
 import org.fabor.services.persistence.JdbcAssetRepo;
 import org.fabor.services.persistence.JdbcDealerRepo;
+import org.fabor.services.persistence.JdbcFloorPlanRepo;
 import org.fabor.services.persistence.JdbcLeaseRepo;
 import org.fabor.services.persistence.JdbcMasterRepo;
 import org.fabor.services.persistence.JdbcLoanRepo;
@@ -207,6 +210,16 @@ class AppConfig {
     @Bean
     LeaseService leaseService(TenantId tenant, LedgerService ledger, LeaseRepo repo, BusinessCalendar calendar) {
         return new LeaseService(tenant, ledger, repo, calendar);
+    }
+
+    @Bean
+    FloorPlanRepo floorPlanRepo(DataSource ds, TenantId tenant) {
+        return new JdbcFloorPlanRepo(ds, tenant);
+    }
+
+    @Bean
+    FloorPlanService floorPlanService(TenantId tenant, LedgerService ledger, FloorPlanRepo repo, LoanRepo loans) {
+        return new FloorPlanService(tenant, ledger, repo, loans);
     }
 
     @Bean
