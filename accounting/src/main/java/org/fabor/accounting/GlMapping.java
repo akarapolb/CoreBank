@@ -73,6 +73,7 @@ public final class GlMapping {
                 .rule("gl:leased-assets", "1500", "Assets under operating leases", GlAccount.Type.ASSET)
                 .rule("gl:accumulated-depreciation", "1590", "Accumulated depreciation, leased assets", GlAccount.Type.ASSET)
                 .rule("gl:supplier-payable", "2200", "Supplier payable", GlAccount.Type.LIABILITY)
+                .rule("gl:dealer-commission-deferred", "1430", "Deferred dealer commission", GlAccount.Type.ASSET)
                 .rule("gl:finance-income", "4400", "Finance lease income", GlAccount.Type.INCOME)
                 .rule("gl:rental-income", "4410", "Operating lease rental income", GlAccount.Type.INCOME)
                 .rule("gl:depreciation-expense", "5200", "Depreciation, leased assets", GlAccount.Type.EXPENSE)

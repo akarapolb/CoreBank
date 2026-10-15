@@ -129,6 +129,7 @@ class AccountingTest {
         assertThat(m.map("gl:leased-assets").code()).isEqualTo("1500");
         assertThat(m.map("gl:accumulated-depreciation").code()).isEqualTo("1590");
         assertThat(m.map("gl:supplier-payable").type()).isEqualTo(GlAccount.Type.LIABILITY);
+        assertThat(m.map("gl:dealer-commission-deferred").code()).isEqualTo("1430");
         assertThat(m.map("gl:finance-income").type()).isEqualTo(GlAccount.Type.INCOME);
         assertThat(m.map("gl:rental-income").code()).isEqualTo("4410");
         assertThat(m.map("gl:depreciation-expense").type()).isEqualTo(GlAccount.Type.EXPENSE);

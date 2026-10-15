@@ -10,6 +10,7 @@
   <dependencies>
     <dependency><groupId>org.fabor</groupId><artifactId>deposit</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>lending</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>assets</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>onboarding</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>catalog</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>platform-security</artifactId><version>${project.version}</version></dependency>

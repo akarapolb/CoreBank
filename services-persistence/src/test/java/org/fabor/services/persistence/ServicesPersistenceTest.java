@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, "
                     + "catalog_draft, catalog_version");
         }
     }
@@ -241,6 +241,58 @@ class ServicesPersistenceTest {
         assertThat(leases.find("LS1").orElseThrow().status()).isEqualTo(org.fabor.lending.Lease.Status.COMPLETED);
         assertThat(leases.idsByParty("P-LEASE")).containsExactly("LS1");
         assertThat(leases.idsByParty("nobody")).isEmpty();
+    }
+
+    @Test
+    void assetRegisterAndDealersRoundTrip() {
+        var dealers = new JdbcDealerRepo(ds, T);
+        var assets = new JdbcAssetRepo(ds, T);
+        assertThat(dealers.find("DLR-1")).isEmpty();
+        dealers.save(new org.fabor.assets.Dealer("DLR-1", "Siam Isuzu", "0105500000001", org.fabor.assets.Dealer.Status.ACTIVE,
+                new java.math.BigDecimal("0.02")));
+        dealers.save(new org.fabor.assets.Dealer("DLR-0", "Hino Bangna", "0105500000002", org.fabor.assets.Dealer.Status.ACTIVE,
+                java.math.BigDecimal.ZERO));
+        dealers.save(dealers.find("DLR-1").orElseThrow().withStatus(org.fabor.assets.Dealer.Status.SUSPENDED));
+        assertThat(dealers.find("DLR-1").orElseThrow().status()).isEqualTo(org.fabor.assets.Dealer.Status.SUSPENDED);
+        assertThat(dealers.find("DLR-1").orElseThrow().commissionRate()).isEqualByComparingTo("0.02");
+        assertThat(dealers.all()).extracting(org.fabor.assets.Dealer::id).containsExactly("DLR-0", "DLR-1");
+
+        org.fabor.assets.Asset a = new org.fabor.assets.Asset("A1", org.fabor.assets.Asset.Kind.VEHICLE, "Isuzu", "FVM", "MPA123",
+                null, null, "DLR-1", "THB", 300_000_000, null, org.fabor.assets.Asset.Status.ORDERED, "Showroom",
+                org.fabor.assets.Asset.Condition.NEW, org.fabor.assets.Asset.TitleHolder.LESSOR);
+        assets.save(a);
+        assertThat(assets.find("A1")).contains(a);
+        assertThat(assets.findBySerial("MPA123")).contains(a);
+        assertThat(assets.findBySerial("nope")).isEmpty();
+        org.fabor.assets.Asset active = a.withDelivery("ENG-1", "1AB 1234").withContract("HP-1");
+        assets.save(active);
+        assertThat(assets.find("A1")).contains(active);
+        assertThat(assets.byStatus(org.fabor.assets.Asset.Status.ACTIVE)).containsExactly(active);
+        assertThat(assets.byStatus(org.fabor.assets.Asset.Status.ORDERED)).isEmpty();
+        assertThat(assets.byContract("HP-1")).containsExactly(active);
+        assertThat(assets.byContract("none")).isEmpty();
+        // a serial number can be registered once
+        org.fabor.assets.Asset twin = new org.fabor.assets.Asset("A2", org.fabor.assets.Asset.Kind.VEHICLE, "Isuzu", "FVM", "MPA123",
+                null, null, "DLR-1", "THB", 1, null, org.fabor.assets.Asset.Status.ORDERED, null,
+                org.fabor.assets.Asset.Condition.NEW, org.fabor.assets.Asset.TitleHolder.LESSOR);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> assets.save(twin)).isInstanceOf(IllegalStateException.class);
+
+        var policy = new org.fabor.assets.Policy("A1", "Viriyah", "P-1", LocalDate.of(2026, 1, 15), LocalDate.of(2027, 1, 14),
+                300_000_000, 1_200_000, true);
+        assets.addPolicy(policy);
+        assets.addPolicy(new org.fabor.assets.Policy("A1", "Viriyah", "P-2", LocalDate.of(2027, 1, 15), LocalDate.of(2028, 1, 14),
+                250_000_000, 1_100_000, false));
+        assertThat(assets.policies("A1")).hasSize(2).first().isEqualTo(policy);
+        assertThat(assets.policies("A2")).isEmpty();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> assets.addPolicy(policy)).isInstanceOf(IllegalStateException.class);
+
+        assets.addTitleEvent(new org.fabor.assets.TitleEvent("A1", LocalDate.of(2026, 1, 15), null,
+                org.fabor.assets.Asset.TitleHolder.LESSOR, "delivery", "Title registered with the lessor"));
+        assets.addTitleEvent(new org.fabor.assets.TitleEvent("A1", LocalDate.of(2031, 1, 15),
+                org.fabor.assets.Asset.TitleHolder.LESSOR, org.fabor.assets.Asset.TitleHolder.CUSTOMER, "payoff", "Paid off"));
+        assertThat(assets.titleEvents("A1")).extracting(org.fabor.assets.TitleEvent::reference).containsExactly("delivery", "payoff");
+        assertThat(assets.titleEvents("A1").get(0).from()).isNull();
+        assertThat(assets.titleEvents("A2")).isEmpty();
     }
 
     @Test

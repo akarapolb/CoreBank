@@ -25,8 +25,14 @@ import org.fabor.ledger.adapter.persistence.PostgresLedgerStore;
 import org.fabor.ledger.adapter.web.LedgerGrpcService;
 import org.fabor.ledger.application.LedgerService;
 import org.fabor.ledger.application.LedgerStore;
+import org.fabor.assets.AssetRepo;
+import org.fabor.assets.AssetService;
+import org.fabor.assets.DealerRepo;
+import org.fabor.assets.DealerService;
+import org.fabor.lending.Lease;
 import org.fabor.lending.LeaseRepo;
 import org.fabor.lending.LeaseService;
+import org.fabor.lending.Loan;
 import org.fabor.lending.LoanRepo;
 import org.fabor.lending.LoanService;
 import org.fabor.onboarding.OnboardingService;
@@ -43,6 +49,8 @@ import org.fabor.services.persistence.JdbcAuditStore;
 import org.fabor.services.persistence.JdbcCatalogStore;
 import org.fabor.services.persistence.JdbcConsentStore;
 import org.fabor.services.persistence.JdbcDepositRepo;
+import org.fabor.services.persistence.JdbcAssetRepo;
+import org.fabor.services.persistence.JdbcDealerRepo;
 import org.fabor.services.persistence.JdbcLeaseRepo;
 import org.fabor.services.persistence.JdbcLoanRepo;
 import org.fabor.services.persistence.JdbcPartyRepo;
@@ -196,6 +204,33 @@ class AppConfig {
     @Bean
     LeaseService leaseService(TenantId tenant, LedgerService ledger, LeaseRepo repo, BusinessCalendar calendar) {
         return new LeaseService(tenant, ledger, repo, calendar);
+    }
+
+    @Bean
+    AssetRepo assetRepo(DataSource ds, TenantId tenant) {
+        return new JdbcAssetRepo(ds, tenant);
+    }
+
+    @Bean
+    DealerRepo dealerRepo(DataSource ds, TenantId tenant) {
+        return new JdbcDealerRepo(ds, tenant);
+    }
+
+    /** A loan is settled once closed; a lease once every period has been collected. */
+    @Bean
+    AssetService.ContractLookup contractLookup(LoanRepo loans, LeaseRepo leases) {
+        return id -> loans.find(id).map(l -> new AssetService.ContractState(id, l.status() == Loan.Status.CLOSED))
+                .or(() -> leases.find(id).map(l -> new AssetService.ContractState(id, l.status() == Lease.Status.COMPLETED)));
+    }
+
+    @Bean
+    AssetService assetService(AssetRepo repo, AssetService.ContractLookup contracts) {
+        return new AssetService(repo, contracts);
+    }
+
+    @Bean
+    DealerService dealerService(TenantId tenant, LedgerService ledger, DealerRepo dealers, AssetRepo assets) {
+        return new DealerService(tenant, ledger, dealers, assets);
     }
 
     @Bean

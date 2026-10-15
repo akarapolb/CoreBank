@@ -43,6 +43,7 @@
     <module>catalog</module>
     <module>deposit</module>
     <module>lending</module>
+    <module>assets</module>
     <module>accounting</module>
     <module>decisioning</module>
     <module>onboarding</module>
