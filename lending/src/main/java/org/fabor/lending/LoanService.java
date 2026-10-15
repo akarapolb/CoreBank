@@ -17,6 +17,7 @@ import org.fabor.engine.schedule.RebateRule;
 import org.fabor.engine.schedule.Schedule;
 import org.fabor.engine.schedule.ScheduleEngine;
 import org.fabor.engine.schedule.ScheduleRequest;
+import org.fabor.engine.tax.InstalmentVat;
 import org.fabor.engine.tax.TaxInvoice;
 import org.fabor.engine.tax.Vat;
 import org.fabor.platform.time.BusinessCalendar.Convention;
@@ -85,6 +86,23 @@ public final class LoanService {
         return new AccountId("loan:" + id + ":penalty");
     }
 
+    /** VAT added to instalment bills and not yet paid by the customer (asset: debit balance). */
+    public static AccountId vatAcct(String id) {
+        return new AccountId("loan:" + id + ":vat");
+    }
+
+    /** The taxable base of instalment VAT for the product, or null when it charges none. */
+    private static InstalmentVat.Base instalmentVatBase(ProductDefinition p) {
+        var vat = p.tax() == null ? null : p.tax().vat();
+        if (vat == null) {
+            return null;
+        }
+        if (vat.appliesTo().contains("INSTALMENT_TOTAL")) {
+            return InstalmentVat.Base.TOTAL;
+        }
+        return vat.appliesTo().contains("INSTALMENT_INTEREST") ? InstalmentVat.Base.INTEREST : null;
+    }
+
     /** Opens the loan from a quote and pays the net amount (principal less upfront fees) to the customer's deposit account. */
     public Loan disburse(String id, String party, String productCode, int version, Money principal, int term,
                          LocalDate date, String depositAccountId) {
@@ -138,13 +156,28 @@ public final class LoanService {
             throw new IllegalStateException("Bill instalments in order");
         }
         AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        InstalmentVat.Base vatBase = instalmentVatBase(p);
+        Vat.Split vat = vatBase == null ? null : InstalmentVat.of(money(loan, i.principalDue()), money(loan, i.interestDue()),
+                vatBase, p.tax().vat().rate());
+        long vatMinor = vat == null ? 0 : vat.vat().minor();
+        List<Entry> entries = new ArrayList<>();
         if (i.interestDue() > 0) {
-            post(loanId, loan.tag() + "bill-" + number, i.dueDate(), List.of(
-                    new Entry(interestAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, i.interestDue())),
-                    new Entry(income, BalanceType.SETTLED, Direction.CREDIT, money(loan, i.interestDue()))));
+            entries.add(new Entry(interestAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, i.interestDue())));
+            entries.add(new Entry(income, BalanceType.SETTLED, Direction.CREDIT, money(loan, i.interestDue())));
         }
-        return replace(loan, number, new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(),
-                i.principalPaid(), i.interestPaid(), i.penaltyAccrued(), i.penaltyPaid(), true), loan.status());
+        if (vatMinor > 0) {
+            entries.add(new Entry(vatAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, vatMinor)));
+            entries.add(new Entry(VAT_PAYABLE, BalanceType.SETTLED, Direction.CREDIT, money(loan, vatMinor)));
+        }
+        if (!entries.isEmpty()) {
+            post(loanId, loan.tag() + "bill-" + number, i.dueDate(), entries);
+        }
+        if (vatMinor > 0 && invoicing != null) {
+            invoicing.sink().accept(InstalmentVat.invoice(loanId + (loan.generation() == 0 ? "" : "-g" + loan.generation()),
+                    number, i.dueDate(), invoicing.sellerTaxId(), loan.party(), vat));
+        }
+        return replace(loan, number, i.withBilled(vatMinor), loan.status());
     }
 
     /** Accrues the day's late charge on every overdue instalment, then applies the non-accrual rule. Idempotent per day. */
@@ -165,8 +198,7 @@ public final class LoanService {
             long perDay = dailyPenalty(p, overdue);
             if (perDay > 0 && !postedPenalty(loanId, loan.tag(), i.number(), day)) {
                 totalPenalty += perDay;
-                list.set(k, new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalPaid(),
-                        i.interestPaid(), i.penaltyAccrued() + perDay, i.penaltyPaid(), true));
+                list.set(k, i.withPenalty(perDay));
                 post(loanId, loan.tag() + "pen-" + i.number() + "-" + day, day, List.of(
                         new Entry(penaltyAcct(loanId), BalanceType.SETTLED, Direction.DEBIT, money(loan, perDay)),
                         new Entry(PENALTY_INCOME, BalanceType.SETTLED, Direction.CREDIT, money(loan, perDay))));
@@ -211,6 +243,7 @@ public final class LoanService {
         for (Loan.Instalment i : loan.instalments()) {
             if (i.billed()) {
                 dues.add(new Waterfall.Due(i.number(), Waterfall.Component.PENALTY, i.penaltyOutstanding()));
+                dues.add(new Waterfall.Due(i.number(), Waterfall.Component.VAT, i.vatOutstanding()));
                 dues.add(new Waterfall.Due(i.number(), Waterfall.Component.INTEREST, i.interestOutstanding()));
                 dues.add(new Waterfall.Due(i.number(), Waterfall.Component.PRINCIPAL, i.principalOutstanding()));
             }
@@ -231,11 +264,32 @@ public final class LoanService {
      */
     public Money settlementQuote(String loanId, LocalDate date) {
         Loan loan = load(loanId);
-        long total = chargeableInterest(loan);
+        long chargeable = chargeableInterest(loan);
+        long total = chargeable + settlementVat(loan, chargeable);
         for (Loan.Instalment i : loan.instalments()) {
             total += i.billed() ? i.outstanding() : i.principalOutstanding();
         }
         return money(loan, total);
+    }
+
+    /**
+     * VAT on the interest charged at settlement, for products that charge VAT on instalment interest. A product with VAT
+     * on the whole instalment has no settlement rule yet, so settling it while instalments remain unbilled is refused.
+     */
+    private long settlementVat(Loan loan, long chargeable) {
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        InstalmentVat.Base base = instalmentVatBase(p);
+        if (base == null || loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
+            return 0;
+        }
+        if (base == InstalmentVat.Base.TOTAL) {
+            if (loan.instalments().stream().anyMatch(i -> !i.billed())) {
+                throw new IllegalStateException("Early settlement needs a termination rule for products with VAT on the "
+                        + "whole instalment");
+            }
+            return 0;
+        }
+        return chargeable == 0 ? 0 : Vat.exclusive(money(loan, chargeable), p.tax().vat().rate()).vat().minor();
     }
 
     /**
@@ -292,6 +346,9 @@ public final class LoanService {
             if (i.billed() && i.interestOutstanding() > 0) {
                 all.add(new Waterfall.Allocation(i.number(), Waterfall.Component.INTEREST, i.interestOutstanding()));
             }
+            if (i.billed() && i.vatOutstanding() > 0) {
+                all.add(new Waterfall.Allocation(i.number(), Waterfall.Component.VAT, i.vatOutstanding()));
+            }
             if (i.principalOutstanding() > 0) {
                 all.add(new Waterfall.Allocation(i.number(), Waterfall.Component.PRINCIPAL, i.principalOutstanding()));
             }
@@ -300,7 +357,14 @@ public final class LoanService {
             return keep(loan.withStatus(Loan.Status.CLOSED));
         }
         AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
-        applyAllocation(loan, "settle-" + reference, date, all, quote, chargeable, income);
+        long settleVat = settlementVat(loan, chargeable);
+        applyAllocation(loan, "settle-" + reference, date, all, quote, chargeable, income, settleVat);
+        if (settleVat > 0 && invoicing != null) {
+            ProductDefinition p = product(loan.productCode(), loan.productVersion());
+            invoicing.sink().accept(TaxInvoice.of("INV-" + loanId + "-SETTLE-" + reference, date, invoicing.sellerTaxId(),
+                    loan.party(), List.of(new TaxInvoice.Line("Interest on early settlement of " + loanId,
+                            money(loan, chargeable), money(loan, settleVat)))));
+        }
         Loan after = repo.find(loanId).orElseThrow();
         // unbilled future instalments are cancelled: nothing more will be billed
         return keep(after.withStatus(Loan.Status.CLOSED));
@@ -308,32 +372,34 @@ public final class LoanService {
 
     private void applyAllocation(Loan loan, String reference, LocalDate date, List<Waterfall.Allocation> allocations,
                                  Money total) {
-        applyAllocation(loan, reference, date, allocations, total, 0, null);
+        applyAllocation(loan, reference, date, allocations, total, 0, null, 0);
     }
 
     private void applyAllocation(Loan loan, String reference, LocalDate date, List<Waterfall.Allocation> allocations,
-                                 Money total, long unbilledInterest, AccountId unbilledIncome) {
+                                 Money total, long unbilledInterest, AccountId unbilledIncome, long unbilledVat) {
         long principal = 0;
         long interest = 0;
         long penalty = 0;
+        long vat = 0;
         List<Loan.Instalment> list = new ArrayList<>(loan.instalments());
         for (Waterfall.Allocation a : allocations) {
             Loan.Instalment i = list.get(a.instalment() - 1);
             list.set(a.instalment() - 1, switch (a.component()) {
                 case PRINCIPAL -> {
                     principal += a.amount();
-                    yield new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(),
-                            i.principalPaid() + a.amount(), i.interestPaid(), i.penaltyAccrued(), i.penaltyPaid(), i.billed());
+                    yield i.withPaid(a.amount(), 0, 0, 0);
                 }
                 case INTEREST -> {
                     interest += a.amount();
-                    yield new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalPaid(),
-                            i.interestPaid() + a.amount(), i.penaltyAccrued(), i.penaltyPaid(), i.billed());
+                    yield i.withPaid(0, a.amount(), 0, 0);
                 }
                 case PENALTY -> {
                     penalty += a.amount();
-                    yield new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalPaid(),
-                            i.interestPaid(), i.penaltyAccrued(), i.penaltyPaid() + a.amount(), i.billed());
+                    yield i.withPaid(0, 0, a.amount(), 0);
+                }
+                case VAT -> {
+                    vat += a.amount();
+                    yield i.withPaid(0, 0, 0, a.amount());
                 }
                 default -> throw new IllegalStateException("Component not postable in v1: " + a.component());
             });
@@ -349,12 +415,18 @@ public final class LoanService {
         if (penalty > 0) {
             entries.add(new Entry(penaltyAcct(loan.id()), BalanceType.SETTLED, Direction.CREDIT, money(loan, penalty)));
         }
+        if (vat > 0) {
+            entries.add(new Entry(vatAcct(loan.id()), BalanceType.SETTLED, Direction.CREDIT, money(loan, vat)));
+        }
         if (unbilledInterest > 0) {
             entries.add(new Entry(unbilledIncome, BalanceType.SETTLED, Direction.CREDIT, money(loan, unbilledInterest)));
         }
+        if (unbilledVat > 0) {
+            entries.add(new Entry(VAT_PAYABLE, BalanceType.SETTLED, Direction.CREDIT, money(loan, unbilledVat)));
+        }
         post(loan.id(), "pay-" + reference, date, entries);
         boolean allPaid = list.stream().allMatch(i -> i.principalOutstanding() == 0 && i.penaltyOutstanding() == 0
-                && i.interestOutstanding() == 0);
+                && i.interestOutstanding() == 0 && i.vatOutstanding() == 0);
         Loan.Status status = allPaid ? Loan.Status.CLOSED : loan.status();
         repo.save(loan.withInstalments(List.copyOf(list), status));
     }
@@ -541,6 +613,9 @@ public final class LoanService {
         if (newRate.compareTo(rateOf(loan, p)) > 0) {
             throw new IllegalArgumentException("A restructuring cannot raise the rate");
         }
+        if (loan.instalments().stream().anyMatch(i -> i.vatOutstanding() > 0)) {
+            throw new IllegalStateException("VAT on billed instalments is unpaid; collect it before restructuring");
+        }
         long principal = 0;
         long unpaidInterest = 0;
         long unpaidPenalty = 0;
@@ -624,15 +699,18 @@ public final class LoanService {
         long principal = 0;
         long interest = 0;
         long penalty = 0;
+        long vat = 0;
         List<Loan.Instalment> cleared = new ArrayList<>();
         for (Loan.Instalment i : loan.instalments()) {
             principal += i.principalOutstanding();
             interest += i.billed() ? i.interestOutstanding() : 0;
             penalty += i.billed() ? i.penaltyOutstanding() : 0;
+            vat += i.vatOutstanding();
             cleared.add(new Loan.Instalment(i.number(), i.dueDate(), i.principalDue(), i.interestDue(), i.principalDue(),
-                    i.billed() ? i.interestDue() : i.interestPaid(), i.penaltyAccrued(), i.penaltyAccrued(), true));
+                    i.billed() ? i.interestDue() : i.interestPaid(), i.penaltyAccrued(), i.penaltyAccrued(), true, i.vatDue(),
+                    i.vatDue()));
         }
-        long total = principal + interest + penalty;
+        long total = principal + interest + penalty + vat;
         List<Entry> entries = new ArrayList<>();
         entries.add(new Entry(WRITE_OFF_EXPENSE, BalanceType.SETTLED, Direction.DEBIT, money(loan, total)));
         if (principal > 0) {
@@ -643,6 +721,9 @@ public final class LoanService {
         }
         if (penalty > 0) {
             entries.add(new Entry(penaltyAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, penalty)));
+        }
+        if (vat > 0) {   // VAT already invoiced stays payable to the tax authority: relief is a tax-team decision
+            entries.add(new Entry(vatAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, money(loan, vat)));
         }
         post(loanId, "writeoff-" + reference, date, entries);
         // memo: the borrower still owes it

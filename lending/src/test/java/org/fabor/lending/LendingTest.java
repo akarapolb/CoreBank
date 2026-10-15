@@ -636,4 +636,199 @@ class LendingTest {
         svc.settle("L1", "s", d.plusDays(91));
         assertThat(bal(LoanService.INTEREST_SUSPENSE) - suspenseBefore).isEqualTo(unbilled - Math.round(unbilled * 0.5)); // the rebate rounds half-up, in the customer's favour
     }
+
+    private final java.util.List<org.fabor.engine.tax.TaxInvoice> invoices = new java.util.ArrayList<>();
+
+    /** The sample loan with 7% VAT on fees and the given instalment VAT target, with an invoice sink. */
+    private void wireInstalmentVat(String target, String rebate) throws IOException {
+        invoices.clear();
+        product = ProductLoader.parse(yaml().replace("applies_to: [FEES]", "applies_to: [FEES, " + target + "]")
+                .replace("rebate: NONE", "rebate: \"" + rebate + "\""));
+        ledger = new LedgerService(new InMemoryLedgerStore(), Clock.fixed(Instant.parse("2026-12-31T00:00:00Z"), ZoneOffset.UTC));
+        svc = new LoanService(T, ledger, new LoanRepo.InMemory(), (c, v) -> c.equals(product.product()) && v == 1 ? product : null,
+                BusinessCalendar.monToFri(Set.of()), new LoanService.Invoicing("0105500000001", invoices::add));
+        ledger.post(fund("seed", 20_000_000));
+    }
+
+    @Test
+    void instalmentVatIsBilledInvoicedAndPaidBeforeInterest() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "NONE");
+        Loan l = open();
+        invoices.clear(); // the origination fee invoice
+        Loan.Instalment first = l.instalments().get(0);
+        Loan billed = svc.bill("L1", 1, first.dueDate());
+        long vat = Math.round(first.interestDue() * 0.07);
+        assertThat(vat).isPositive();
+        assertThat(billed.instalments().get(0).vatDue()).isEqualTo(vat);
+        assertThat(bal(LoanService.vatAcct("L1"))).isEqualTo(-vat);
+        assertThat(bal(LoanService.VAT_PAYABLE)).isEqualTo(7_000 + vat); // the fee VAT plus this instalment's
+        assertThat(invoices).singleElement().satisfies(inv -> {
+            assertThat(inv.number()).isEqualTo("INV-L1-I1");
+            assertThat(inv.base().minor()).isEqualTo(first.interestDue());
+            assertThat(inv.vat().minor()).isEqualTo(vat);
+        });
+        svc.bill("L1", 1, first.dueDate()); // retry: nothing is booked twice
+        assertThat(bal(LoanService.vatAcct("L1"))).isEqualTo(-vat);
+        // a payment that covers only VAT and part of the interest: VAT comes before interest in the product's waterfall
+        Loan part = svc.repay("L1", "p1", Money.ofMinor(vat + 1_000, Currency.THB), first.dueDate());
+        assertThat(part.instalments().get(0).vatOutstanding()).isZero();
+        assertThat(part.instalments().get(0).interestPaid()).isEqualTo(1_000);
+        assertThat(bal(LoanService.vatAcct("L1"))).isZero();
+        // the rest of the instalment closes it
+        long rest = first.principalDue() + first.interestDue() - 1_000;
+        assertThat(svc.repay("L1", "p2", Money.ofMinor(rest, Currency.THB), first.dueDate()).instalments().get(0).settled()).isTrue();
+    }
+
+    @Test
+    void vatOnTheWholeInstalmentTaxesPrincipalToo() throws IOException {
+        wireInstalmentVat("INSTALMENT_TOTAL", "NONE");
+        Loan l = open();
+        Loan.Instalment first = l.instalments().get(0);
+        Loan billed = svc.bill("L1", 1, first.dueDate());
+        assertThat(billed.instalments().get(0).vatDue()).isEqualTo(Math.round((first.principalDue() + first.interestDue()) * 0.07));
+        // early settlement while instalments are unbilled has no rule for this product
+        assertThatThrownBy(() -> svc.settlementQuote("L1", first.dueDate())).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("termination rule");
+        assertThatThrownBy(() -> svc.settle("L1", "s", first.dueDate())).isInstanceOf(IllegalStateException.class);
+        // unpaid VAT blocks restructuring
+        assertThatThrownBy(() -> svc.restructure("L1", "r", new BigDecimal("0.10"), 24, first.dueDate()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("VAT");
+    }
+
+    @Test
+    void settlementChargesVatOnTheInterestItStillCharges() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "PERCENT:0.5");
+        Loan l = open();
+        Loan.Instalment first = l.instalments().get(0);
+        svc.bill("L1", 1, first.dueDate());
+        long vat1 = Math.round(first.interestDue() * 0.07);
+        svc.repay("L1", "p1", Money.ofMinor(first.principalDue() + first.interestDue() + vat1, Currency.THB), first.dueDate());
+        long unbilled = l.instalments().stream().skip(1).mapToLong(Loan.Instalment::interestDue).sum();
+        long charged = unbilled - Math.round(unbilled * 0.5);
+        long settleVat = Math.round(charged * 0.07);
+        long principalLeft = l.instalments().stream().skip(1).mapToLong(Loan.Instalment::principalDue).sum();
+        invoices.clear();
+        Money quote = svc.settlementQuote("L1", first.dueDate());
+        assertThat(quote.minor()).isEqualTo(principalLeft + charged + settleVat);
+        long payableBefore = bal(LoanService.VAT_PAYABLE);
+        Loan closed = svc.settle("L1", "s1", first.dueDate());
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.VAT_PAYABLE) - payableBefore).isEqualTo(settleVat);
+        assertThat(invoices).singleElement().satisfies(inv -> {
+            assertThat(inv.number()).isEqualTo("INV-L1-SETTLE-s1");
+            assertThat(inv.base().minor()).isEqualTo(charged);
+            assertThat(inv.vat().minor()).isEqualTo(settleVat);
+        });
+        // a retry posts and invoices nothing more
+        svc.settle("L1", "s1", first.dueDate());
+        assertThat(invoices).hasSize(1);
+        assertThat(bal(LoanService.VAT_PAYABLE) - payableBefore).isEqualTo(settleVat);
+    }
+
+    @Test
+    void writeOffTakesTheUnpaidVatOffTheReceivable() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "NONE");
+        Loan l = open();
+        svc.bill("L1", 1, l.instalments().get(0).dueDate());
+        long vat = Math.round(l.instalments().get(0).interestDue() * 0.07);
+        assertThat(bal(LoanService.vatAcct("L1"))).isEqualTo(-vat);
+        Loan off = svc.writeOff("L1", "w", l.instalments().get(0).dueDate(), true);
+        assertThat(off.status()).isEqualTo(Loan.Status.WRITTEN_OFF);
+        assertThat(bal(LoanService.vatAcct("L1"))).isZero();
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+        // the VAT stays payable to the tax authority until the tax team decides on relief
+        assertThat(bal(LoanService.VAT_PAYABLE)).isEqualTo(7_000 + vat);
+    }
+
+    @Test
+    void productsWithoutInstalmentVatAreUntouched() {
+        Loan l = open();
+        Loan billed = svc.bill("L1", 1, l.instalments().get(0).dueDate());
+        assertThat(billed.instalments().get(0).vatDue()).isZero();
+        assertThat(bal(LoanService.vatAcct("L1"))).isZero();
+    }
+
+    /** Like {@link #wireInstalmentVat} but without an invoice sink. */
+    private void wireInstalmentVatNoSink(String target, String rebate) throws IOException {
+        wire(yaml().replace("applies_to: [FEES]", "applies_to: [FEES, " + target + "]")
+                .replace("rebate: NONE", "rebate: \"" + rebate + "\""));
+    }
+
+    @Test
+    void instalmentVatWorksWithoutAnInvoiceSink() throws IOException {
+        wireInstalmentVatNoSink("INSTALMENT_INTEREST", "PERCENT:0.5");
+        Loan l = open();
+        Loan.Instalment first = l.instalments().get(0);
+        assertThat(svc.bill("L1", 1, first.dueDate()).instalments().get(0).vatDue()).isPositive();
+        // settling with the first instalment's VAT unpaid: the VAT is part of what closes the loan
+        long vat1 = svc.bill("L1", 1, first.dueDate()).instalments().get(0).vatDue();
+        long unbilled = l.instalments().stream().skip(1).mapToLong(Loan.Instalment::interestDue).sum();
+        long charged = unbilled - Math.round(unbilled * 0.5);
+        long principalLeft = l.instalments().stream().mapToLong(Loan.Instalment::principalDue).sum();
+        long expected = principalLeft + first.interestDue() + vat1 + charged + Math.round(charged * 0.07);
+        assertThat(svc.settlementQuote("L1", first.dueDate()).minor()).isEqualTo(expected);
+        Loan closed = svc.settle("L1", "s", first.dueDate());
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.vatAcct("L1"))).isZero();
+        assertThat(svc.settlementQuote("L1", first.dueDate()).isZero()).isTrue();
+    }
+
+    @Test
+    void settlingWithNoRebateChargesNoFutureInterestAndNoVatOnIt() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "NONE");
+        Loan l = open();
+        long principalLeft = l.instalments().stream().mapToLong(Loan.Instalment::principalDue).sum();
+        assertThat(svc.settlementQuote("L1", D0).minor()).isEqualTo(principalLeft);
+        assertThat(svc.settle("L1", "s", D0).status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(invoices).hasSize(1); // only the origination fee invoice
+    }
+
+    @Test
+    void vatOnTheWholeInstalmentSettlesOnceEveryInstalmentIsBilled() throws IOException {
+        wireInstalmentVat("INSTALMENT_TOTAL", "NONE");
+        Loan l = open();
+        for (Loan.Instalment i : l.instalments()) {
+            svc.bill("L1", i.number(), i.dueDate());
+        }
+        long owed = svc.settlementQuote("L1", l.instalments().get(11).dueDate()).minor();
+        assertThat(owed).isGreaterThan(l.principal());
+        svc.settle("L1", "s", l.instalments().get(11).dueDate());
+        assertThat(bal(LoanService.vatAcct("L1"))).isZero();
+    }
+
+    @Test
+    void closedAndWrittenOffLoansHaveNothingToSettle() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "PERCENT:0.5");
+        Loan l = open();
+        svc.settle("L1", "s", D0);
+        assertThat(svc.settlementQuote("L1", D0).isZero()).isTrue();
+        svc.disburse("L2", "party-2", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("50000"), Currency.THB), 12, D0, "D1");
+        svc.writeOff("L2", "w", D0, true);
+        // nothing is charged on top for a written-off loan (the recovery path handles what is still owed)
+        assertThat(svc.settlementQuote("L2", D0)).isNotNull();
+    }
+
+    @Test
+    void productsWithoutTaxOrRebateBlocksSettleOnRemainingPrincipal() throws IOException {
+        wire(yaml().replaceAll("(?s)tax:.*?early_settlement:", "early_settlement:"));
+        Loan l = open();
+        assertThat(svc.settlementQuote("L1", D0).minor()).isEqualTo(l.principal());
+        wire(yaml().replaceAll("(?s)early_settlement:.*?delinquency:", "delinquency:"));
+        open();
+        assertThat(svc.settlementQuote("L1", D0).minor()).isEqualTo(10_000_000);
+    }
+
+    @Test
+    void instalmentInvoicesAfterARestructuringCarryTheGeneration() throws IOException {
+        wireInstalmentVat("INSTALMENT_INTEREST", "NONE");
+        Loan l = open();
+        Loan.Instalment first = l.instalments().get(0);
+        svc.bill("L1", 1, first.dueDate());
+        long vat = Math.round(first.interestDue() * 0.07);
+        svc.repay("L1", "p1", Money.ofMinor(first.principalDue() + first.interestDue() + vat, Currency.THB), first.dueDate());
+        Loan re = svc.restructure("L1", "r1", new BigDecimal("0.12"), 12, first.dueDate());
+        invoices.clear();
+        svc.bill("L1", 1, re.instalments().get(0).dueDate());
+        assertThat(invoices).singleElement().satisfies(inv -> assertThat(inv.number()).isEqualTo("INV-L1-g1-I1"));
+    }
 }

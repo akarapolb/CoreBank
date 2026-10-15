@@ -15,9 +15,20 @@ public record Loan(String id, String party, String productCode, int productVersi
         this(id, party, productCode, productVersion, currency, depositAccountId, disbursedOn, principal, instalments, status, null, 0);
     }
 
-    /** One scheduled instalment and what has been done with it. */
+    /**
+     * One scheduled instalment and what has been done with it. {@code vatDue} is the VAT added to the customer's bill when
+     * the instalment is billed (zero for products that charge no VAT on instalments).
+     */
     public record Instalment(int number, LocalDate dueDate, long principalDue, long interestDue, long principalPaid,
-                             long interestPaid, long penaltyAccrued, long penaltyPaid, boolean billed) {
+                             long interestPaid, long penaltyAccrued, long penaltyPaid, boolean billed, long vatDue,
+                             long vatPaid) {
+        /** An instalment without VAT. */
+        public Instalment(int number, LocalDate dueDate, long principalDue, long interestDue, long principalPaid,
+                          long interestPaid, long penaltyAccrued, long penaltyPaid, boolean billed) {
+            this(number, dueDate, principalDue, interestDue, principalPaid, interestPaid, penaltyAccrued, penaltyPaid,
+                    billed, 0, 0);
+        }
+
         public long principalOutstanding() {
             return principalDue - principalPaid;
         }
@@ -30,12 +41,34 @@ public record Loan(String id, String party, String productCode, int productVersi
             return penaltyAccrued - penaltyPaid;
         }
 
+        public long vatOutstanding() {
+            return vatDue - vatPaid;
+        }
+
         public long outstanding() {
-            return principalOutstanding() + interestOutstanding() + penaltyOutstanding();
+            return principalOutstanding() + interestOutstanding() + penaltyOutstanding() + vatOutstanding();
         }
 
         public boolean settled() {
             return billed && outstanding() == 0;
+        }
+
+        /** The same instalment, billed, with the VAT that billing added. */
+        public Instalment withBilled(long vat) {
+            return new Instalment(number, dueDate, principalDue, interestDue, principalPaid, interestPaid, penaltyAccrued,
+                    penaltyPaid, true, vat, vatPaid);
+        }
+
+        /** The same instalment with these amounts paid on top of what was already paid. */
+        public Instalment withPaid(long principal, long interest, long penalty, long vat) {
+            return new Instalment(number, dueDate, principalDue, interestDue, principalPaid + principal,
+                    interestPaid + interest, penaltyAccrued, penaltyPaid + penalty, billed, vatDue, vatPaid + vat);
+        }
+
+        /** The same instalment with this much extra late charge accrued. */
+        public Instalment withPenalty(long extra) {
+            return new Instalment(number, dueDate, principalDue, interestDue, principalPaid, interestPaid,
+                    penaltyAccrued + extra, penaltyPaid, billed, vatDue, vatPaid);
         }
     }
 

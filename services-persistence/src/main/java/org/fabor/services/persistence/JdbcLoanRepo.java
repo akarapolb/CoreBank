@@ -37,11 +37,13 @@ public final class JdbcLoanRepo implements LoanRepo {
                 del.executeUpdate();   // a prepayment or restructuring can shorten the schedule
             }
             try (PreparedStatement ps = c.prepareStatement("INSERT INTO loan_instalment (tenant, loan_id, number, due_date, "
-                    + "principal_due, interest_due, principal_paid, interest_paid, penalty_accrued, penalty_paid, billed) "
-                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (tenant, loan_id, number) DO UPDATE SET "
+                    + "principal_due, interest_due, principal_paid, interest_paid, penalty_accrued, penalty_paid, billed, "
+                    + "vat_due, vat_paid) "
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (tenant, loan_id, number) DO UPDATE SET "
                     + "due_date = EXCLUDED.due_date, principal_due = EXCLUDED.principal_due, interest_due = EXCLUDED.interest_due, "
                     + "principal_paid = EXCLUDED.principal_paid, interest_paid = EXCLUDED.interest_paid, "
-                    + "penalty_accrued = EXCLUDED.penalty_accrued, penalty_paid = EXCLUDED.penalty_paid, billed = EXCLUDED.billed")) {
+                    + "penalty_accrued = EXCLUDED.penalty_accrued, penalty_paid = EXCLUDED.penalty_paid, billed = EXCLUDED.billed, "
+                    + "vat_due = EXCLUDED.vat_due, vat_paid = EXCLUDED.vat_paid")) {
                 for (Loan.Instalment i : l.instalments()) {
                     ps.setString(1, tenant.value());
                     ps.setString(2, l.id());
@@ -54,6 +56,8 @@ public final class JdbcLoanRepo implements LoanRepo {
                     ps.setLong(9, i.penaltyAccrued());
                     ps.setLong(10, i.penaltyPaid());
                     ps.setBoolean(11, i.billed());
+                    ps.setLong(12, i.vatDue());
+                    ps.setLong(13, i.vatPaid());
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -78,11 +82,11 @@ public final class JdbcLoanRepo implements LoanRepo {
             }
             List<Loan.Instalment> list = new ArrayList<>();
             try (PreparedStatement ps = Jdbc.prep(c, "SELECT number, due_date, principal_due, interest_due, principal_paid, "
-                    + "interest_paid, penalty_accrued, penalty_paid, billed FROM loan_instalment WHERE tenant = ? AND loan_id = ? "
+                    + "interest_paid, penalty_accrued, penalty_paid, billed, vat_due, vat_paid FROM loan_instalment WHERE tenant = ? AND loan_id = ? "
                     + "ORDER BY number", tenant.value(), id); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new Loan.Instalment(rs.getInt(1), rs.getObject(2, LocalDate.class), rs.getLong(3), rs.getLong(4),
-                            rs.getLong(5), rs.getLong(6), rs.getLong(7), rs.getLong(8), rs.getBoolean(9)));
+                            rs.getLong(5), rs.getLong(6), rs.getLong(7), rs.getLong(8), rs.getBoolean(9), rs.getLong(10), rs.getLong(11)));
                 }
             }
             return Optional.of(head.withInstalments(List.copyOf(list), head.status()));

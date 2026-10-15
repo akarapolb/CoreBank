@@ -137,4 +137,17 @@ class HirePurchaseRulesTest {
             assertThat(ProductValidator.ok(ProductValidator.validate(product(CAR.replace("TIERED:0.6,0.7,1", legacy))))).isTrue();
         }
     }
+
+    @Test
+    void instalmentVatTargetsAreValidated() {
+        String base = CAR.replace("early_settlement:", "tax:\n  vat: { applies_to: [INSTALMENT_INTEREST], rate: 0.07 }\nearly_settlement:");
+        assertThat(ProductValidator.validate(product(base))).noneMatch(i -> i.severity() == Issue.Severity.ERROR);
+        assertThat(errorPaths(ProductValidator.validate(product(base.replace("INSTALMENT_INTEREST", "INSTALMENT_TOTAL")))))
+                .isEmpty();
+        assertThat(errorPaths(ProductValidator.validate(product(base.replace("INSTALMENT_INTEREST", "SOMETHING")))))
+                .contains("tax.vat.applies_to");
+        assertThat(errorPaths(ProductValidator.validate(product(base.replace("[INSTALMENT_INTEREST]",
+                "[INSTALMENT_INTEREST, INSTALMENT_TOTAL]"))))).contains("tax.vat.applies_to");
+        assertThat(errorPaths(ProductValidator.validate(product(base.replace("VAT_DUE, ", ""))))).contains("repayment_waterfall");
+    }
 }

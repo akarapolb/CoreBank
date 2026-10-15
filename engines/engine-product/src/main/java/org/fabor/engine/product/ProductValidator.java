@@ -16,6 +16,7 @@ import org.fabor.platform.money.Currency;
 /** Structural and semantic checks that do not depend on a jurisdiction (those live in rule packs). */
 public final class ProductValidator {
     public static final List<String> FEE_VARIABLES = List.of("principal", "term", "overdue", "outstanding");
+    private static final Set<String> VAT_TARGETS = Set.of("FEES", "INSTALMENT_INTEREST", "INSTALMENT_TOTAL");
     private static final Set<String> WATERFALL = Set.of("FEES_DUE", "PENALTY_DUE", "VAT_DUE", "INTEREST_DUE", "PRINCIPAL_DUE");
     private static final Set<String> FEE_TRIGGERS = Set.of("DISBURSEMENT", "MONTHLY", "ANNUAL", "DAILY_WHILE_OVERDUE",
             "EARLY_SETTLEMENT", "ON_REQUEST");
@@ -218,6 +219,20 @@ public final class ProductValidator {
         }
         if (v.appliesTo() == null || v.appliesTo().isEmpty()) {
             out.add(Issue.error("tax.vat.applies_to", "Say what VAT applies to"));
+            return;
+        }
+        for (String a : v.appliesTo()) {
+            if (!VAT_TARGETS.contains(a)) {
+                out.add(Issue.error("tax.vat.applies_to", "Unknown VAT target " + a + "; use " + VAT_TARGETS));
+            }
+        }
+        boolean interest = v.appliesTo().contains("INSTALMENT_INTEREST");
+        boolean total = v.appliesTo().contains("INSTALMENT_TOTAL");
+        if (interest && total) {
+            out.add(Issue.error("tax.vat.applies_to", "INSTALMENT_INTEREST and INSTALMENT_TOTAL exclude each other"));
+        }
+        if ((interest || total) && (d.repaymentWaterfall() == null || !d.repaymentWaterfall().contains("VAT_DUE"))) {
+            out.add(Issue.error("repayment_waterfall", "VAT on instalments needs VAT_DUE in the repayment waterfall"));
         }
     }
 

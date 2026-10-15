@@ -37,7 +37,7 @@ income_recognition:
 
 tax:
   vat:
-    applies_to: [INSTALLMENT]     # VAT on each HP installment
+    applies_to: [INSTALMENT_INTEREST]   # FEES | INSTALMENT_INTEREST (VAT on the interest part of each instalment) | INSTALMENT_TOTAL (on the whole instalment)
     rate: 0.07
     point: DUE_DATE
 
@@ -54,7 +54,7 @@ repayment_waterfall: [FEES_DUE, PENALTY_DUE, VAT_DUE, INTEREST_DUE, PRINCIPAL_DU
 
 early_settlement:
   allowed: true
-  rebate: REGULATORY_FORMULA_TH_HP
+  rebate: "TIERED:0.6,0.7,1"     # ACTUARIAL | RULE_OF_78 | PERCENT:x | TIERED:a,b,c (share of interest not yet due excused)
   fee: "remaining_interest * 0.0"
 
 delinquency:
