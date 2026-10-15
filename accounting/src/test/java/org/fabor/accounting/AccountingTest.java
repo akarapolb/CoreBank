@@ -119,6 +119,24 @@ class AccountingTest {
     }
 
     @Test
+    void leaseChartExtendsTheRetailChart() {
+        GlMapping m = GlMapping.leaseTfrs16V1();
+        assertThat(m.name()).isEqualTo("lease_tfrs16_v1");
+        assertThat(m.map("dep:Z").code()).isEqualTo("2100");                      // the retail rules are still there
+        assertThat(m.map("lease:F1:net-investment").code()).isEqualTo("1400");
+        assertThat(m.map("lease:O1:rent-receivable").code()).isEqualTo("1410");
+        assertThat(m.map("lease:O1:accrued-rent").type()).isEqualTo(GlAccount.Type.ASSET);
+        assertThat(m.map("gl:leased-assets").code()).isEqualTo("1500");
+        assertThat(m.map("gl:accumulated-depreciation").code()).isEqualTo("1590");
+        assertThat(m.map("gl:supplier-payable").type()).isEqualTo(GlAccount.Type.LIABILITY);
+        assertThat(m.map("gl:finance-income").type()).isEqualTo(GlAccount.Type.INCOME);
+        assertThat(m.map("gl:rental-income").code()).isEqualTo("4410");
+        assertThat(m.map("gl:depreciation-expense").type()).isEqualTo(GlAccount.Type.EXPENSE);
+        // the plain retail chart does not know lease accounts
+        assertThatThrownBy(() -> GlMapping.retailV1().map("lease:F1:net-investment")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void otherTenantsAreNotMixedIn() {
         bookSomeActivity();
         outbox.forEach(projection::apply);

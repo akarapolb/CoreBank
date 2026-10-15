@@ -57,7 +57,30 @@ public final class GlMapping {
 
     /** Standard Phase 1 chart for retail deposits and personal loans. */
     public static GlMapping retailV1() {
-        return named("retail_th_v1")
+        return retailRules(named("retail_th_v1")).build();
+    }
+
+    /**
+     * The retail chart plus lessor accounts for TFRS 16 finance and operating leases: net investment in leases, rent
+     * receivable, accrued (deferred) rent, assets under operating leases with their accumulated depreciation, supplier
+     * payable, finance and rental income and depreciation expense.
+     */
+    public static GlMapping leaseTfrs16V1() {
+        return retailRules(named("lease_tfrs16_v1"))
+                .rule("lease:.*:net-investment", "1400", "Net investment in finance leases", GlAccount.Type.ASSET)
+                .rule("lease:.*:rent-receivable", "1410", "Operating lease rent receivable", GlAccount.Type.ASSET)
+                .rule("lease:.*:accrued-rent", "1420", "Accrued (deferred) rent, net", GlAccount.Type.ASSET)
+                .rule("gl:leased-assets", "1500", "Assets under operating leases", GlAccount.Type.ASSET)
+                .rule("gl:accumulated-depreciation", "1590", "Accumulated depreciation, leased assets", GlAccount.Type.ASSET)
+                .rule("gl:supplier-payable", "2200", "Supplier payable", GlAccount.Type.LIABILITY)
+                .rule("gl:finance-income", "4400", "Finance lease income", GlAccount.Type.INCOME)
+                .rule("gl:rental-income", "4410", "Operating lease rental income", GlAccount.Type.INCOME)
+                .rule("gl:depreciation-expense", "5200", "Depreciation, leased assets", GlAccount.Type.EXPENSE)
+                .build();
+    }
+
+    private static Builder retailRules(Builder b) {
+        return b
                 .rule("dep:.*", "2100", "Customer deposits", GlAccount.Type.LIABILITY)
                 .rule("loan:.*:principal", "1300", "Loans receivable", GlAccount.Type.ASSET)
                 .rule("loan:.*:interest", "1310", "Interest receivable", GlAccount.Type.ASSET)
@@ -70,7 +93,6 @@ public final class GlMapping {
                 .rule("gl:interest-income", "4100", "Interest income", GlAccount.Type.INCOME)
                 .rule("gl:fee-income", "4200", "Fee income", GlAccount.Type.INCOME)
                 .rule("gl:penalty-income", "4300", "Penalty income", GlAccount.Type.INCOME)
-                .rule("gl:interest-expense", "5100", "Interest expense", GlAccount.Type.EXPENSE)
-                .build();
+                .rule("gl:interest-expense", "5100", "Interest expense", GlAccount.Type.EXPENSE);
     }
 }

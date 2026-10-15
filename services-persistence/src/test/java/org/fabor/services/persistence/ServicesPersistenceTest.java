@@ -219,6 +219,31 @@ class ServicesPersistenceTest {
     }
 
     @Test
+    void leaseRoundTripAndAccrualState() {
+        var leases = new JdbcLeaseRepo(ds, T);
+        assertThat(leases.find("LS1")).isEmpty();
+        org.fabor.lending.Lease lease = new org.fabor.lending.Lease("LS1", "P-LEASE", org.fabor.lending.Lease.Kind.OPERATING, "THB",
+                "SAV-P1", LocalDate.of(2026, 1, 15), 6_000_000, 3_000_000, List.of(
+                        new org.fabor.lending.Lease.Period(1, LocalDate.of(2026, 2, 16), 0, 0, 483_334, 500_000, false, 0),
+                        new org.fabor.lending.Lease.Period(2, LocalDate.of(2026, 3, 16), 500_000, 0, 483_333, 500_000, false, 0)),
+                org.fabor.lending.Lease.Status.ACTIVE);
+        leases.save(lease);
+        assertThat(leases.find("LS1")).contains(lease);
+        // accrual and a partial collection change only the state columns
+        org.fabor.lending.Lease accrued = lease.withPeriods(List.of(
+                new org.fabor.lending.Lease.Period(1, LocalDate.of(2026, 2, 16), 0, 0, 483_334, 500_000, true, 0),
+                new org.fabor.lending.Lease.Period(2, LocalDate.of(2026, 3, 16), 500_000, 0, 483_333, 500_000, true, 200_000)),
+                org.fabor.lending.Lease.Status.ACTIVE);
+        leases.save(accrued);
+        assertThat(leases.find("LS1")).contains(accrued);
+        assertThat(leases.find("LS1").orElseThrow().periods().get(1).outstanding()).isEqualTo(300_000);
+        leases.save(accrued.withPeriods(accrued.periods(), org.fabor.lending.Lease.Status.COMPLETED));
+        assertThat(leases.find("LS1").orElseThrow().status()).isEqualTo(org.fabor.lending.Lease.Status.COMPLETED);
+        assertThat(leases.idsByParty("P-LEASE")).containsExactly("LS1");
+        assertThat(leases.idsByParty("nobody")).isEmpty();
+    }
+
+    @Test
     void masterBuilderRunsEndToEndOnTheDatabaseCatalog() throws IOException {
         var store = new JdbcCatalogStore(ds);
         MasterBuilder mb = new MasterBuilder(store, List.of(new ThailandRetailRules()), Set.of("PRODUCT", "RISK"),

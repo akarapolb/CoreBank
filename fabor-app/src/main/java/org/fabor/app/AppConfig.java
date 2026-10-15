@@ -25,6 +25,8 @@ import org.fabor.ledger.adapter.persistence.PostgresLedgerStore;
 import org.fabor.ledger.adapter.web.LedgerGrpcService;
 import org.fabor.ledger.application.LedgerService;
 import org.fabor.ledger.application.LedgerStore;
+import org.fabor.lending.LeaseRepo;
+import org.fabor.lending.LeaseService;
 import org.fabor.lending.LoanRepo;
 import org.fabor.lending.LoanService;
 import org.fabor.onboarding.OnboardingService;
@@ -41,6 +43,7 @@ import org.fabor.services.persistence.JdbcAuditStore;
 import org.fabor.services.persistence.JdbcCatalogStore;
 import org.fabor.services.persistence.JdbcConsentStore;
 import org.fabor.services.persistence.JdbcDepositRepo;
+import org.fabor.services.persistence.JdbcLeaseRepo;
 import org.fabor.services.persistence.JdbcLoanRepo;
 import org.fabor.services.persistence.JdbcPartyRepo;
 import org.fabor.services.persistence.JdbcVaultStore;
@@ -183,6 +186,16 @@ class AppConfig {
     LoanService loanService(TenantId tenant, LedgerService ledger, LoanRepo repo,
                             BiFunction<String, Integer, ProductDefinition> products, BusinessCalendar calendar) {
         return new LoanService(tenant, ledger, repo, products, calendar);
+    }
+
+    @Bean
+    LeaseRepo leaseRepo(DataSource ds, TenantId tenant) {
+        return new JdbcLeaseRepo(ds, tenant);
+    }
+
+    @Bean
+    LeaseService leaseService(TenantId tenant, LedgerService ledger, LeaseRepo repo, BusinessCalendar calendar) {
+        return new LeaseService(tenant, ledger, repo, calendar);
     }
 
     @Bean
