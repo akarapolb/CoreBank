@@ -13,6 +13,8 @@ import org.fabor.engine.product.ProductValidator;
 import org.fabor.engine.schedule.Installment;
 import org.fabor.engine.schedule.Frequency;
 import org.fabor.engine.schedule.Method;
+import org.fabor.engine.schedule.RebateRule;
+import org.fabor.engine.schedule.Schedule;
 import org.fabor.engine.schedule.ScheduleEngine;
 import org.fabor.engine.schedule.ScheduleRequest;
 import org.fabor.engine.tax.TaxInvoice;
@@ -222,18 +224,65 @@ public final class LoanService {
         return repo.find(loanId).orElseThrow();
     }
 
-    /** Amount that closes the loan on {@code date}: unpaid billed items plus remaining principal, no future interest. */
+    /**
+     * Amount that closes the loan on {@code date}: unpaid billed items plus remaining principal, plus the part of the
+     * interest not yet due that the product's early-settlement rebate rule does not excuse. With the default (actuarial)
+     * rule no future interest is charged.
+     */
     public Money settlementQuote(String loanId, LocalDate date) {
         Loan loan = load(loanId);
-        long total = 0;
+        long total = chargeableInterest(loan);
         for (Loan.Instalment i : loan.instalments()) {
             total += i.billed() ? i.outstanding() : i.principalOutstanding();
         }
         return money(loan, total);
     }
 
+    /**
+     * Interest of the instalments not yet billed that is still charged on early settlement: what remains after the
+     * product's rebate rule. Zero for the actuarial rule (the schedule's own interest is simply not earned), for a
+     * closed or written-off loan and for products without a rebate rule.
+     */
+    private long chargeableInterest(Loan loan) {
+        if (loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
+            return 0;
+        }
+        ProductDefinition p = product(loan.productCode(), loan.productVersion());
+        if (p.earlySettlement() == null || p.earlySettlement().rebate() == null) {
+            return 0;
+        }
+        RebateRule rule = RebateRule.parse(p.earlySettlement().rebate());
+        if (rule.kind() == RebateRule.Kind.ACTUARIAL) {
+            return 0;
+        }
+        Currency cur = Currency.of(loan.currency());
+        List<Installment> rows = new ArrayList<>();
+        long totalInterest = 0;
+        int billed = 0;
+        for (Loan.Instalment i : loan.instalments()) {
+            Money principal = Money.ofMinor(i.principalDue(), cur);
+            Money interest = Money.ofMinor(i.interestDue(), cur);
+            rows.add(new Installment(i.number(), i.dueDate(), principal, interest, principal.plus(interest),
+                    Money.zero(cur)));
+            totalInterest += i.interestDue();
+            if (i.billed()) {
+                billed++;
+            }
+        }
+        long unbilled = loan.instalments().stream().filter(i -> !i.billed()).mapToLong(Loan.Instalment::interestDue).sum();
+        Schedule schedule = new Schedule(rows, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
+                Money.ofMinor(totalInterest, cur), Money.zero(cur));
+        return unbilled - rule.rebate(schedule, billed).minor();
+    }
+
+    /**
+     * Closes the loan early. Pays what {@link #settlementQuote} says from the customer's deposit account in one ledger
+     * batch: billed items and principal as before, and the interest the rebate rule still charges as income (or
+     * suspense on a non-accrual loan), so the batch is atomic and a retry posts nothing twice.
+     */
     public Loan settle(String loanId, String reference, LocalDate date) {
         Loan loan = load(loanId);
+        long chargeable = chargeableInterest(loan);
         Money quote = settlementQuote(loanId, date);
         List<Waterfall.Allocation> all = new ArrayList<>();
         for (Loan.Instalment i : loan.instalments()) {
@@ -250,7 +299,8 @@ public final class LoanService {
         if (quote.isZero()) {
             return keep(loan.withStatus(Loan.Status.CLOSED));
         }
-        applyAllocation(loan, "settle-" + reference, date, all, quote);
+        AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
+        applyAllocation(loan, "settle-" + reference, date, all, quote, chargeable, income);
         Loan after = repo.find(loanId).orElseThrow();
         // unbilled future instalments are cancelled: nothing more will be billed
         return keep(after.withStatus(Loan.Status.CLOSED));
@@ -258,6 +308,11 @@ public final class LoanService {
 
     private void applyAllocation(Loan loan, String reference, LocalDate date, List<Waterfall.Allocation> allocations,
                                  Money total) {
+        applyAllocation(loan, reference, date, allocations, total, 0, null);
+    }
+
+    private void applyAllocation(Loan loan, String reference, LocalDate date, List<Waterfall.Allocation> allocations,
+                                 Money total, long unbilledInterest, AccountId unbilledIncome) {
         long principal = 0;
         long interest = 0;
         long penalty = 0;
@@ -293,6 +348,9 @@ public final class LoanService {
         }
         if (penalty > 0) {
             entries.add(new Entry(penaltyAcct(loan.id()), BalanceType.SETTLED, Direction.CREDIT, money(loan, penalty)));
+        }
+        if (unbilledInterest > 0) {
+            entries.add(new Entry(unbilledIncome, BalanceType.SETTLED, Direction.CREDIT, money(loan, unbilledInterest)));
         }
         post(loan.id(), "pay-" + reference, date, entries);
         boolean allPaid = list.stream().allMatch(i -> i.principalOutstanding() == 0 && i.penaltyOutstanding() == 0

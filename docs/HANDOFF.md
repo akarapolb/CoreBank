@@ -9,8 +9,8 @@ Fabor OS: an AI-native core banking platform (retail, commercial, virtual bank; 
 ## State
 
 - **Phase 0 and Phase 1: built and tested.** Every Phase 1 item that code can close is closed. What cannot be closed here is listed in `phase1-status.md` ("Not built, and why") and `phase0-exit-report.md`.
-- **Phase 2: started.** `engines/engine-tax` (VAT, `TaxInvoice`) and `engines/engine-lease` (finance and operating lease, `LeaseJournal`) are committed and tested. Nothing else from Phase 2 exists.
-- Last full build: BUILD SUCCESS, all modules, 90% branch coverage gate met, app tests green on real PostgreSQL. Browser smoke tests (token mode and OIDC mode) pass.
+- **Phase 2: started.** `engines/engine-tax` (VAT, `TaxInvoice`, `InstalmentVat`) and `engines/engine-lease` (finance and operating lease, `LeaseJournal`) are committed and tested. Hire purchase, first slice (this session): flat-rate schedules accept a balloon (`Method.ANNUITY_FROM_FLAT`); `RebateRule` (`ACTUARIAL`/`EIR`/`NONE`, `RULE_OF_78`, `PERCENT:x`, `TIERED:a,b,c`) is validated by `ProductValidator` and applied by `LoanService.settle` (the interest the rule still charges is one atomic ledger batch with the payment, to income or suspense on a non-accrual loan); `ThailandHirePurchaseRules` (rule pack `TH-HP-VEHICLE-v1`) checks vehicle products. Nothing else from Phase 2 exists.
+- Last full build (Windows, JDK 21, PostgreSQL 16 in Docker via `FABOR_PG_URL`): BUILD SUCCESS, all modules, coverage gates met, app tests green on real PostgreSQL, with `LedgerInvariantsTest` excluded (see "Things that will bite you"). The browser smoke tests (token mode and OIDC mode) were last run in the earlier Linux session; they were not re-run after the hire-purchase change.
 
 ## Standing instructions from the user
 
@@ -57,6 +57,10 @@ NODE_PATH=$(npm root -g) OUT=docs/ui node scripts/ui-tour.js # regenerate the 18
 
 ## Things that will bite you
 
+- **Windows.** A global `core.autocrlf=true` turns test resources into CRLF and breaks tests that match on `"
+"`; the repo now has `.gitattributes` (`* text=auto eol=lf`). `Golden.render` forces LF in the pretty printer (Jackson used the platform separator). Testcontainers 1.x cannot talk to Docker Engine 29 here, so PostgreSQL tests were silently skipped ("No PostgreSQL; skipping"): start a container yourself (`docker run -d --name fabor-test-pg -e POSTGRES_PASSWORD=... -p 127.0.0.1:55432:5432 postgres:16.4-alpine`) and set `FABOR_PG_URL`/`FABOR_PG_USER`/`FABOR_PG_PASSWORD`. `LedgerInvariantsTest` opens thousands of connections and exhausts Windows' ephemeral ports (`BindException: Address already in use`), so it did not run on Windows: use `-Dtest='!LedgerInvariantsTest' -Dsurefire.failIfNoSpecifiedTests=false` or run it on Linux. Do not leave a shell inside a module's `target/` (Maven cannot clean it).
+- **Vehicle hire purchase in Thailand may not be quoted flat.** Law-firm summaries of the Contract Committee notification in force from 10 January 2023 say interest must be charged on the outstanding principal, with effective-rate ceilings of 10% (new car), 15% (used car), 23% (motorcycle) and an early-settlement rebate of at least 60% / 70% / 100% of the interest not yet due at up to a third / two thirds / beyond two thirds of the term paid. The Bank of Thailand has since taken over supervision (Notification 55/2568, December 2025). The primary texts were not read; the numbers in `ThailandHirePurchaseRules` are configuration to confirm with counsel. The flat-rate engine therefore suits non-vehicle hire purchase (equipment, consumer goods), and vehicle products use `ANNUITY` plus the rule pack.
+
 - `pkill -f` and `pgrep -f` can kill your own shell; use pid files.
 - A stale app holding the database makes `drop database` fail silently, so the tour shows "Version already published". Kill strays first.
 - Test JVM: `-Xlint:all -Werror`, `dependencyConvergence` (skipped only in `fabor-app`), 90% branch coverage per module. New code needs tests in the same module; `-DskipTests` makes the coverage check fail unless you add `-Djacoco.skip=true`.
@@ -67,7 +71,7 @@ NODE_PATH=$(npm root -g) OUT=docs/ui node scripts/ui-tour.js # regenerate the 18
 
 ## Next steps (Phase 2, in plan order)
 
-1. **Hire purchase:** annuity from flat rate, EIR disclosure, balloon, VAT on instalments, e-Tax invoice integration (engine-tax has the model; the sink is a port). Hire-purchase rate caps and the early-settlement rebate formula (the "rule of 78"-style Thai HP rebate) as a rule pack. Prepayment and holidays currently refuse flat-rate products.
+1. **Hire purchase, rest of it:** VAT on instalments at billing time (`InstalmentVat` computes the split and the invoice; `Loan.Instalment` has no VAT fields and the waterfall's `VAT_DUE` is not postable yet, and which part of an instalment is taxable is a tax-advice question); the e-Tax sink for instalment invoices; EIR/APR disclosure text; prepayment and payment holidays on flat-rate loans (still refused by `requireAnnuity`); the console's Master Builder emits no vehicle segment yet, so the registered `ThailandHirePurchaseRules` pack (in `AppConfig`) only applies to products that declare `NEW_CAR`, `USED_CAR` or `MOTORCYCLE` in `segment`.
 2. **Leases (TFRS 16):** wire `engine-lease` into the lending service and GL mapping (`lease_tfrs16_v1`).
 3. **Asset register,** title, insurance, dealer channel; then fleet master agreements, call-offs, consolidated billing; floor plan lines, curtailments, payoff on sale, sold-out-of-trust alerts.
 4. **Collections v1, repossession and remarketing, TFRS 9 ECL engine v1** (restructuring currently books a modification loss only, never a gain).

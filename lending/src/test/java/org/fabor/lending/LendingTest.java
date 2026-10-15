@@ -550,4 +550,90 @@ class LendingTest {
         open();
         assertThatThrownBy(() -> svc.writeOff("L1", "w", D0.plusDays(400), false)).hasMessageContaining("override");
     }
+
+    /** The sample loan turned into a flat-rate hire purchase with the given early-settlement rebate rule. */
+    private void wireHirePurchase(String rebate) throws IOException {
+        wire(yaml().replace("rate_type: FIXED", "rate_type: FLAT").replace("rate: 0.18", "rate: 0.06")
+                .replace("method: ANNUITY", "method: ANNUITY_FROM_FLAT").replace("rebate: NONE", "rebate: \"" + rebate + "\""));
+    }
+
+    /** Opens the hire purchase, pays {@code paid} instalments on time and returns {quote, principalLeft, unbilledInterest}. */
+    private long[] payThenQuote(int paid) {
+        Loan l = svc.disburse("L1", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        for (int n = 1; n <= paid; n++) {
+            Loan.Instalment i = l.instalments().get(n - 1);
+            svc.bill("L1", n, i.dueDate());
+            svc.repay("L1", "r" + n, Money.ofMinor(i.principalDue() + i.interestDue(), Currency.THB), i.dueDate());
+        }
+        long principalLeft = l.instalments().stream().skip(paid).mapToLong(Loan.Instalment::principalDue).sum();
+        long unbilled = l.instalments().stream().skip(paid).mapToLong(Loan.Instalment::interestDue).sum();
+        LocalDate asOf = paid == 0 ? D0 : l.instalments().get(paid - 1).dueDate();
+        return new long[] {svc.settlementQuote("L1", asOf).minor(), principalLeft, unbilled};
+    }
+
+    @Test
+    void ruleOf78SettlementChargesTheShareOfInterestTheFormulaKeeps() throws IOException {
+        wireHirePurchase("RULE_OF_78");
+        Loan l = svc.disburse("L1", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        long totalInterest = l.instalments().stream().mapToLong(Loan.Instalment::interestDue).sum();
+        assertThat(totalInterest).isEqualTo(600_000); // 6% flat on 100,000.00 for 12 months
+        for (int n = 1; n <= 4; n++) {
+            Loan.Instalment i = l.instalments().get(n - 1);
+            svc.bill("L1", n, i.dueDate());
+            svc.repay("L1", "r" + n, Money.ofMinor(i.principalDue() + i.interestDue(), Currency.THB), i.dueDate());
+        }
+        long principalLeft = l.instalments().stream().skip(4).mapToLong(Loan.Instalment::principalDue).sum();
+        long unbilled = l.instalments().stream().skip(4).mapToLong(Loan.Instalment::interestDue).sum();
+        // 8 of 12 instalments left: the rule excuses 8*9/(12*13) of the total interest, i.e. 600,000 x 72/156 = 276,923
+        long rebate = 276_923;
+        Money quote = svc.settlementQuote("L1", l.instalments().get(3).dueDate());
+        assertThat(quote.minor()).isEqualTo(principalLeft + unbilled - rebate);
+        assertThat(quote.minor()).isGreaterThan(principalLeft); // the customer pays some future interest
+        long incomeBefore = bal(LoanService.INTEREST_INCOME);
+        Loan closed = svc.settle("L1", "s1", l.instalments().get(3).dueDate());
+        assertThat(closed.status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.INTEREST_INCOME) - incomeBefore).isEqualTo(unbilled - rebate);
+        assertThat(bal(LoanService.principalAcct("L1"))).isZero();
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        // a retry (same reference or another) posts nothing more
+        long incomeAfter = bal(LoanService.INTEREST_INCOME);
+        assertThat(svc.settle("L1", "s1", l.instalments().get(3).dueDate()).status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(svc.settle("L1", "s2", l.instalments().get(3).dueDate()).status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(incomeAfter);
+        assertThat(svc.settlementQuote("L1", D0.plusYears(1)).isZero()).isTrue();
+    }
+
+    @Test
+    void tieredSettlementExcusesMoreTheLongerTheCustomerHasPaid() throws IOException {
+        // 12 instalments: up to 4 paid -> 60% of the interest not yet due is excused, up to 8 -> 70%, beyond -> all
+        double[] excused = {0.6, 0.6, 0.7, 1.0};
+        int[] paid = {2, 4, 6, 9};
+        for (int k = 0; k < paid.length; k++) {
+            wireHirePurchase("TIERED:0.6,0.7,1");
+            long[] q = payThenQuote(paid[k]);
+            long rebate = Math.round(q[2] * excused[k]);
+            assertThat(q[0]).as(paid[k] + " paid").isEqualTo(q[1] + q[2] - rebate);
+            assertThat(q[2]).isPositive();
+            if (excused[k] == 1.0) {
+                assertThat(q[0]).isEqualTo(q[1]); // nothing but the principal still outstanding
+            } else {
+                assertThat(q[0]).isGreaterThan(q[1]);
+            }
+        }
+    }
+
+    @Test
+    void settlementOnANonAccrualLoanBooksTheChargedInterestAsSuspense() throws IOException {
+        wireHirePurchase("PERCENT:0.5");
+        Loan l = svc.disburse("L1", "party-1", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
+        LocalDate d = l.instalments().get(0).dueDate();
+        svc.bill("L1", 1, d);
+        // 90+ days late: the loan goes to non-accrual
+        svc.accrueDaily("L1", d.plusDays(91));
+        assertThat(svc.settlementQuote("L1", d.plusDays(91)).minor()).isPositive();
+        long suspenseBefore = bal(LoanService.INTEREST_SUSPENSE);
+        long unbilled = l.instalments().stream().skip(1).mapToLong(Loan.Instalment::interestDue).sum();
+        svc.settle("L1", "s", d.plusDays(91));
+        assertThat(bal(LoanService.INTEREST_SUSPENSE) - suspenseBefore).isEqualTo(unbilled - Math.round(unbilled * 0.5)); // the rebate rounds half-up, in the customer's favour
+    }
 }

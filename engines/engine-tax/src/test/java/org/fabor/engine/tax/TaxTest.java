@@ -72,4 +72,19 @@ class TaxTest {
         assertThatThrownBy(() -> new TaxInvoice("N", LocalDate.of(2026, 1, 1), "T", "b", List.of(l), thb(101), thb(7), thb(108)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void instalmentVatTaxesTheChosenBase() {
+        // instalment of 10,000.00 = 8,500.00 principal + 1,500.00 interest
+        var onInterest = InstalmentVat.of(thb(850_000), thb(150_000), InstalmentVat.Base.INTEREST, SEVEN);
+        assertThat(onInterest.base().minor()).isEqualTo(150_000);
+        assertThat(onInterest.vat().minor()).isEqualTo(10_500);
+        var onTotal = InstalmentVat.of(thb(850_000), thb(150_000), InstalmentVat.Base.TOTAL, SEVEN);
+        assertThat(onTotal.base().minor()).isEqualTo(1_000_000);
+        assertThat(onTotal.vat().minor()).isEqualTo(70_000);
+        TaxInvoice inv = InstalmentVat.invoice("HP-1", 3, LocalDate.of(2026, 4, 15), "0105500000001", "party-1", onTotal);
+        assertThat(inv.number()).isEqualTo("INV-HP-1-I3");
+        assertThat(inv.gross().minor()).isEqualTo(1_070_000);
+        assertThat(inv.lines()).singleElement().extracting(TaxInvoice.Line::description).isEqualTo("Instalment 3 of HP-1");
+    }
 }

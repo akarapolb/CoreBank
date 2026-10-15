@@ -48,6 +48,6 @@ Measured against the Phase 1 plan items ([07](07-roadmap.md), `plan/plan.json`).
 ## Known gaps in what is built
 
 - Loan servicing still lacks debt consolidation and the TFRS 9 allowance behind write-offs (Phase 2 ECL). Restructuring books a modification loss but never a gain, and ignores interest accrued since the last due date.
-- Prepayment and holidays do not apply to flat-rate (hire purchase) products; those need the rebate rules of Phase 2.
+- Prepayment and holidays do not apply to flat-rate (hire purchase) products. Early settlement of such products now follows the product's rebate rule (Phase 2).
 - OIDC (API tokens and the console's PKCE sign-in) is exercised only against a locally generated key and `scripts/mock-idp.js`, never a real Keycloak.
 - Rule-pack values (rate cap, retention, thresholds) are configuration to confirm with counsel and the regulator, not legal advice.

@@ -11,7 +11,7 @@ import org.fabor.platform.time.BusinessCalendar;
 /**
  * Thai retail lending rules, v1 subset: the personal-loan interest ceiling (25% a year all-in, applied here
  * to the effective rate of a sample quote at the product's own default or smallest permitted principal and
- * term). Hire-purchase flat-rate caps and rebate formulas arrive with Phase 2 products.
+ * term). Vehicle hire purchase is covered by {@link ThailandHirePurchaseRules}.
  * <p>Rule values are configuration of the pack, not law: confirm against current Bank of Thailand notices
  * before production use.
  */

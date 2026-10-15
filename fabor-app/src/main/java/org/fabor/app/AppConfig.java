@@ -17,6 +17,7 @@ import org.fabor.deposit.DepositRepo;
 import org.fabor.deposit.DepositService;
 import org.fabor.engine.product.ProductDefinition;
 import org.fabor.engine.product.ProductLoader;
+import org.fabor.engine.product.ThailandHirePurchaseRules;
 import org.fabor.engine.product.ThailandRetailRules;
 import org.fabor.ledger.adapter.metrics.MeteredLedgerStore;
 import org.fabor.ledger.adapter.persistence.GroupCommitLedgerStore;
@@ -134,7 +135,7 @@ class AppConfig {
 
     @Bean
     MasterBuilder masterBuilder(CatalogStore store, Clock clock) {
-        return new MasterBuilder(store, java.util.List.of(new ThailandRetailRules()),
+        return new MasterBuilder(store, java.util.List.of(new ThailandRetailRules(), new ThailandHirePurchaseRules()),
                 Set.of("PRODUCT", "RISK", "FINANCE", "COMPLIANCE"), clock);
     }
 

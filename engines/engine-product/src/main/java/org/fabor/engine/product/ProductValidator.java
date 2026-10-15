@@ -10,6 +10,7 @@ import org.fabor.engine.product.ProductDefinition.Param;
 import org.fabor.engine.product.ProductDefinition.RateType;
 import org.fabor.engine.schedule.Frequency;
 import org.fabor.engine.schedule.Method;
+import org.fabor.engine.schedule.RebateRule;
 import org.fabor.platform.money.Currency;
 
 /** Structural and semantic checks that do not depend on a jurisdiction (those live in rule packs). */
@@ -48,6 +49,7 @@ public final class ProductValidator {
         fees(d, out);
         waterfall(d, lending, out);
         tax(d, out);
+        earlySettlement(d, out);
         delinquency(d, lending, out);
         deposit(d, out);
         if (d.accounting() == null || d.accounting().glMapping() == null || d.accounting().glMapping().isBlank()) {
@@ -216,6 +218,18 @@ public final class ProductValidator {
         }
         if (v.appliesTo() == null || v.appliesTo().isEmpty()) {
             out.add(Issue.error("tax.vat.applies_to", "Say what VAT applies to"));
+        }
+    }
+
+    private static void earlySettlement(ProductDefinition d, List<Issue> out) {
+        var es = d.earlySettlement();
+        if (es == null || es.rebate() == null) {
+            return;
+        }
+        try {
+            RebateRule.parse(es.rebate());
+        } catch (IllegalArgumentException e) {
+            out.add(Issue.error("early_settlement.rebate", e.getMessage()));
         }
     }
 

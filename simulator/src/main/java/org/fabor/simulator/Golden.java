@@ -1,7 +1,9 @@
 package org.fabor.simulator;
 
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,13 +15,16 @@ import java.util.List;
  * fails verification until a reviewer regenerates the file, which shows up in the diff and in approval.
  */
 public final class Golden {
-    private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper JSON = new ObjectMapper();
+    // fixed line feeds: the default printer uses the platform separator, so golden files would differ on Windows
+    private static final PrettyPrinter PRINTER = new DefaultPrettyPrinter()
+            .withObjectIndenter(new DefaultIndenter("  ", "\n"));
 
     private Golden() { }
 
     public static String render(List<ScenarioResult> results) {
         try {
-            return JSON.writeValueAsString(results) + "\n";
+            return JSON.writer(PRINTER).writeValueAsString(results) + "\n";
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

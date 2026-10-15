@@ -144,11 +144,11 @@ public final class ScheduleEngine {
 
     /**
      * Quoted flat rate: total interest = principal x flat x years. Instalments are equal (the last absorbs
-     * rounding), so the total payable is exact. The interest part of each instalment follows the implied EIR.
+     * rounding and any balloon), so the total payable is exact. The interest part of each instalment follows the implied EIR.
      */
     private static List<Installment> annuityFromFlat(ScheduleRequest q) {
-        if (q.balloon().minor() != 0 || q.interestOnlyPeriods() != 0) {
-            throw new IllegalArgumentException("ANNUITY_FROM_FLAT supports neither balloon nor interest-only periods");
+        if (q.interestOnlyPeriods() != 0) {
+            throw new IllegalArgumentException("ANNUITY_FROM_FLAT does not support interest-only periods");
         }
         int monthsPerPeriod = q.frequency().months();
         if (monthsPerPeriod < 0) {
@@ -157,7 +157,8 @@ public final class ScheduleEngine {
         int months = q.periods() * monthsPerPeriod;
         Money flat = Rates.flatInterest(q.principal(), q.annualRate(), months, q.rounding());
         Money totalPayable = q.principal().plus(flat);
-        Money instalment = Money.ofMinor(BigDecimal.valueOf(totalPayable.minor())
+        // a balloon (residual) is paid with the last instalment; the flat interest is still charged on the full principal
+        Money instalment = Money.ofMinor(BigDecimal.valueOf(totalPayable.minus(q.balloon()).minor())
                 .divide(BigDecimal.valueOf(q.periods()), Rates.MC).setScale(0, q.rounding()).longValueExact(),
                 q.principal().currency());
         Money last = totalPayable.minus(instalment.times(BigDecimal.valueOf(q.periods() - 1), q.rounding()));

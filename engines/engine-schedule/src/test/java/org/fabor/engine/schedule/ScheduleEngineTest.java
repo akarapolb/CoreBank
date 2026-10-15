@@ -105,8 +105,35 @@ class ScheduleEngineTest {
     }
 
     @Test
+    void hirePurchaseWithBalloon() {
+        // 500,000.00 at 4.25% flat for 60 months with a 100,000.00 residual: interest is still charged on the full
+        // principal (106,250.00); the regular instalments pay (606,250.00 - 100,000.00) / 60, the residual rides on the last
+        Schedule s = ScheduleEngine.build(req(50_000_000, "0.0425", 60, Method.ANNUITY_FROM_FLAT, 10_000_000, 0));
+        assertThat(s.totalInterest().minor()).isEqualTo(10_625_000);
+        assertThat(s.installments().get(0).total().minor()).isEqualTo(843_750); // 8,437.50
+        assertThat(s.installments().get(59).total().minor()).isEqualTo(843_750 + 10_000_000);
+        assertInvariants(s, 50_000_000);
+        // a balloon leaves more principal outstanding for longer, so the effective rate is lower than without it
+        Schedule plain = ScheduleEngine.build(req(50_000_000, "0.0425", 60, Method.ANNUITY_FROM_FLAT, 0, 0));
+        assertThat(s.effectiveAnnualRate()).isLessThan(plain.effectiveAnnualRate());
+    }
+
+    @Property
+    void flatRateWithBalloonKeepsInvariants(@ForAll @LongRange(min = 1_000_000, max = 5_000_000_000L) long principal,
+                                            @ForAll @BigRange(min = "0.01", max = "0.15") BigDecimal flat,
+                                            @ForAll @IntRange(min = 12, max = 84) int n,
+                                            @ForAll @IntRange(min = 0, max = 40) int balloonPercent) {
+        long balloon = principal * balloonPercent / 100;
+        Schedule s = ScheduleEngine.build(req(principal, flat.toPlainString(), n, Method.ANNUITY_FROM_FLAT, balloon, 0));
+        assertInvariants(s, principal);
+        Money expected = org.fabor.engine.interest.Rates.flatInterest(thb(principal), flat, n, RoundingMode.HALF_UP);
+        assertThat(s.totalInterest()).isEqualTo(expected);
+        assertThat(s.installments().get(n - 1).principal().minor()).isGreaterThanOrEqualTo(balloon);
+    }
+
+    @Test
     void flatRateRejectsUnsupportedOptions() {
-        assertThatThrownBy(() -> ScheduleEngine.build(req(1_000_000, "0.05", 12, Method.ANNUITY_FROM_FLAT, 100_000, 0)))
+        assertThatThrownBy(() -> ScheduleEngine.build(req(1_000_000, "0.05", 12, Method.ANNUITY_FROM_FLAT, 0, 2)))
                 .isInstanceOf(IllegalArgumentException.class);
         ScheduleRequest weekly = new ScheduleRequest(thb(1_000_000), new BigDecimal("0.05"), 12, Frequency.WEEKLY, D0,
                 null, Method.ANNUITY_FROM_FLAT, null, 0, CAL, Convention.FOLLOWING, RoundingMode.HALF_UP);
