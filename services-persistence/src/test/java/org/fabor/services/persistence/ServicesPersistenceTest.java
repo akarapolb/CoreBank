@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, "
                     + "catalog_draft, catalog_version");
         }
     }
@@ -241,6 +241,40 @@ class ServicesPersistenceTest {
         assertThat(leases.find("LS1").orElseThrow().status()).isEqualTo(org.fabor.lending.Lease.Status.COMPLETED);
         assertThat(leases.idsByParty("P-LEASE")).containsExactly("LS1");
         assertThat(leases.idsByParty("nobody")).isEmpty();
+    }
+
+    @Test
+    void masterAgreementRateCardAndSchedulesRoundTrip() {
+        var repo = new JdbcMasterRepo(ds, T);
+        assertThat(repo.find("MA-1")).isEmpty();
+        var card = List.of(
+                new org.fabor.lending.MasterAgreement.RateCardRow("TRUCK", 12, 36, new java.math.BigDecimal("0.035"),
+                        LocalDate.of(2026, 1, 1), null),
+                new org.fabor.lending.MasterAgreement.RateCardRow("PICKUP", 12, 60, new java.math.BigDecimal("0.03"),
+                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)));
+        var master = new org.fabor.lending.MasterAgreement("MA-1", "fleet-co", "THB", 100_000_000, "PERSONAL_LOAN_STD", 1, 30,
+                card, org.fabor.lending.MasterAgreement.Status.ACTIVE, LocalDate.of(2026, 1, 15));
+        repo.save(master);
+        var found = repo.find("MA-1").orElseThrow();
+        assertThat(found.rateCard()).hasSize(2);
+        assertThat(found.rateCard().get(0).validTo()).isNull();
+        assertThat(found.rateCard().get(1).validTo()).isEqualTo(LocalDate.of(2026, 12, 31));
+        assertThat(found.rateCard().get(0).rate()).isEqualByComparingTo("0.035");
+        assertThat(found.limit()).isEqualTo(100_000_000);
+        assertThat(found.crossDefaultDpd()).isEqualTo(30);
+        // saving again (a status change) neither duplicates the rate card nor fails
+        repo.save(master.withStatus(org.fabor.lending.MasterAgreement.Status.DEFAULTED));
+        var defaulted = repo.find("MA-1").orElseThrow();
+        assertThat(defaulted.status()).isEqualTo(org.fabor.lending.MasterAgreement.Status.DEFAULTED);
+        assertThat(defaulted.rateCard()).hasSize(2);
+        repo.addSchedule(new org.fabor.lending.MasterAgreement.Schedule("MA-1", "S-01", "TRUCK", new java.math.BigDecimal("0.035"),
+                24, LocalDate.of(2026, 1, 15), List.of("V1", "V2")));
+        repo.addSchedule(new org.fabor.lending.MasterAgreement.Schedule("MA-1", "S-02", "PICKUP", new java.math.BigDecimal("0.03"),
+                12, LocalDate.of(2026, 2, 1), List.of()));
+        assertThat(repo.schedules("MA-1")).extracting(org.fabor.lending.MasterAgreement.Schedule::loanId).containsExactly("S-01", "S-02");
+        assertThat(repo.schedules("MA-1").get(0).assetIds()).containsExactly("V1", "V2");
+        assertThat(repo.schedules("MA-1").get(1).assetIds()).isEmpty();
+        assertThat(repo.schedules("none")).isEmpty();
     }
 
     @Test

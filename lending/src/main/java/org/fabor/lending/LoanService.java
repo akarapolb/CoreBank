@@ -106,10 +106,27 @@ public final class LoanService {
     /** Opens the loan from a quote and pays the net amount (principal less upfront fees) to the customer's deposit account. */
     public Loan disburse(String id, String party, String productCode, int version, Money principal, int term,
                          LocalDate date, String depositAccountId) {
+        return open(id, party, productCode, version, null, principal, term, date, depositAccountId, null);
+    }
+
+    /**
+     * Like {@link #disburse} with the product's rate replaced by {@code lockedRate}, for a rate agreed outside the product
+     * (a fleet rate card). The loan keeps the rate, so later prepayments and holidays use it too. When
+     * {@code payoutAccountId} is another account (the dealer's), it receives the whole principal; the customer's
+     * {@code depositAccountId} then pays the fee and VAT and stays the account instalments are collected from.
+     */
+    public Loan disburseAtRate(String id, String party, String productCode, int version, java.math.BigDecimal lockedRate,
+                               Money principal, int term, LocalDate date, String depositAccountId, String payoutAccountId) {
+        return open(id, party, productCode, version, lockedRate, principal, term, date, depositAccountId, payoutAccountId);
+    }
+
+    private Loan open(String id, String party, String productCode, int version, java.math.BigDecimal lockedRate, Money principal,
+                      int term, LocalDate date, String depositAccountId, String payoutAccountId) {
         if (repo.find(id).isPresent()) {
             throw new IllegalStateException("Loan already exists: " + id);
         }
-        ProductDefinition p = product(productCode, version);
+        ProductDefinition pinned = product(productCode, version);
+        ProductDefinition p = lockedRate == null ? pinned : pinned.withRate(lockedRate);
         var quote = ProductQuote.quote(p, principal, term, date, calendar);
         Money fees = quote.disbursementFees().values().stream().reduce(Money.zero(principal.currency()), Money::plus);
         Money feeVat = Money.zero(principal.currency());
@@ -119,8 +136,15 @@ public final class LoanService {
         }
         List<Entry> entries = new ArrayList<>();
         entries.add(new Entry(principalAcct(id), BalanceType.SETTLED, Direction.DEBIT, principal));
-        entries.add(new Entry(new AccountId("dep:" + depositAccountId), BalanceType.SETTLED, Direction.CREDIT,
-                principal.minus(fees).minus(feeVat)));
+        if (payoutAccountId == null || payoutAccountId.equals(depositAccountId)) {
+            entries.add(new Entry(new AccountId("dep:" + depositAccountId), BalanceType.SETTLED, Direction.CREDIT,
+                    principal.minus(fees).minus(feeVat)));
+        } else {   // paid out to the dealer in full; the customer pays the fee
+            entries.add(new Entry(new AccountId("dep:" + payoutAccountId), BalanceType.SETTLED, Direction.CREDIT, principal));
+            if (!fees.plus(feeVat).isZero()) {
+                entries.add(Entry.guardedDebit(new AccountId("dep:" + depositAccountId), BalanceType.SETTLED, fees.plus(feeVat)));
+            }
+        }
         if (!fees.isZero()) {
             entries.add(new Entry(FEE_INCOME, BalanceType.SETTLED, Direction.CREDIT, fees));
         }
@@ -137,7 +161,7 @@ public final class LoanService {
             list.add(new Loan.Instalment(i.number(), i.dueDate(), i.principal().minor(), i.interest().minor(), 0, 0, 0, 0, false));
         }
         Loan loan = new Loan(id, party, productCode, version, principal.currency().code(), depositAccountId, date,
-                principal.minor(), List.copyOf(list), Loan.Status.ACTIVE);
+                principal.minor(), List.copyOf(list), Loan.Status.ACTIVE, lockedRate, 0);
         repo.save(loan);
         return loan;
     }
@@ -255,6 +279,15 @@ public final class LoanService {
         }
         applyAllocation(loan, reference, date, r.allocations(), amount);
         return repo.find(loanId).orElseThrow();
+    }
+
+    /** What was taken from the customer's deposit account under a payment reference of {@link #repay}; zero if none. */
+    public Money amountPaidWith(String loanId, String reference) {
+        Loan loan = load(loanId);
+        Money zero = money(loan, 0);
+        return ledger.find(tenant, new BatchId(loanId + ":pay-" + reference)).map(sb -> sb.batch().entries().stream()
+                .filter(e -> e.direction() == Direction.DEBIT && e.account().value().startsWith("dep:"))
+                .map(Entry::amount).reduce(zero, Money::plus)).orElse(zero);
     }
 
     /**

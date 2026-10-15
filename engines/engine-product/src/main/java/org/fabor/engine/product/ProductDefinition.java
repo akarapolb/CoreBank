@@ -25,6 +25,13 @@ public record ProductDefinition(
         Accounting accounting,
         Deposit deposit) {
 
+    /** The same product with its quoted rate replaced, for a rate agreed outside the product. */
+    public ProductDefinition withRate(BigDecimal rate) {
+        return new ProductDefinition(product, version, family, currency, segment, parameters,
+                new Pricing(pricing.rateType(), rate, pricing.rateTable(), pricing.disclosedRate(), pricing.dayCount()),
+                schedule, fees, repaymentWaterfall, tax, earlySettlement, delinquency, accounting, deposit);
+    }
+
     public enum Family { DEPOSIT, LOAN, CREDIT_LINE, LEASE, ASSET_FINANCE }
 
     public enum RateType { FLAT, FIXED, FLOATING, STEPPED, TIERED, CUSTOM }
