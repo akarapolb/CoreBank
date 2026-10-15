@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, "
                     + "catalog_draft, catalog_version");
         }
     }
