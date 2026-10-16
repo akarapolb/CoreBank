@@ -504,14 +504,24 @@ public final class LoanService {
                     fresh.get(i).interest().minor(), 0, 0, 0, 0, false));
         }
         long chargeable = flat ? prepaidChargeable(loan, p, first, amount.minor(), outstanding) : 0;
+        long chargeableVat = chargeable == 0 ? 0 : prepaidVat(loan, p, chargeable);
         List<Entry> entries = new ArrayList<>(List.of(
-                Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED, amount.plus(money(loan, chargeable))),
+                Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED,
+                        amount.plus(money(loan, chargeable + chargeableVat))),
                 new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, amount)));
         if (chargeable > 0) {
             AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
             entries.add(new Entry(income, BalanceType.SETTLED, Direction.CREDIT, money(loan, chargeable)));
         }
+        if (chargeableVat > 0) {
+            entries.add(new Entry(VAT_PAYABLE, BalanceType.SETTLED, Direction.CREDIT, money(loan, chargeableVat)));
+        }
         post(loanId, "prepay-" + reference, date, entries);
+        if (chargeableVat > 0 && invoicing != null) {
+            invoicing.sink().accept(TaxInvoice.of("INV-" + loanId + "-PREPAY-" + reference, date, invoicing.sellerTaxId(),
+                    loan.party(), List.of(new TaxInvoice.Line("Interest on prepayment of " + loanId,
+                            money(loan, chargeable), money(loan, chargeableVat)))));
+        }
         return keep(loan.withInstalments(List.copyOf(list), loan.status()));
     }
 
@@ -610,6 +620,21 @@ public final class LoanService {
         }
         long unbilledInterest = loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::interestDue).sum();
         return share(unbilledInterest, prepaid, outstanding) - share(unbilledRebate(loan, rule), prepaid, outstanding);
+    }
+
+    /**
+     * VAT on the interest a flat-rate prepayment charges now. For VAT on the whole instalment the interest is not
+     * separable from the instalment total, so the prepayment is refused, as early settlement is.
+     */
+    private long prepaidVat(Loan loan, ProductDefinition p, long chargeable) {
+        InstalmentVat.Base base = instalmentVatBase(p);
+        if (base == null) {
+            return 0;
+        }
+        if (base == InstalmentVat.Base.TOTAL) {
+            throw new IllegalStateException("Prepayment needs a termination rule for products with VAT on the whole instalment");
+        }
+        return Vat.exclusive(money(loan, chargeable), p.tax().vat().rate()).vat().minor();
     }
 
     private static long share(long part, long prepaid, long outstanding) {

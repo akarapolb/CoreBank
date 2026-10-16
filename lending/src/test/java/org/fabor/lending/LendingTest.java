@@ -407,6 +407,45 @@ class LendingTest {
         assertThat(bal(LoanService.INTEREST_INCOME) - incomeBefore).isPositive();
     }
 
+    /** The flat-rate hire purchase with instalment VAT on interest or on the whole instalment, and an invoice sink. */
+    private void wireFlatInstalmentVat(String target, String rebate) throws IOException {
+        invoices.clear();
+        product = ProductLoader.parse(yaml().replace("applies_to: [FEES]", "applies_to: [FEES, " + target + "]")
+                .replace("rate_type: FIXED", "rate_type: FLAT").replace("rate: 0.18", "rate: 0.06")
+                .replace("method: ANNUITY", "method: ANNUITY_FROM_FLAT").replace("rebate: NONE", "rebate: \"" + rebate + "\""));
+        ledger = new LedgerService(new InMemoryLedgerStore(), Clock.fixed(Instant.parse("2026-12-31T00:00:00Z"), ZoneOffset.UTC));
+        svc = new LoanService(T, ledger, new LoanRepo.InMemory(), (c, v) -> c.equals(product.product()) && v == 1 ? product : null,
+                BusinessCalendar.monToFri(Set.of()), new LoanService.Invoicing("0105500000001", invoices::add));
+        ledger.post(fund("seed", 20_000_000));
+    }
+
+    /** Bills and pays instalment 1 including its VAT, so the prepayment is not refused for arrears. */
+    private Loan billAndPayWithVat(Loan l) {
+        Loan.Instalment i = svc.bill("L1", 1, l.instalments().get(0).dueDate()).instalments().get(0);
+        return svc.repay("L1", "m1", Money.ofMinor(i.principalDue() + i.interestDue() + i.vatDue(), Currency.THB), i.dueDate());
+    }
+
+    @Test
+    void prepaymentOnAFlatRateLoanChargesVatOnTheInterestItCharges() throws IOException {
+        wireFlatInstalmentVat("INSTALMENT_INTEREST", "PERCENT:0.5");
+        Loan l = billAndPayWithVat(open());
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        long vatBefore = bal(LoanService.VAT_PAYABLE);
+        svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1), LoanService.PrepaymentMode.REDUCE_TERM);
+        long vat = bal(LoanService.VAT_PAYABLE) - vatBefore;
+        assertThat(vat).isPositive();
+        assertThat(invoices).anySatisfy(inv -> assertThat(inv.number()).isEqualTo("INV-L1-PREPAY-pp1"));
+    }
+
+    @Test
+    void prepaymentOnAFlatRateLoanWithVatOnTheWholeInstalmentIsRefused() throws IOException {
+        wireFlatInstalmentVat("INSTALMENT_TOTAL", "PERCENT:0.5");
+        Loan l = billAndPayWithVat(open());
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        assertThatThrownBy(() -> svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1),
+                LoanService.PrepaymentMode.REDUCE_TERM)).hasMessageContaining("termination rule");
+    }
+
     @Test
     void vatOnTheOriginationFeeIsCollectedAndInvoiced() throws IOException {
         List<org.fabor.engine.tax.TaxInvoice> invoices = new java.util.ArrayList<>();
