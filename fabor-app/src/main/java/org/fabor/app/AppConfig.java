@@ -203,6 +203,12 @@ class AppConfig {
     }
 
     @Bean
+    org.fabor.lending.EclService eclService(TenantId tenant, LedgerService ledger, LoanRepo repo,
+                                            BiFunction<String, Integer, ProductDefinition> products) {
+        return new org.fabor.lending.EclService(tenant, ledger, repo, products);
+    }
+
+    @Bean
     LeaseRepo leaseRepo(DataSource ds, TenantId tenant) {
         return new JdbcLeaseRepo(ds, tenant);
     }

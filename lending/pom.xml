@@ -11,6 +11,7 @@
     <dependency><groupId>org.fabor</groupId><artifactId>engine-product</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>engine-tax</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>engine-lease</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.fabor</groupId><artifactId>engine-ecl</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.fabor</groupId><artifactId>ledger-testkit</artifactId><version>${project.version}</version><scope>test</scope></dependency>
   </dependencies>
 </project>
