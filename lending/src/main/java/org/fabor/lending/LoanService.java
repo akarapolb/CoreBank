@@ -306,8 +306,9 @@ public final class LoanService {
     }
 
     /**
-     * VAT on the interest charged at settlement, for products that charge VAT on instalment interest. A product with VAT
-     * on the whole instalment has no settlement rule yet, so settling it while instalments remain unbilled is refused.
+     * VAT on what an early settlement charges now. Interest-base products pay VAT on the interest still charged. For VAT
+     * on the whole instalment the settlement replaces the unbilled instalments, so the taxable amount is their remaining
+     * principal plus the interest still charged (a tax-team decision: confirm before use).
      */
     private long settlementVat(Loan loan, long chargeable) {
         ProductDefinition p = product(loan.productCode(), loan.productVersion());
@@ -315,14 +316,15 @@ public final class LoanService {
         if (base == null || loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
             return 0;
         }
-        if (base == InstalmentVat.Base.TOTAL) {
-            if (loan.instalments().stream().anyMatch(i -> !i.billed())) {
-                throw new IllegalStateException("Early settlement needs a termination rule for products with VAT on the "
-                        + "whole instalment");
-            }
-            return 0;
+        long taxable = settlementTaxable(loan, base, chargeable);
+        return taxable == 0 ? 0 : Vat.exclusive(money(loan, taxable), p.tax().vat().rate()).vat().minor();
+    }
+
+    private static long settlementTaxable(Loan loan, InstalmentVat.Base base, long chargeable) {
+        if (base == InstalmentVat.Base.INTEREST) {
+            return chargeable;
         }
-        return chargeable == 0 ? 0 : Vat.exclusive(money(loan, chargeable), p.tax().vat().rate()).vat().minor();
+        return chargeable + loan.instalments().stream().filter(i -> !i.billed()).mapToLong(Loan.Instalment::principalOutstanding).sum();
     }
 
     /**
@@ -376,7 +378,7 @@ public final class LoanService {
             ProductDefinition p = product(loan.productCode(), loan.productVersion());
             invoicing.sink().accept(TaxInvoice.of("INV-" + loanId + "-SETTLE-" + reference, date, invoicing.sellerTaxId(),
                     loan.party(), List.of(new TaxInvoice.Line("Interest on early settlement of " + loanId,
-                            money(loan, chargeable), money(loan, settleVat)))));
+                            money(loan, settlementTaxable(loan, instalmentVatBase(p), chargeable)), money(loan, settleVat)))));
         }
         Loan after = repo.find(loanId).orElseThrow();
         // unbilled future instalments are cancelled: nothing more will be billed
@@ -504,7 +506,7 @@ public final class LoanService {
                     fresh.get(i).interest().minor(), 0, 0, 0, 0, false));
         }
         long chargeable = flat ? prepaidChargeable(loan, p, first, amount.minor(), outstanding) : 0;
-        long chargeableVat = chargeable == 0 ? 0 : prepaidVat(loan, p, chargeable);
+        long chargeableVat = prepaidVat(loan, p, chargeable, amount.minor());
         List<Entry> entries = new ArrayList<>(List.of(
                 Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED,
                         amount.plus(money(loan, chargeable + chargeableVat))),
@@ -520,7 +522,8 @@ public final class LoanService {
         if (chargeableVat > 0 && invoicing != null) {
             invoicing.sink().accept(TaxInvoice.of("INV-" + loanId + "-PREPAY-" + reference, date, invoicing.sellerTaxId(),
                     loan.party(), List.of(new TaxInvoice.Line("Interest on prepayment of " + loanId,
-                            money(loan, chargeable), money(loan, chargeableVat)))));
+                            money(loan, chargeable + (instalmentVatBase(p) == InstalmentVat.Base.TOTAL ? amount.minor() : 0)),
+                            money(loan, chargeableVat)))));
         }
         return keep(loan.withInstalments(List.copyOf(list), loan.status()));
     }
@@ -589,23 +592,18 @@ public final class LoanService {
         return "ANNUITY_FROM_FLAT".equals(p.schedule().method());
     }
 
-    private static void requireAnnuity(ProductDefinition p) {
-        if (p.pricing() == null || p.pricing().rate() == null || !"ANNUITY".equals(p.schedule().method())) {
-            throw new IllegalArgumentException("Only fixed-rate annuity products support this change");
-        }
-    }
-
-    /** Prepayment and payment holidays: fixed-rate annuity or flat-rate products (a flat quote is rebuilt flat). */
+    /** Prepayment, holidays and restructuring: fixed-rate annuity or flat-rate products (a flat quote is rebuilt flat). */
     private static void requireAmortising(ProductDefinition p) {
         if (p.pricing() == null || p.pricing().rate() == null || !("ANNUITY".equals(p.schedule().method()) || isFlat(p))) {
             throw new IllegalArgumentException("Only fixed-rate annuity or flat-rate products support this change");
         }
     }
 
-    /** Periodic rate implied by the unbilled instalments of a flat-rate loan, from its principal outstanding. */
+    /** Periodic rate implied by what the instalments from {@code first} still owe, for a flat-rate loan. */
     private static java.math.BigDecimal impliedPeriodic(Loan loan, int first) {
         long principal = loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum();
-        List<Long> pays = loan.instalments().stream().skip(first).map(i -> i.principalDue() + i.interestDue()).toList();
+        List<Long> pays = loan.instalments().stream().skip(first)
+                .map(i -> i.principalOutstanding() + i.interestDue() - i.interestPaid()).toList();
         return org.fabor.engine.interest.Eir.periodicRate(principal, pays);
     }
 
@@ -623,18 +621,13 @@ public final class LoanService {
     }
 
     /**
-     * VAT on the interest a flat-rate prepayment charges now. For VAT on the whole instalment the interest is not
-     * separable from the instalment total, so the prepayment is refused, as early settlement is.
+     * VAT on what a prepayment charges now: on the interest charged for interest-base products, and for VAT on the whole
+     * instalment on the prepaid principal plus that interest, since the prepayment replaces part of the instalments.
      */
-    private long prepaidVat(Loan loan, ProductDefinition p, long chargeable) {
+    private long prepaidVat(Loan loan, ProductDefinition p, long chargeable, long prepaid) {
         InstalmentVat.Base base = instalmentVatBase(p);
-        if (base == null) {
-            return 0;
-        }
-        if (base == InstalmentVat.Base.TOTAL) {
-            throw new IllegalStateException("Prepayment needs a termination rule for products with VAT on the whole instalment");
-        }
-        return Vat.exclusive(money(loan, chargeable), p.tax().vat().rate()).vat().minor();
+        long taxable = base == InstalmentVat.Base.TOTAL ? prepaid + chargeable : base == null ? 0 : chargeable;
+        return taxable == 0 ? 0 : Vat.exclusive(money(loan, taxable), p.tax().vat().rate()).vat().minor();
     }
 
     private static long share(long part, long prepaid, long outstanding) {
@@ -719,7 +712,7 @@ public final class LoanService {
             throw new IllegalArgumentException("Invalid restructuring terms");
         }
         ProductDefinition p = product(loan.productCode(), loan.productVersion());
-        requireAnnuity(p);
+        requireAmortising(p);
         if (newRate.compareTo(rateOf(loan, p)) > 0) {
             throw new IllegalArgumentException("A restructuring cannot raise the rate");
         }
@@ -736,7 +729,12 @@ public final class LoanService {
         }
         long carrying = principal + unpaidInterest;                        // what the loan is worth before modification
         Frequency f = Frequency.valueOf(p.schedule().frequency());
-        java.math.BigDecimal oldPeriodic = org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear());
+        int owing = 0;
+        while (owing < loan.instalments().size() && loan.instalments().get(owing).principalOutstanding() == 0) {
+            owing++;
+        }
+        java.math.BigDecimal oldPeriodic = !isFlat(p) ? org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear())
+                : owing == loan.instalments().size() ? java.math.BigDecimal.ZERO : impliedPeriodic(loan, owing);
         Loan target = loan.withRate(newRate);
         List<Installment> fresh = rebuild(p, target, carrying, newTerm, date);
         // present value of the new payments at the original effective rate

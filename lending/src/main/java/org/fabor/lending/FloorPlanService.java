@@ -276,6 +276,49 @@ public final class FloorPlanService {
         return repo.units(lineId).stream().filter(u -> saleOverdue(line, u, asOf)).toList();
     }
 
+    /**
+     * Result of a physical stock audit. {@code missing} are open, unsold units not found on the lot (a unit may have been
+     * sold without being reported); {@code saleOverdue} are units reported sold and not paid off in the window;
+     * {@code unexpected} are units found on the lot that the line does not know. Together the first two are the
+     * sold-out-of-trust suspects.
+     */
+    public record StockAudit(String lineId, LocalDate asOf, List<String> missing, List<String> saleOverdue,
+                             List<String> unexpected, int checked) {
+        public List<String> soldOutOfTrust() {
+            return java.util.stream.Stream.concat(missing.stream(), saleOverdue.stream()).sorted().toList();
+        }
+
+        public boolean clean() {
+            return missing.isEmpty() && saleOverdue.isEmpty() && unexpected.isEmpty();
+        }
+    }
+
+    /**
+     * Compares the line's open stock with the unit ids an inspector found on the lot. Read-only: it books nothing, so an
+     * audit can be repeated; acting on the findings (freezing the line, calling the dealer) is a separate decision.
+     */
+    public StockAudit stockAudit(String lineId, LocalDate asOf, java.util.Set<String> foundOnLot) {
+        FloorPlanLine line = line(lineId);
+        List<FloorPlanUnit> all = repo.units(lineId);
+        java.util.Set<String> known = all.stream().map(FloorPlanUnit::unitId).collect(java.util.stream.Collectors.toSet());
+        List<String> missing = new ArrayList<>();
+        List<String> overdue = new ArrayList<>();
+        int checked = 0;
+        for (FloorPlanUnit u : all) {
+            if (u.status() != FloorPlanUnit.Status.OPEN) {
+                continue;
+            }
+            checked++;
+            if (saleOverdue(line, u, asOf)) {
+                overdue.add(u.unitId());
+            } else if (u.soldOn() == null && !foundOnLot.contains(u.unitId())) {
+                missing.add(u.unitId());
+            }
+        }
+        List<String> unexpected = foundOnLot.stream().filter(id -> !known.contains(id)).sorted().toList();
+        return new StockAudit(lineId, asOf, List.copyOf(missing), List.copyOf(overdue), unexpected, checked);
+    }
+
     /** Principal outstanding across the line's units. */
     public Money exposure(String lineId) {
         FloorPlanLine line = line(lineId);

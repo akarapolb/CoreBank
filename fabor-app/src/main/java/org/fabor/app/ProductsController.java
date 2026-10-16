@@ -1,18 +1,30 @@
 package org.fabor.app;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import org.fabor.catalog.CatalogStore;
 import org.fabor.catalog.Draft;
 import org.fabor.catalog.MasterBuilder;
 import org.fabor.catalog.PublishedVersion;
 import org.fabor.catalog.ReviewReport;
+import org.fabor.engine.product.Disclosure;
+import org.fabor.engine.product.ProductDefinition;
+import org.fabor.engine.product.ProductQuote;
+import org.fabor.platform.money.Currency;
+import org.fabor.platform.money.Money;
+import org.fabor.platform.time.BusinessCalendar;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Master Builder over HTTP: draft, check, submit, approve, publish. The actor and roles come from the verified token (see SecurityConfig). */
@@ -21,10 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 class ProductsController {
     private final MasterBuilder builder;
     private final CatalogStore store;
+    private final BiFunction<String, Integer, ProductDefinition> products;
+    private final BusinessCalendar calendar;
 
-    ProductsController(MasterBuilder builder, CatalogStore store) {
+    ProductsController(MasterBuilder builder, CatalogStore store, BiFunction<String, Integer, ProductDefinition> products,
+                       BusinessCalendar calendar) {
         this.builder = builder;
         this.store = store;
+        this.products = products;
+        this.calendar = calendar;
     }
 
     record DraftView(String id, String product, int version, String status, Map<String, String> approvals, String author) {
@@ -86,5 +103,28 @@ class ProductsController {
         actor.require("product-publisher");
         builder.retire(product, version);
         return Map.of("product", product, "version", version, "retired", true);
+    }
+
+    /** The cost-of-credit disclosure for a published version: quoted and effective rates, fees, totals. */
+    @GetMapping("/{product}/versions/{version}/disclosure")
+    Map<String, Object> disclosure(@PathVariable String product, @PathVariable int version,
+                                   @RequestParam BigDecimal principal, @RequestParam int term,
+                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        ProductDefinition d = products.apply(product, version);
+        if (d == null) {
+            throw new IllegalArgumentException("No published version " + product + " v" + version);
+        }
+        Money amount = Money.of(principal, Currency.of(d.currency()));
+        Disclosure x = Disclosure.of(d, amount, ProductQuote.quote(d, amount, term, date == null ? LocalDate.now() : date, calendar));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("product", x.product());
+        out.put("version", x.version());
+        out.put("flat", x.flat());
+        out.put("quotedRate", x.quotedRate().toPlainString());
+        out.put("effectiveRate", x.effectiveRate().toPlainString());
+        out.put("allInEffectiveRate", x.allInEffectiveRate().toPlainString());
+        out.put("lines", x.lines());
+        out.put("text", x.text());
+        return out;
     }
 }

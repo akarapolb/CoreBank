@@ -30,7 +30,9 @@ import org.fabor.platform.time.BusinessCalendar.Convention;
  * cumulative difference sits in one accrued-or-deferred rent account) and depreciates the asset. Accrual is by time and independent of payment;
  * collection applies cash to the oldest accrued period. Every posting has a deterministic id, so each call can be retried.
  *
- * <p>Payments in advance, VAT on rentals, early termination, purchase options and residual disposal are not handled yet.
+ * <p>Finance leases can be terminated early (the customer pays the net investment still carried plus a fee) and the
+ * lessee can buy the asset at the end (the difference to the residual carried is a disposal gain or loss). Payments in
+ * advance, VAT on rentals, termination of operating leases and residual impairment are not handled yet.
  */
 public final class LeaseService {
     public static final AccountId SUPPLIER_PAYABLE = new AccountId("gl:supplier-payable");
@@ -39,6 +41,9 @@ public final class LeaseService {
     public static final AccountId LEASED_ASSETS = new AccountId("gl:leased-assets");
     public static final AccountId DEPRECIATION_EXPENSE = new AccountId("gl:depreciation-expense");
     public static final AccountId ACCUMULATED_DEPRECIATION = new AccountId("gl:accumulated-depreciation");
+    public static final AccountId TERMINATION_FEE_INCOME = new AccountId("gl:lease-termination-fee");
+    /** Credit balance: gain on selling the asset to the lessee for more than the residual carried; debit: loss. */
+    public static final AccountId DISPOSAL_GAIN = new AccountId("gl:lease-disposal-gain");
 
     private final TenantId tenant;
     private final LedgerService ledger;
@@ -180,6 +185,88 @@ public final class LeaseService {
                 new Entry(credit, BalanceType.SETTLED, Direction.CREDIT, amount)));
         boolean done = list.stream().allMatch(p -> p.accrued() && p.outstanding() == 0);
         return keep(lease.withPeriods(List.copyOf(list), done ? Lease.Status.COMPLETED : lease.status()));
+    }
+
+    /** Net investment a finance lease still carries on {@code date}, accrued income included and collections taken off. */
+    public Money carrying(String id, LocalDate date) {
+        Lease lease = load(id);
+        if (lease.kind() != Lease.Kind.FINANCE) {
+            throw new IllegalArgumentException("Only a finance lease carries a net investment");
+        }
+        Currency cur = Currency.of(lease.currency());
+        return Money.ofMinor(-ledger.balance(tenant, netInvestment(id), BalanceType.SETTLED, cur, date).minor(), cur);
+    }
+
+    /**
+     * Early termination of a finance lease: the customer pays what the lease still carries (the remaining rentals at the
+     * implicit rate plus the residual, and any accrued unpaid rent) plus {@code fee}. The unaccrued periods are cancelled.
+     * Every period due by {@code date} must have been accrued first. Idempotent per reference.
+     */
+    public Lease terminate(String id, String reference, Money fee, LocalDate date) {
+        Lease lease = load(id);
+        if (ledger.find(tenant, new BatchId(id + ":terminate-" + reference)).isPresent()) {
+            return lease;
+        }
+        if (lease.kind() != Lease.Kind.FINANCE || lease.status() != Lease.Status.ACTIVE) {
+            throw new IllegalStateException("Only an active finance lease can be terminated");
+        }
+        if (fee.minor() < 0) {
+            throw new IllegalArgumentException("Termination fee must not be negative");
+        }
+        for (Lease.Period p : lease.periods()) {
+            if (!p.accrued() && !p.dueDate().isAfter(date)) {
+                throw new IllegalStateException("Accrue period " + p.number() + " before terminating");
+            }
+        }
+        Money carried = carrying(id, date);
+        if (carried.minor() <= 0) {
+            throw new IllegalStateException("Nothing is carried on lease " + id);
+        }
+        List<Entry> entries = new ArrayList<>();
+        entries.add(Entry.guardedDebit(new AccountId("dep:" + lease.depositAccountId()), BalanceType.SETTLED, carried.plus(fee)));
+        entries.add(new Entry(netInvestment(id), BalanceType.SETTLED, Direction.CREDIT, carried));
+        if (fee.minor() > 0) {
+            entries.add(new Entry(TERMINATION_FEE_INCOME, BalanceType.SETTLED, Direction.CREDIT, fee));
+        }
+        post(id, "terminate-" + reference, date, entries);
+        List<Lease.Period> list = new ArrayList<>();
+        for (Lease.Period p : lease.periods()) {
+            list.add(p.accrued() ? new Lease.Period(p.number(), p.dueDate(), p.payment(), p.income(), p.rentRecognised(),
+                    p.depreciation(), true, p.payment()) : p);
+        }
+        return keep(lease.withPeriods(List.copyOf(list), Lease.Status.TERMINATED));
+    }
+
+    /**
+     * The lessee buys the asset when the lease has run off and been paid. The price is received from the customer's
+     * deposit account, the residual still carried is released and the difference is a disposal gain or loss.
+     * Idempotent per reference.
+     */
+    public Lease purchase(String id, String reference, Money price, LocalDate date) {
+        Lease lease = load(id);
+        if (ledger.find(tenant, new BatchId(id + ":purchase-" + reference)).isPresent()) {
+            return lease;
+        }
+        if (lease.kind() != Lease.Kind.FINANCE || lease.status() != Lease.Status.COMPLETED) {
+            throw new IllegalStateException("A purchase option needs a finance lease that has run off and been paid");
+        }
+        if (price.minor() <= 0) {
+            throw new IllegalArgumentException("Purchase price must be positive");
+        }
+        Money carried = carrying(id, date);
+        List<Entry> entries = new ArrayList<>();
+        entries.add(Entry.guardedDebit(new AccountId("dep:" + lease.depositAccountId()), BalanceType.SETTLED, price));
+        if (carried.minor() > 0) {
+            entries.add(new Entry(netInvestment(id), BalanceType.SETTLED, Direction.CREDIT, carried));
+        }
+        long gain = price.minor() - carried.minor();
+        if (gain > 0) {
+            entries.add(new Entry(DISPOSAL_GAIN, BalanceType.SETTLED, Direction.CREDIT, Money.ofMinor(gain, price.currency())));
+        } else if (gain < 0) {
+            entries.add(new Entry(DISPOSAL_GAIN, BalanceType.SETTLED, Direction.DEBIT, Money.ofMinor(-gain, price.currency())));
+        }
+        post(id, "purchase-" + reference, date, entries);
+        return keep(lease.withPeriods(lease.periods(), Lease.Status.PURCHASED));
     }
 
     /** What the customer owes now: accrued periods not yet collected. */

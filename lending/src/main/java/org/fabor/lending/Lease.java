@@ -12,7 +12,7 @@ public record Lease(String id, String party, Kind kind, String currency, String 
                     long assetCost, long residual, List<Period> periods, Status status) {
     public enum Kind { FINANCE, OPERATING }
 
-    public enum Status { ACTIVE, COMPLETED }
+    public enum Status { ACTIVE, COMPLETED, TERMINATED, PURCHASED }
 
     /**
      * @param payment          what the customer pays for the period (rent), excluding VAT

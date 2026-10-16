@@ -438,12 +438,14 @@ class LendingTest {
     }
 
     @Test
-    void prepaymentOnAFlatRateLoanWithVatOnTheWholeInstalmentIsRefused() throws IOException {
+    void prepaymentOnAFlatRateLoanWithVatOnTheWholeInstalmentTaxesThePrepaidPrincipal() throws IOException {
         wireFlatInstalmentVat("INSTALMENT_TOTAL", "PERCENT:0.5");
         Loan l = billAndPayWithVat(open());
         LocalDate due1 = l.instalments().get(0).dueDate();
-        assertThatThrownBy(() -> svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1),
-                LoanService.PrepaymentMode.REDUCE_TERM)).hasMessageContaining("termination rule");
+        long vatBefore = bal(LoanService.VAT_PAYABLE);
+        svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1), LoanService.PrepaymentMode.REDUCE_TERM);
+        assertThat(bal(LoanService.VAT_PAYABLE) - vatBefore).isGreaterThanOrEqualTo(Math.round(2_000_000 * 0.07));
+        assertThat(invoices).anySatisfy(inv -> assertThat(inv.number()).isEqualTo("INV-L1-PREPAY-pp1"));
     }
 
     @Test
@@ -519,6 +521,20 @@ class LendingTest {
         svc.accrueDaily("L1", due1.plusDays(1));
         svc.accrueDaily("L1", due1.plusDays(2));          // penalty 734
         return svc.accrueDaily("L1", due1.plusDays(2));
+    }
+
+    @Test
+    void restructuringAFlatRateLoanRebuildsItFlatAtTheLowerRate() throws IOException {
+        wireHirePurchase("ACTUARIAL");
+        Loan l = inArrears();
+        LocalDate day = l.instalments().get(0).dueDate().plusDays(10);
+        Loan r = svc.restructure("L1", "tdr1", new BigDecimal("0.03"), 18, day);
+        assertThat(r.instalments()).hasSize(18);
+        assertThat(r.rateOverride()).isEqualByComparingTo("0.03");
+        assertThat(bal(LoanService.interestAcct("L1"))).isZero();
+        assertThat(bal(LoanService.principalAcct("L1"))).isEqualTo(-outstandingPrincipal(r));
+        assertThat(-bal(LoanService.MODIFICATION_LOSS)).isPositive();
+        assertThatThrownBy(() -> svc.restructure("L1", "tdr2", new BigDecimal("0.30"), 18, day)).hasMessageContaining("raise");
     }
 
     @Test
@@ -749,13 +765,18 @@ class LendingTest {
         Loan.Instalment first = l.instalments().get(0);
         Loan billed = svc.bill("L1", 1, first.dueDate());
         assertThat(billed.instalments().get(0).vatDue()).isEqualTo(Math.round((first.principalDue() + first.interestDue()) * 0.07));
-        // early settlement while instalments are unbilled has no rule for this product
-        assertThatThrownBy(() -> svc.settlementQuote("L1", first.dueDate())).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("termination rule");
-        assertThatThrownBy(() -> svc.settle("L1", "s", first.dueDate())).isInstanceOf(IllegalStateException.class);
         // unpaid VAT blocks restructuring
         assertThatThrownBy(() -> svc.restructure("L1", "r", new BigDecimal("0.10"), 24, first.dueDate()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("VAT");
+        // settling early replaces the unbilled instalments: VAT is charged on their principal (no interest under rebate NONE)
+        Loan.Instalment b1 = billed.instalments().get(0);
+        svc.repay("L1", "p1", Money.ofMinor(b1.principalDue() + b1.interestDue() + b1.vatDue(), Currency.THB), first.dueDate());
+        long left = l.instalments().stream().skip(1).mapToLong(Loan.Instalment::principalDue).sum();
+        long settleVat = Math.round(left * 0.07);
+        assertThat(svc.settlementQuote("L1", first.dueDate()).minor()).isEqualTo(left + settleVat);
+        long payableBefore = bal(LoanService.VAT_PAYABLE);
+        assertThat(svc.settle("L1", "s", first.dueDate()).status()).isEqualTo(Loan.Status.CLOSED);
+        assertThat(bal(LoanService.VAT_PAYABLE) - payableBefore).isEqualTo(settleVat);
     }
 
     @Test

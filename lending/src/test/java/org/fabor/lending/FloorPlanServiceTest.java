@@ -193,6 +193,30 @@ class FloorPlanServiceTest {
     }
 
     @Test
+    void aStockAuditFlagsMissingUnitsOverdueSalesAndStrangers() {
+        draw("VIN1", UnitType.NEW, 10_000_000, D0);
+        draw("VIN2", UnitType.NEW, 10_000_000, D0);
+        draw("VIN3", UnitType.NEW, 10_000_000, D0);
+        draw("VIN4", UnitType.NEW, 10_000_000, D0);
+        LocalDate sold = D0.plusDays(30);
+        svc.recordSale("FP-1", "VIN3", sold);                        // sold and not paid off
+        svc.recordSale("FP-1", "VIN4", sold);
+        svc.payoff("FP-1", "VIN4", "po4", sold);                     // sold and paid: gone from stock, not a problem
+        LocalDate audit = sold.plusDays(5);
+        FloorPlanService.StockAudit a = svc.stockAudit("FP-1", audit, java.util.Set.of("VIN1", "VIN9"));
+        assertThat(a.missing()).containsExactly("VIN2");
+        assertThat(a.saleOverdue()).containsExactly("VIN3");
+        assertThat(a.unexpected()).containsExactly("VIN9");
+        assertThat(a.soldOutOfTrust()).containsExactly("VIN2", "VIN3");
+        assertThat(a.checked()).isEqualTo(3);
+        assertThat(a.clean()).isFalse();
+        FloorPlanService.StockAudit clean = svc.stockAudit("FP-1", D0.plusDays(1), java.util.Set.of("VIN1", "VIN2", "VIN3"));
+        assertThat(clean.clean()).isTrue();
+        assertThat(clean.soldOutOfTrust()).isEmpty();
+        assertThatThrownBy(() -> svc.stockAudit("NOPE", audit, java.util.Set.of())).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void aSoldUnitMustBePaidOffWithinTheWindow() {
         draw("VIN1", UnitType.NEW, 50_000_000, D0);
         LocalDate sold = D0.plusDays(100);

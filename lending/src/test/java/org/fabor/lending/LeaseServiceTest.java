@@ -196,4 +196,71 @@ class LeaseServiceTest {
         List<Lease.Period> none = new ArrayList<>();
         assertThat(svc.find("F1").orElseThrow().withPeriods(none, Lease.Status.COMPLETED).periods()).isEmpty();
     }
+
+    private void runOff(Lease lease) {
+        for (Lease.Period p : lease.periods()) {
+            svc.accrue("F1", p.number(), p.dueDate());
+            svc.collect("F1", "c" + p.number(), thb(p.payment()), p.dueDate());
+        }
+    }
+
+    @Test
+    void earlyTerminationChargesTheCarriedNetInvestmentPlusFeeAndCancelsTheRest() {
+        Lease lease = finance();
+        for (int n = 1; n <= 3; n++) {
+            Lease.Period p = lease.periods().get(n - 1);
+            svc.accrue("F1", n, p.dueDate());
+            svc.collect("F1", "c" + n, thb(p.payment()), p.dueDate());
+        }
+        LocalDate day = lease.periods().get(2).dueDate();
+        long carried = svc.carrying("F1", day).minor();
+        assertThat(carried).isGreaterThan(20_000_000);
+        long before = bal(new AccountId("dep:D1"));
+        Lease ended = svc.terminate("F1", "t1", thb(500_000), day);
+        assertThat(ended.status()).isEqualTo(Lease.Status.TERMINATED);
+        assertThat(before - bal(new AccountId("dep:D1"))).isEqualTo(carried + 500_000);
+        assertThat(bal(LeaseService.netInvestment("F1"))).isZero();
+        assertThat(bal(LeaseService.TERMINATION_FEE_INCOME)).isEqualTo(500_000);
+        assertThat(svc.due("F1").isZero()).isTrue();
+        assertThat(svc.terminate("F1", "t1", thb(500_000), day).status()).isEqualTo(Lease.Status.TERMINATED);   // retry
+        assertThatThrownBy(() -> svc.terminate("F1", "t2", thb(0), day)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void terminationNeedsDuePeriodsAccruedAndASaneFee() {
+        Lease lease = finance();
+        LocalDate day = lease.periods().get(0).dueDate();
+        assertThatThrownBy(() -> svc.terminate("F1", "t", thb(0), day)).hasMessageContaining("Accrue period 1");
+        svc.accrue("F1", 1, day);
+        assertThatThrownBy(() -> svc.terminate("F1", "t", thb(-1), day)).isInstanceOf(IllegalArgumentException.class);
+        svc.bookOperating("O1", "party-1", "D1", thb(10_000_000), thb(1_000_000), List.of(thb(300_000), thb(300_000)),
+                START, Frequency.MONTHLY);
+        assertThatThrownBy(() -> svc.terminate("O1", "t", thb(0), day)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.carrying("O1", day)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void purchaseOptionReleasesTheResidualAndBooksTheGain() {
+        Lease lease = finance();
+        runOff(lease);
+        LocalDate end = lease.periods().get(35).dueDate();
+        assertThat(svc.carrying("F1", end).minor()).isEqualTo(20_000_000);
+        assertThatThrownBy(() -> svc.purchase("F1", "b", thb(0), end)).isInstanceOf(IllegalArgumentException.class);
+        Lease sold = svc.purchase("F1", "b", thb(25_000_000), end);
+        assertThat(sold.status()).isEqualTo(Lease.Status.PURCHASED);
+        assertThat(bal(LeaseService.netInvestment("F1"))).isZero();
+        assertThat(bal(LeaseService.DISPOSAL_GAIN)).isEqualTo(5_000_000);
+        assertThat(svc.purchase("F1", "b", thb(25_000_000), end).status()).isEqualTo(Lease.Status.PURCHASED);   // retry
+        assertThatThrownBy(() -> svc.purchase("F1", "c", thb(1), end)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void purchaseBelowTheResidualIsALossAndAnActiveLeaseCannotBeBought() {
+        Lease lease = finance();
+        assertThatThrownBy(() -> svc.purchase("F1", "b", thb(1), lease.periods().get(0).dueDate()))
+                .isInstanceOf(IllegalStateException.class);
+        runOff(lease);
+        svc.purchase("F1", "b", thb(15_000_000), lease.periods().get(35).dueDate());
+        assertThat(bal(LeaseService.DISPOSAL_GAIN)).isEqualTo(-5_000_000);
+    }
 }
