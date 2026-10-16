@@ -27,6 +27,7 @@
     <module>engines/engine-schedule</module>
     <module>engines/engine-tax</module>
     <module>engines/engine-lease</module>
+    <module>engines/engine-ecl</module>
     <module>engines/engine-product</module>
     <module>ledger/ledger-domain</module>
     <module>ledger/ledger-api</module>
