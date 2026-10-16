@@ -334,32 +334,12 @@ public final class LoanService {
         if (loan.status() == Loan.Status.CLOSED || loan.status() == Loan.Status.WRITTEN_OFF) {
             return 0;
         }
-        ProductDefinition p = product(loan.productCode(), loan.productVersion());
-        if (p.earlySettlement() == null || p.earlySettlement().rebate() == null) {
+        RebateRule rule = rebateRule(product(loan.productCode(), loan.productVersion()));
+        if (rule == null || rule.kind() == RebateRule.Kind.ACTUARIAL) {
             return 0;
-        }
-        RebateRule rule = RebateRule.parse(p.earlySettlement().rebate());
-        if (rule.kind() == RebateRule.Kind.ACTUARIAL) {
-            return 0;
-        }
-        Currency cur = Currency.of(loan.currency());
-        List<Installment> rows = new ArrayList<>();
-        long totalInterest = 0;
-        int billed = 0;
-        for (Loan.Instalment i : loan.instalments()) {
-            Money principal = Money.ofMinor(i.principalDue(), cur);
-            Money interest = Money.ofMinor(i.interestDue(), cur);
-            rows.add(new Installment(i.number(), i.dueDate(), principal, interest, principal.plus(interest),
-                    Money.zero(cur)));
-            totalInterest += i.interestDue();
-            if (i.billed()) {
-                billed++;
-            }
         }
         long unbilled = loan.instalments().stream().filter(i -> !i.billed()).mapToLong(Loan.Instalment::interestDue).sum();
-        Schedule schedule = new Schedule(rows, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
-                Money.ofMinor(totalInterest, cur), Money.zero(cur));
-        return unbilled - rule.rebate(schedule, billed).minor();
+        return unbilled - unbilledRebate(loan, rule);
     }
 
     /**
@@ -492,7 +472,8 @@ public final class LoanService {
             return loan;
         }
         ProductDefinition p = product(loan.productCode(), loan.productVersion());
-        requireAnnuity(p);
+        requireAmortising(p);
+        boolean flat = isFlat(p);
         int first = firstUnbilled(loan);
         requireNothingDue(loan, first);
         Loan.Instalment head = loan.instalments().get(first);
@@ -522,9 +503,15 @@ public final class LoanService {
             list.add(new Loan.Instalment(first + i + 1, loan.instalments().get(first + i).dueDate(), fresh.get(i).principal().minor(),
                     fresh.get(i).interest().minor(), 0, 0, 0, 0, false));
         }
-        post(loanId, "prepay-" + reference, date, List.of(
-                Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED, amount),
+        long chargeable = flat ? prepaidChargeable(loan, p, first, amount.minor(), outstanding) : 0;
+        List<Entry> entries = new ArrayList<>(List.of(
+                Entry.guardedDebit(new AccountId("dep:" + loan.depositAccountId()), BalanceType.SETTLED, amount.plus(money(loan, chargeable))),
                 new Entry(principalAcct(loanId), BalanceType.SETTLED, Direction.CREDIT, amount)));
+        if (chargeable > 0) {
+            AccountId income = loan.status() == Loan.Status.NON_ACCRUAL ? INTEREST_SUSPENSE : INTEREST_INCOME;
+            entries.add(new Entry(income, BalanceType.SETTLED, Direction.CREDIT, money(loan, chargeable)));
+        }
+        post(loanId, "prepay-" + reference, date, entries);
         return keep(loan.withInstalments(List.copyOf(list), loan.status()));
     }
 
@@ -542,11 +529,13 @@ public final class LoanService {
             throw new IllegalArgumentException("A payment holiday is 1 to 6 periods");
         }
         ProductDefinition p = product(loan.productCode(), loan.productVersion());
-        requireAnnuity(p);
+        requireAmortising(p);
         int first = firstUnbilled(loan);
         requireNothingDue(loan, first);
         Frequency f = Frequency.valueOf(p.schedule().frequency());
-        java.math.BigDecimal r = org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear());
+        // a flat-rate loan has no nominal periodic rate: its implied rate is the one that repays the unbilled instalments
+        java.math.BigDecimal r = isFlat(p) ? impliedPeriodic(loan, first)
+                : org.fabor.engine.interest.Rates.periodic(rateOf(loan, p), f.perYear());
         Money out = money(loan, loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum());
         Money start = out;
         for (int i = 0; i < periods; i++) {
@@ -582,14 +571,77 @@ public final class LoanService {
     private List<Installment> rebuild(ProductDefinition p, Loan loan, long principal, int periods, LocalDate from) {
         Convention conv = p.schedule().holidayRule() == null ? Convention.FOLLOWING : Convention.valueOf(p.schedule().holidayRule());
         return ScheduleEngine.build(new ScheduleRequest(money(loan, principal), rateOf(loan, p), periods,
-                Frequency.valueOf(p.schedule().frequency()), from, null, Method.ANNUITY, null, 0, calendar, conv,
-                java.math.RoundingMode.HALF_UP)).installments();
+                Frequency.valueOf(p.schedule().frequency()), from, null, isFlat(p) ? Method.ANNUITY_FROM_FLAT : Method.ANNUITY,
+                null, 0, calendar, conv, java.math.RoundingMode.HALF_UP)).installments();
+    }
+
+    private static boolean isFlat(ProductDefinition p) {
+        return "ANNUITY_FROM_FLAT".equals(p.schedule().method());
     }
 
     private static void requireAnnuity(ProductDefinition p) {
         if (p.pricing() == null || p.pricing().rate() == null || !"ANNUITY".equals(p.schedule().method())) {
             throw new IllegalArgumentException("Only fixed-rate annuity products support this change");
         }
+    }
+
+    /** Prepayment and payment holidays: fixed-rate annuity or flat-rate products (a flat quote is rebuilt flat). */
+    private static void requireAmortising(ProductDefinition p) {
+        if (p.pricing() == null || p.pricing().rate() == null || !("ANNUITY".equals(p.schedule().method()) || isFlat(p))) {
+            throw new IllegalArgumentException("Only fixed-rate annuity or flat-rate products support this change");
+        }
+    }
+
+    /** Periodic rate implied by the unbilled instalments of a flat-rate loan, from its principal outstanding. */
+    private static java.math.BigDecimal impliedPeriodic(Loan loan, int first) {
+        long principal = loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::principalOutstanding).sum();
+        List<Long> pays = loan.instalments().stream().skip(first).map(i -> i.principalDue() + i.interestDue()).toList();
+        return org.fabor.engine.interest.Eir.periodicRate(principal, pays);
+    }
+
+    /**
+     * Flat-rate prepayment: the interest the prepaid principal carried on the unbilled schedule, less the same share of
+     * the product's rebate rule. Without a rebate rule (or with ACTUARIAL) nothing is charged on the prepaid part.
+     */
+    private long prepaidChargeable(Loan loan, ProductDefinition p, int first, long prepaid, long outstanding) {
+        RebateRule rule = rebateRule(p);
+        if (rule == null || rule.kind() == RebateRule.Kind.ACTUARIAL) {
+            return 0;
+        }
+        long unbilledInterest = loan.instalments().stream().skip(first).mapToLong(Loan.Instalment::interestDue).sum();
+        return share(unbilledInterest, prepaid, outstanding) - share(unbilledRebate(loan, rule), prepaid, outstanding);
+    }
+
+    private static long share(long part, long prepaid, long outstanding) {
+        return java.math.BigDecimal.valueOf(part).multiply(java.math.BigDecimal.valueOf(prepaid))
+                .divide(java.math.BigDecimal.valueOf(outstanding), 0, java.math.RoundingMode.HALF_UP).longValueExact();
+    }
+
+    private static RebateRule rebateRule(ProductDefinition p) {
+        if (p.earlySettlement() == null || p.earlySettlement().rebate() == null) {
+            return null;
+        }
+        return RebateRule.parse(p.earlySettlement().rebate());
+    }
+
+    /** Interest the rule excuses on the unbilled instalments of the loan, over the whole original schedule. */
+    private static long unbilledRebate(Loan loan, RebateRule rule) {
+        Currency cur = Currency.of(loan.currency());
+        List<Installment> rows = new ArrayList<>();
+        long totalInterest = 0;
+        int billed = 0;
+        for (Loan.Instalment i : loan.instalments()) {
+            Money principal = Money.ofMinor(i.principalDue(), cur);
+            Money interest = Money.ofMinor(i.interestDue(), cur);
+            rows.add(new Installment(i.number(), i.dueDate(), principal, interest, principal.plus(interest), Money.zero(cur)));
+            totalInterest += i.interestDue();
+            if (i.billed()) {
+                billed++;
+            }
+        }
+        Schedule schedule = new Schedule(rows, java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
+                Money.ofMinor(totalInterest, cur), Money.zero(cur));
+        return rule.rebate(schedule, billed).minor();
     }
 
     private static int firstUnbilled(Loan loan) {

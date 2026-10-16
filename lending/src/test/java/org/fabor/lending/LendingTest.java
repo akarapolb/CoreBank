@@ -369,18 +369,42 @@ class LendingTest {
     }
 
     @Test
-    void holidayAndPrepaymentRefuseFlatRateProducts() throws IOException {
-        String flat = yaml().replace("rate_type: FIXED", "rate_type: FLAT").replace("method: ANNUITY", "method: ANNUITY_FROM_FLAT")
-                .replace("rate: 0.18", "rate: 0.05");
-        wire(flat);
-        Loan l = svc.disburse("L1", "p", "PERSONAL_LOAN_STD", 1, Money.of(new BigDecimal("100000"), Currency.THB), 12, D0, "D1");
-        svc.bill("L1", 1, l.instalments().get(0).dueDate());
-        svc.repay("L1", "m1", Money.ofMinor(l.instalments().get(0).principalDue() + l.instalments().get(0).interestDue(), Currency.THB),
-                l.instalments().get(0).dueDate());
+    void holidayOnAFlatRateLoanCapitalisesAtTheImpliedRate() throws IOException {
+        wireHirePurchase("ACTUARIAL");
+        Loan l = billAndPay(open(), 1);
+        long before = outstandingPrincipal(l);
+        long incomeBefore = bal(LoanService.INTEREST_INCOME);
         LocalDate day = l.instalments().get(0).dueDate().plusDays(1);
-        assertThatThrownBy(() -> svc.holiday("L1", "h", 1, day)).hasMessageContaining("annuity");
-        assertThatThrownBy(() -> svc.prepay("L1", "p", Money.ofMinor(1_000, Currency.THB), day, LoanService.PrepaymentMode.REDUCE_TERM))
-                .hasMessageContaining("annuity");
+        Loan after = svc.holiday("L1", "h1", 2, day);
+        assertThat(after.instalments()).hasSize(12);
+        long capitalised = outstandingPrincipal(after) - before;
+        assertThat(capitalised).isPositive();
+        assertThat(bal(LoanService.INTEREST_INCOME) - incomeBefore).isEqualTo(capitalised);
+        assertThat(after.instalments().get(1).dueDate()).isAfter(l.instalments().get(1).dueDate().plusDays(50));   // moved about two months
+        assertThat(outstandingPrincipal(svc.holiday("L1", "h1", 2, day))).isEqualTo(outstandingPrincipal(after));   // retry safe
+    }
+
+    @Test
+    void prepaymentOnAFlatRateLoanWithActuarialRebateChargesNothingExtra() throws IOException {
+        wireHirePurchase("ACTUARIAL");
+        Loan l = billAndPay(open(), 1);
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        long before = outstandingPrincipal(l);
+        long incomeBefore = bal(LoanService.INTEREST_INCOME);
+        Loan after = svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1),
+                LoanService.PrepaymentMode.REDUCE_INSTALMENT);
+        assertThat(outstandingPrincipal(after)).isEqualTo(before - 2_000_000);
+        assertThat(bal(LoanService.INTEREST_INCOME)).isEqualTo(incomeBefore);
+    }
+
+    @Test
+    void prepaymentOnAFlatRateLoanChargesWhatAPercentRebateLeaves() throws IOException {
+        wireHirePurchase("PERCENT:0.5");
+        Loan l = billAndPay(open(), 1);
+        LocalDate due1 = l.instalments().get(0).dueDate();
+        long incomeBefore = bal(LoanService.INTEREST_INCOME);
+        svc.prepay("L1", "pp1", Money.ofMinor(2_000_000, Currency.THB), due1.plusDays(1), LoanService.PrepaymentMode.REDUCE_TERM);
+        assertThat(bal(LoanService.INTEREST_INCOME) - incomeBefore).isPositive();
     }
 
     @Test
