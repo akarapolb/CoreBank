@@ -114,6 +114,9 @@ class AccountingTest {
         assertThat(GlMapping.retailV1().name()).isEqualTo("retail_th_v1");
         assertThat(GlMapping.retailV1().map("dep:Z").type()).isEqualTo(GlAccount.Type.LIABILITY);
         assertThat(GlMapping.retailV1().map("loan:L1:vat").code()).isEqualTo("1330");
+        assertThat(GlMapping.retailV1().map("loan:L1:ecl-allowance").code()).isEqualTo("1390");
+        assertThat(GlMapping.assetFinanceV1().map("gl:ecl-expense").code()).isEqualTo("5300");
+        assertThat(GlMapping.assetFinanceV1().map("gl:ecl-expense").type()).isEqualTo(GlAccount.Type.EXPENSE);
         assertThat(GlMapping.retailV1().map("gl:vat-payable").type()).isEqualTo(GlAccount.Type.LIABILITY);
         assertThat(projection.snapshot()).isNotEmpty();
     }

@@ -215,6 +215,15 @@ class FaborAppTest {
         assertThat(((Number) detail.get("outstandingMinor")).longValue()).isEqualTo(10_000_000L);
         assertThat(call(HttpMethod.GET, "/api/v1/loans/LN-APP1/detail", "ops", null, MediaType.APPLICATION_JSON).get("status")).isEqualTo("ACTIVE");
 
+        // loss allowance: the model parameters are not configured in tests, so neither the run nor the preview may start
+        ResponseEntity<Map> noModel = http.exchange("/api/v1/ecl/run?asOf=2026-02-01", HttpMethod.POST,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class);
+        assertThat(noModel.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(String.valueOf(noModel.getBody().get("message"))).contains("fabor.ecl.annual-pd");
+        assertThat(http.exchange("/api/v1/ecl/loans/LN-APP1", HttpMethod.GET,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+
         // asset register: order, deliver, insure and put the vehicle under the loan; refusals map to stable statuses
         Map<String, Object> ordered = call(HttpMethod.POST, "/api/v1/assets", "ops", Map.of("id", "A1", "kind", "VEHICLE",
                 "make", "Isuzu", "model", "D-Max", "serialNo", " mpav1234567890 ", "dealerId", "DLR-1", "costMinor", 12_000_000,

@@ -15,6 +15,14 @@ public interface LoanRepo {
     /** Ids of loans that still need servicing (neither closed nor written off). */
     java.util.List<String> activeIds();
 
+    /**
+     * Ids of every loan, closed and written off included: work that must also reach loans that have just left servicing
+     * (releasing a loss allowance) needs them. Implementations that cannot tell return the active ones.
+     */
+    default java.util.List<String> allIds() {
+        return activeIds();
+    }
+
     final class InMemory implements LoanRepo {
         private final Map<String, Loan> loans = new HashMap<>();
 
@@ -36,6 +44,11 @@ public interface LoanRepo {
         @Override
         public synchronized java.util.List<String> activeIds() {
             return loans.values().stream().filter(l -> l.status() != Loan.Status.CLOSED && l.status() != Loan.Status.WRITTEN_OFF).map(Loan::id).sorted().toList();
+        }
+
+        @Override
+        public synchronized java.util.List<String> allIds() {
+            return loans.keySet().stream().sorted().toList();
         }
     }
 }

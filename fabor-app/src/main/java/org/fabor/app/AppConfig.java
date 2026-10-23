@@ -209,6 +209,11 @@ class AppConfig {
     }
 
     @Bean
+    org.fabor.lending.EclRun eclRun(LoanRepo repo, org.fabor.lending.EclService ecl) {
+        return new org.fabor.lending.EclRun(repo, ecl);
+    }
+
+    @Bean
     org.fabor.lending.RepossessionRepo repossessionRepo(DataSource ds, TenantId tenant) {
         return new org.fabor.services.persistence.JdbcRepossessionRepo(ds, tenant);
     }

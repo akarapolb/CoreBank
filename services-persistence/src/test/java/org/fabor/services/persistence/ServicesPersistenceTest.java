@@ -216,6 +216,7 @@ class ServicesPersistenceTest {
         assertThat(loans.activeIds()).containsExactly("L1");
         loans.save(restructured.withStatus(Loan.Status.WRITTEN_OFF));
         assertThat(loans.activeIds()).isEmpty();
+        assertThat(loans.allIds()).containsExactly("L1");               // a written-off loan still counts here
     }
 
     @Test

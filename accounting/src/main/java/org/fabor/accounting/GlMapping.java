@@ -102,6 +102,7 @@ public final class GlMapping {
                 .rule("loan:.*:interest", "1310", "Interest receivable", GlAccount.Type.ASSET)
                 .rule("loan:.*:penalty", "1320", "Penalties receivable", GlAccount.Type.ASSET)
                 .rule("loan:.*:vat", "1330", "VAT receivable on instalments", GlAccount.Type.ASSET)
+                .rule("loan:.*:ecl-allowance", "1390", "Loss allowance on loans (contra asset)", GlAccount.Type.ASSET)
                 .rule("gl:(deposit-clearing|cash)", "1100", "Cash and clearing", GlAccount.Type.ASSET)
                 .rule("gl:wht-payable", "2300", "Withholding tax payable", GlAccount.Type.LIABILITY)
                 .rule("gl:vat-payable", "2310", "VAT payable", GlAccount.Type.LIABILITY)
@@ -109,6 +110,7 @@ public final class GlMapping {
                 .rule("gl:interest-income", "4100", "Interest income", GlAccount.Type.INCOME)
                 .rule("gl:fee-income", "4200", "Fee income", GlAccount.Type.INCOME)
                 .rule("gl:penalty-income", "4300", "Penalty income", GlAccount.Type.INCOME)
-                .rule("gl:interest-expense", "5100", "Interest expense", GlAccount.Type.EXPENSE);
+                .rule("gl:interest-expense", "5100", "Interest expense", GlAccount.Type.EXPENSE)
+                .rule("gl:ecl-expense", "5300", "Expected credit loss expense", GlAccount.Type.EXPENSE);
     }
 }
