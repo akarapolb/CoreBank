@@ -209,6 +209,18 @@ class AppConfig {
     }
 
     @Bean
+    org.fabor.lending.RepossessionRepo repossessionRepo(DataSource ds, TenantId tenant) {
+        return new org.fabor.services.persistence.JdbcRepossessionRepo(ds, tenant);
+    }
+
+    @Bean
+    org.fabor.lending.RepossessionService repossessionService(TenantId tenant, LedgerService ledger, LoanService loans,
+                                                              LoanRepo loanRepo, AssetService assets,
+                                                              org.fabor.lending.RepossessionRepo repo) {
+        return new org.fabor.lending.RepossessionService(tenant, ledger, loans, loanRepo, assets, repo);
+    }
+
+    @Bean
     org.fabor.lending.CollectionRepo collectionRepo(DataSource ds, TenantId tenant) {
         return new org.fabor.services.persistence.JdbcCollectionRepo(ds, tenant);
     }

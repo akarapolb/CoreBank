@@ -301,4 +301,28 @@ class AssetRegisterTest {
         assertThat(repo.policies("A2")).isEmpty();
         assertThat(repo.titleEvents("A2")).isEmpty();
     }
+
+    @Test
+    void aRepossessedAssetKeepsItsContractAndTitleUntilItIsSold() {
+        active();
+        Asset taken = svc.repossess("A1", "Yard Bangna", Asset.Condition.FAIR);
+        assertThat(taken.status()).isEqualTo(Asset.Status.REPOSSESSED);
+        assertThat(taken.contractId()).isEqualTo("HP-1");
+        assertThat(taken.titleHolder()).isEqualTo(Asset.TitleHolder.LESSOR);
+        assertThat(taken.location()).isEqualTo("Yard Bangna");
+        assertThat(taken.condition()).isEqualTo(Asset.Condition.FAIR);
+        assertThatThrownBy(() -> svc.repossess("A1", "Yard", Asset.Condition.FAIR)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.returnToLessor("A1")).isInstanceOf(IllegalStateException.class);
+        Asset sold = svc.sellRepossessed("A1");
+        assertThat(sold.status()).isEqualTo(Asset.Status.DISPOSED);
+        assertThatThrownBy(() -> svc.sellRepossessed("A1")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.sellRepossessed("NOPE")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void onlyAnActiveAssetCanBeRepossessed() {
+        ordered();
+        assertThatThrownBy(() -> svc.repossess("A1", "Yard", Asset.Condition.POOR)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.sellRepossessed("A1")).isInstanceOf(IllegalStateException.class);
+    }
 }

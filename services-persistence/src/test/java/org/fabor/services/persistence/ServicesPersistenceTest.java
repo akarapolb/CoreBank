@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, fp_unit, fp_curtailment, fp_unit_terms, fp_line, collection_event, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, fp_unit, fp_curtailment, fp_unit_terms, fp_line, collection_event, repossession, "
                     + "catalog_draft, catalog_version");
         }
     }
@@ -216,6 +216,21 @@ class ServicesPersistenceTest {
         assertThat(loans.activeIds()).containsExactly("L1");
         loans.save(restructured.withStatus(Loan.Status.WRITTEN_OFF));
         assertThat(loans.activeIds()).isEmpty();
+    }
+
+    @Test
+    void repossessionCaseMovesFromOpenToSold() {
+        var repo = new JdbcRepossessionRepo(ds, T);
+        assertThat(repo.find("R1")).isEmpty();
+        var open = new org.fabor.lending.Repossession("R1", "L1", "A1", LocalDate.of(2026, 3, 1), "Yard Bangna",
+                org.fabor.lending.Repossession.Status.OPEN, null, 0, 0, 0, 0, 0);
+        repo.save(open);
+        assertThat(repo.find("R1")).contains(open);
+        var sold = open.sold(LocalDate.of(2026, 3, 20), 5_000_000, 500_000, 6_000_000, 1_500_000, 0);
+        repo.save(sold);
+        assertThat(repo.find("R1")).contains(sold);
+        assertThat(repo.forLoan("L1")).containsExactly(sold);
+        assertThat(repo.forLoan("L2")).isEmpty();
     }
 
     @Test

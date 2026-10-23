@@ -9,8 +9,11 @@ public record Asset(String id, Kind kind, String make, String model, String seri
                     String location, Condition condition, TitleHolder titleHolder) {
     public enum Kind { VEHICLE, EQUIPMENT }
 
-    /** ORDERED from the dealer, DELIVERED (and registered), ACTIVE under a contract, RETURNED to the lessor, DISPOSED of. */
-    public enum Status { ORDERED, DELIVERED, ACTIVE, RETURNED, DISPOSED }
+    /**
+     * ORDERED from the dealer, DELIVERED (and registered), ACTIVE under a contract, RETURNED to the lessor, REPOSSESSED
+     * from a customer in default (awaiting sale), DISPOSED of.
+     */
+    public enum Status { ORDERED, DELIVERED, ACTIVE, RETURNED, REPOSSESSED, DISPOSED }
 
     public enum Condition { NEW, GOOD, FAIR, POOR, DAMAGED }
 

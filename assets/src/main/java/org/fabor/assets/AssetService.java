@@ -176,6 +176,32 @@ public final class AssetService {
         return returned;
     }
 
+    /**
+     * The asset is taken back from a customer in default: it leaves ACTIVE for REPOSSESSED, keeps its contract (the debt
+     * it secures) and the lessor's title, and is recorded at {@code location} in the condition found. Whether the
+     * contract is in default is the caller's check.
+     */
+    public Asset repossess(String id, String location, Asset.Condition condition) {
+        Asset a = load(id);
+        if (a.status() != Asset.Status.ACTIVE) {
+            throw new IllegalStateException("Asset " + id + " is " + a.status() + ", not ACTIVE");
+        }
+        Asset taken = a.withStatus(Asset.Status.REPOSSESSED).withLocation(location).withCondition(condition);
+        repo.save(taken);
+        return taken;
+    }
+
+    /** A repossessed asset has been sold to a third party. */
+    public Asset sellRepossessed(String id) {
+        Asset a = load(id);
+        if (a.status() != Asset.Status.REPOSSESSED) {
+            throw new IllegalStateException("Asset " + id + " is " + a.status() + ", not REPOSSESSED");
+        }
+        Asset sold = a.withStatus(Asset.Status.DISPOSED);
+        repo.save(sold);
+        return sold;
+    }
+
     public Optional<Asset> find(String id) {
         return repo.find(id);
     }
