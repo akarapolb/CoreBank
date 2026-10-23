@@ -126,7 +126,8 @@ class FaborAppTest {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
             st.execute("TRUNCATE ledger_entry, ledger_outbox, ledger_balance, ledger_batch, audit_log, pii_vault, consent_event, "
                     + "party, deposit_account, deposit_ytd, loan_instalment, loan, catalog_draft, catalog_version, scheduler_due, "
-                    + "asset_title_event, asset_policy, asset, dealer, lease_period, lease, collection_event, repossession");
+                    + "asset_title_event, asset_policy, asset, dealer, lease_period, lease, collection_event, repossession, "
+                    + "fp_unit, fp_curtailment, fp_unit_terms, fp_line, master_schedule, master_rate_card, master_agreement");
         }
         // security first: no token, no entry
         assertThat(http.getForEntity("/api/v1/products/X/versions", String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -350,5 +351,66 @@ class FaborAppTest {
         assertThat(ended.get("status")).isEqualTo("TERMINATED");
         assertThat(http.exchange("/api/v1/leases/NOPE", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
                 Map.class).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        // floor plan: a dealer line, a drawdown per unit, limits, interest, sale, payoff and the stock audit
+        Map<String, Object> line = call(HttpMethod.POST, "/api/v1/floorplans", "ops", Map.of("id", "FP-1", "dealerId", "DLR-1",
+                "currency", "THB", "limitMinor", 100_000_000, "annualRate", 0.09, "payoffWindowDays", 2, "settlementAccountId",
+                "SAV-P1", "terms", Map.of("NEW", Map.of("subLimitMinor", 80_000_000, "interestFreeDays", 60), "USED",
+                        Map.of("subLimitMinor", 4_000_000, "interestFreeDays", 0)),
+                "curtailments", List.of(Map.of("atDay", 120, "cumulativePercent", 10)), "signedOn", "2026-01-15"),
+                MediaType.APPLICATION_JSON);
+        assertThat(line.get("status")).isEqualTo("ACTIVE");
+        call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units", "ops", Map.of("unitId", "VIN1", "type", "NEW", "amountMinor",
+                1_000_000, "date", "2026-01-15", "supplierAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);
+        call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units", "ops", Map.of("unitId", "VIN2", "type", "USED", "amountMinor",
+                3_000_000, "date", "2026-01-15", "supplierAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);
+        assertThat(http.exchange("/api/v1/floorplans/FP-1/units", HttpMethod.POST, new HttpEntity<>(Map.of("unitId", "VIN3",
+                "type", "USED", "amountMinor", 2_000_000, "date", "2026-01-15", "supplierAccountId", "SAV-P1"),
+                headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);   // USED sub-limit
+        Map<String, Object> accrued = call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units/VIN1/accrual?upTo=2026-04-15", "ops",
+                null, MediaType.APPLICATION_JSON);
+        assertThat(((Number) accrued.get("subvention")).longValue()).isPositive();             // the manufacturer bears the free days
+        assertThat(((Number) call(HttpMethod.GET, "/api/v1/floorplans/FP-1/exposure", "ops", null, MediaType.APPLICATION_JSON)
+                .get("exposureMinor")).longValue()).isEqualTo(4_000_000L);
+        call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units/VIN1/sale", "ops", Map.of("soldOn", "2026-04-20"), MediaType.APPLICATION_JSON);
+        assertThat(http.exchange("/api/v1/floorplans/FP-1/overdue-sales?asOf=2026-04-25", HttpMethod.GET,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class).getBody()).hasSize(1);
+        Map<String, Object> paidOff = call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units/VIN1/payoff", "ops",
+                Map.of("reference", "po1", "date", "2026-04-26"), MediaType.APPLICATION_JSON);
+        assertThat(paidOff.get("status")).isEqualTo("PAID");
+        Map<String, Object> audit = call(HttpMethod.POST, "/api/v1/floorplans/FP-1/stock-audit", "ops",
+                Map.of("asOf", "2026-05-01", "found", List.of("VIN9")), MediaType.APPLICATION_JSON);
+        assertThat(audit.get("missing")).isEqualTo(List.of("VIN2"));
+        assertThat(audit.get("unexpected")).isEqualTo(List.of("VIN9"));
+        assertThat(audit.get("clean")).isEqualTo(false);
+        call(HttpMethod.POST, "/api/v1/floorplans/FP-1/freeze", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(http.exchange("/api/v1/floorplans/FP-1/units", HttpMethod.POST, new HttpEntity<>(Map.of("unitId", "VIN4",
+                "type", "NEW", "amountMinor", 1_000, "date", "2026-05-02", "supplierAccountId", "SAV-P1"),
+                headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);   // frozen
+
+        // fleet master agreement: rate card, a rate-locked call-off against the facility, headroom and refusals
+        call(HttpMethod.POST, "/api/v1/masters", "ops", Map.of("id", "MA-1", "party", "P1", "currency", "THB", "limitMinor",
+                20_000_000, "productCode", "PERSONAL_LOAN_STD", "productVersion", 1, "crossDefaultDpd", 60, "rateCard", List.of(
+                        Map.of("vehicleClass", "TRUCK", "minTerm", 6, "maxTerm", 36, "rate", 0.05, "validFrom", "2026-01-01")),
+                "date", "2026-06-01"), MediaType.APPLICATION_JSON);
+        Map<String, Object> callOff = call(HttpMethod.POST, "/api/v1/masters/MA-1/call-offs", "ops", Map.of("loanId", "MS-1",
+                "vehicleClass", "TRUCK", "assetIds", List.of("A1"), "principalMinor", 5_000_000, "term", 12, "date", "2026-06-15",
+                "customerAccountId", "SAV-P1", "payoutAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);
+        assertThat(callOff.get("id")).isEqualTo("MS-1");
+        assertThat(http.exchange("/api/v1/masters/MA-1/schedules", HttpMethod.GET,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class).getBody()).hasSize(1);
+        Map<String, Object> facility = call(HttpMethod.GET, "/api/v1/masters/MA-1/facility", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(((Number) facility.get("utilisationMinor")).longValue()).isEqualTo(5_000_000L);
+        assertThat(((Number) facility.get("headroomMinor")).longValue()).isEqualTo(15_000_000L);
+        assertThat(http.exchange("/api/v1/masters/MA-1/call-offs", HttpMethod.POST, new HttpEntity<>(Map.of("loanId", "MS-2",
+                "vehicleClass", "TRUCK", "assetIds", List.of(), "principalMinor", 16_000_000, "term", 12, "date", "2026-06-15",
+                "customerAccountId", "SAV-P1", "payoutAccountId", "SAV-P1"), headers("ops", MediaType.APPLICATION_JSON)), Map.class)
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);                                                        // beyond headroom
+        assertThat(http.exchange("/api/v1/masters/MA-1/call-offs", HttpMethod.POST, new HttpEntity<>(Map.of("loanId", "MS-3",
+                "vehicleClass", "BUS", "assetIds", List.of(), "principalMinor", 1_000_000, "term", 12, "date", "2026-06-15",
+                "customerAccountId", "SAV-P1", "payoutAccountId", "SAV-P1"), headers("ops", MediaType.APPLICATION_JSON)), Map.class)
+                .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);                                                      // no rate card row
+        assertThat(call(HttpMethod.POST, "/api/v1/masters/MA-1/evaluation?asOf=2026-09-20", "ops", null, MediaType.APPLICATION_JSON)
+                .get("status")).isEqualTo("ACTIVE");
     }
 }
