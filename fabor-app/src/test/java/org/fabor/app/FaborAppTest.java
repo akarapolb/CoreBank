@@ -126,7 +126,7 @@ class FaborAppTest {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
             st.execute("TRUNCATE ledger_entry, ledger_outbox, ledger_balance, ledger_batch, audit_log, pii_vault, consent_event, "
                     + "party, deposit_account, deposit_ytd, loan_instalment, loan, catalog_draft, catalog_version, scheduler_due, "
-                    + "asset_title_event, asset_policy, asset");
+                    + "asset_title_event, asset_policy, asset, dealer, lease_period, lease, collection_event, repossession");
         }
         // security first: no token, no entry
         assertThat(http.getForEntity("/api/v1/products/X/versions", String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -258,6 +258,7 @@ class FaborAppTest {
         assertThat(early.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);                  // the loan is not paid off
         assertThat(http.exchange("/api/v1/assets/NOPE", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
                 Map.class).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
         ResponseEntity<List> posted = http.exchange("/api/v1/ledger/batches?account=dep:SAV-P1&limit=5", HttpMethod.GET,
                 new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class);
         assertThat(posted.getBody()).hasSize(1);
@@ -309,5 +310,45 @@ class FaborAppTest {
             rs.next();
             assertThat(rs.getLong(1)).isGreaterThanOrEqualTo(1);
         }
+
+        // dealer channel: onboard, pay for the active asset (cost plus 2% commission), a second payment is refused
+        call(HttpMethod.POST, "/api/v1/dealers", "ops", Map.of("id", "DLR-1", "name", "Bangna Motors", "taxId", "0105551234567",
+                "commissionRate", 0.02), MediaType.APPLICATION_JSON);
+        Map<String, Object> paid = call(HttpMethod.POST, "/api/v1/dealers/payments", "ops", Map.of("assetId", "A1",
+                "date", "2026-01-18"), MediaType.APPLICATION_JSON);
+        assertThat(((Number) paid.get("paidMinor")).longValue()).isEqualTo(12_240_000L);
+        assertThat(http.exchange("/api/v1/dealers/payments", HttpMethod.POST, new HttpEntity<>(Map.of("assetId", "A1",
+                "date", "2026-01-19"), headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(call(HttpMethod.POST, "/api/v1/dealers/DLR-1/suspension", "ops", null, MediaType.APPLICATION_JSON).get("status"))
+                .isEqualTo("SUSPENDED");
+
+        // leases: book a finance lease, accrue and collect, check what it carries, end it early; refusals are stable
+        Map<String, Object> lease = call(HttpMethod.POST, "/api/v1/leases/finance", "ops", Map.ofEntries(Map.entry("id", "F1"),
+                Map.entry("party", "P1"), Map.entry("depositAccountId", "SAV-P1"), Map.entry("fairValueMinor", 5_000_000),
+                Map.entry("directCostsMinor", 0), Map.entry("paymentMinor", 150_000), Map.entry("periods", 36),
+                Map.entry("residualMinor", 1_000_000), Map.entry("start", "2026-01-15"), Map.entry("frequency", "MONTHLY")),
+                MediaType.APPLICATION_JSON);
+        assertThat(lease.get("kind")).isEqualTo("FINANCE");
+        assertThat((List<?>) lease.get("periods")).hasSize(36);
+        assertThat(http.exchange("/api/v1/leases/finance", HttpMethod.POST, new HttpEntity<>(Map.of("id", "F1", "party", "P1",
+                "depositAccountId", "SAV-P1", "fairValueMinor", 1, "paymentMinor", 1, "periods", 1, "residualMinor", 0,
+                "start", "2026-01-15"), headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        call(HttpMethod.POST, "/api/v1/leases/F1/accrual/1?asOf=2026-02-16", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(http.exchange("/api/v1/leases/F1/accrual/3?asOf=2026-04-16", HttpMethod.POST,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        call(HttpMethod.POST, "/api/v1/leases/F1/collections", "ops", Map.of("reference", "c1", "amountMinor", 150_000,
+                "date", "2026-02-16"), MediaType.APPLICATION_JSON);
+        assertThat(((Number) call(HttpMethod.GET, "/api/v1/leases/F1/due", "ops", null, MediaType.APPLICATION_JSON).get("dueMinor"))
+                .longValue()).isZero();
+        long carried = ((Number) call(HttpMethod.GET, "/api/v1/leases/F1/carrying?date=2026-02-16", "ops", null,
+                MediaType.APPLICATION_JSON).get("carryingMinor")).longValue();
+        assertThat(carried).isGreaterThan(1_000_000L);
+        Map<String, Object> ended = call(HttpMethod.POST, "/api/v1/leases/F1/termination", "ops", Map.of("reference", "t1",
+                "feeMinor", 0, "date", "2026-02-16"), MediaType.APPLICATION_JSON);
+        assertThat(ended.get("status")).isEqualTo("TERMINATED");
+        assertThat(http.exchange("/api/v1/leases/NOPE", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                Map.class).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 }
