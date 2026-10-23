@@ -65,7 +65,7 @@ class ServicesPersistenceTest {
     @BeforeEach
     void clean() throws SQLException {
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, fp_unit, fp_curtailment, fp_unit_terms, fp_line, "
+            st.execute("TRUNCATE audit_log, pii_vault, consent_event, party, deposit_account, deposit_ytd, loan_instalment, loan, lease_period, lease, asset_title_event, asset_policy, asset, dealer, master_schedule, master_rate_card, master_agreement, fp_unit, fp_curtailment, fp_unit_terms, fp_line, collection_event, "
                     + "catalog_draft, catalog_version");
         }
     }
@@ -216,6 +216,25 @@ class ServicesPersistenceTest {
         assertThat(loans.activeIds()).containsExactly("L1");
         loans.save(restructured.withStatus(Loan.Status.WRITTEN_OFF));
         assertThat(loans.activeIds()).isEmpty();
+    }
+
+    @Test
+    void collectionEventsAreAppendOnlyAndKeepTheirOrder() {
+        var repo = new JdbcCollectionRepo(ds, T);
+        assertThat(repo.events("L1")).isEmpty();
+        assertThat(repo.find("L1", "c1")).isEmpty();
+        var contact = new org.fabor.lending.CollectionEvent("L1", "c1", LocalDate.of(2026, 3, 1),
+                org.fabor.lending.CollectionEvent.Kind.CONTACT, org.fabor.lending.CollectionEvent.Channel.CALL, "no answer", 0, null, 0);
+        var promise = new org.fabor.lending.CollectionEvent("L1", "p1", LocalDate.of(2026, 2, 20),
+                org.fabor.lending.CollectionEvent.Kind.PROMISE, org.fabor.lending.CollectionEvent.Channel.NONE, null, 500_000,
+                LocalDate.of(2026, 3, 5), 900_000);
+        repo.add(contact);
+        repo.add(promise);
+        repo.add(new org.fabor.lending.CollectionEvent("L1", "c1", LocalDate.of(2026, 4, 1),
+                org.fabor.lending.CollectionEvent.Kind.CONTACT, org.fabor.lending.CollectionEvent.Channel.LETTER, "ignored", 0, null, 0));
+        assertThat(repo.events("L1")).containsExactly(contact, promise);          // insertion order, the repeat ignored
+        assertThat(repo.find("L1", "p1")).contains(promise);
+        assertThat(repo.events("L2")).isEmpty();
     }
 
     @Test
