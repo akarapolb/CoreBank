@@ -367,8 +367,91 @@
       fresh.addEventListener('click', function () { showAll = !showAll; paint(); });
       $('#view-contract thead th:nth-child(6)').textContent = 'VAT';
       paint();
+      loadLoanCollections(d.id);
     } catch (e) { fail('Open contract')(e); }
   }
+
+  // ---------------------------------------------------------------- Collections (on the Contracts screen): worklist, contacts, promises
+  var STEP = { REMIND: ['Remind', ''], CALL: ['Call', 'acc'], LETTER: ['Send letter', 'warn'], FIELD_VISIT: ['Field visit', 'warn'],
+    RESTRUCTURE_REVIEW: ['Review for restructuring', 'crit'], WRITE_OFF_REVIEW: ['Review for write-off', 'crit'] };
+  var stepChip = function (a) { var s = STEP[a] || [a, '']; return "<span class='chip " + s[1] + "'>" + esc(s[0]) + '</span>'; };
+  var promiseCell = function (i) {
+    return i.promiseBroken ? "<span class='chip crit'>Broken</span>" : i.openPromiseBy ? "<span class='chip acc'>By " + esc(i.openPromiseBy) + '</span>' : "<span class='muted'>—</span>";
+  };
+  var collectionsPanel = el(
+    '<div class="panel" id="collectionsPanel"><div class="panel-head"><h2>Collections queue</h2><div class="row"><span class="muted" id="colNote"></span>' +
+    '<button class="btn" type="button" id="colRefresh">Refresh</button></div></div>' +
+    '<div class="tbl-wrap"><table><thead><tr><th>Loan</th><th>Customer</th><th class="num">Days late</th><th class="num">Overdue</th><th>Next step</th><th class="num">Contacts</th><th>Promise</th></tr></thead>' +
+    '<tbody id="colBody"></tbody></table></div>' +
+    '<p class="note">Days late run from the oldest billed installment that is still unpaid. The next step follows the product delinquency buckets; restructuring and write-off stay a decision for a person. Click a row to open the loan.</p></div>');
+  contractTools.after(collectionsPanel);
+  var loanCol = el(
+    '<div class="panel" id="loanCollections" hidden><h2>Collections on this loan</h2><p class="muted" id="lcStatus"></p>' +
+    '<div class="grid g2"><form class="form" id="lcContact"><div class="field"><label for="lcChannel">Contact channel</label><select id="lcChannel">' +
+    '<option>CALL</option><option>SMS</option><option>LETTER</option><option>VISIT</option><option>EMAIL</option></select></div>' +
+    '<div class="field"><label for="lcNote">Note</label><input id="lcNote" autocomplete="off"></div><div class="row"><button class="btn" type="submit">Log contact</button></div></form>' +
+    '<form class="form" id="lcPromise"><div class="field"><label for="lcAmt">Promised, THB</label><input id="lcAmt" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="lcBy">Pay by</label><input id="lcBy" type="date" required></div>' +
+    '<div class="field"><label for="lcPNote">Note</label><input id="lcPNote" autocomplete="off"></div><div class="row"><button class="btn primary" type="submit">Record promise</button></div></form></div>' +
+    '<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Detail</th></tr></thead><tbody id="lcBody"></tbody></table></div>' +
+    '<div class="result" id="lcOut" hidden></div></div>');
+  collectionsPanel.after(loanCol);
+  $('#lcBy').value = iso(new Date(Date.now() + 7 * 86400000));
+  var queueByLoan = {}, colLoan = null;
+
+  async function loadQueue() {
+    try {
+      var q = await api('GET', '/collections/queue?asOf=' + today);
+      queueByLoan = {};
+      q.forEach(function (i) { queueByLoan[i.loanId] = i; });
+      $('#colBody').innerHTML = q.map(function (i) {
+        return "<tr data-col-loan='" + esc(i.loanId) + "' style='cursor:pointer'><td class='mono'>" + esc(i.loanId) + "</td><td class='mono'>" + esc(i.party) + "</td><td class='num'>" + i.daysPastDue +
+          "</td><td class='num'>" + thb(i.overdue) + '</td><td>' + stepChip(i.recommended) + "</td><td class='num'>" + i.contacts + '</td><td>' + promiseCell(i) + '</td></tr>';
+      }).join('') || "<tr><td colspan='7' class='muted'>Nothing is overdue.</td></tr>";
+      $('#colNote').textContent = q.length + ' loan' + (q.length === 1 ? '' : 's') + ' overdue as of ' + today;
+      $$('#colBody [data-col-loan]').forEach(function (r) { r.addEventListener('click', function () { openLoan(r.getAttribute('data-col-loan')); }); });
+    } catch (e) { fail('Load collections queue')(e); }
+  }
+  $('#colRefresh').addEventListener('click', function () { if (signedIn()) loadQueue(); else toast('Sign in under Settings first'); });
+
+  async function loadLoanCollections(id) {
+    colLoan = id;
+    $('#loanCollections').hidden = false;
+    $('#lcOut').hidden = true;
+    try {
+      await loadQueue();
+      var events = await api('GET', '/collections/' + encodeURIComponent(id));
+      var i = queueByLoan[id];
+      $('#lcStatus').textContent = i ? i.daysPastDue + ' days late, ฿' + thb(i.overdue) + ' overdue. Next step: ' + (STEP[i.recommended] || [i.recommended])[0].toLowerCase() + '.' +
+        (i.lastContact ? ' Last contact ' + i.lastContact + '.' : ' Not contacted yet.') + (i.promiseBroken ? ' The last promise was broken.' : i.openPromiseBy ? ' A promise is open until ' + i.openPromiseBy + '.' : '')
+        : 'Nothing is overdue on this loan.';
+      $('#lcBody').innerHTML = events.slice().reverse().map(function (e) {
+        var what = e.kind === 'PROMISE' ? 'Promise to pay' : 'Contact · ' + e.channel.toLowerCase();
+        return "<tr><td class='mono'>" + esc(e.date) + '</td><td>' + what + '</td><td>' + (e.kind === 'PROMISE' ? esc('฿' + thb(e.promisedAmount) + ' by ' + e.payBy) + (e.note ? ' · ' + esc(e.note) : '') : esc(e.note || '')) + '</td></tr>';
+      }).join('') || "<tr><td colspan='3' class='muted'>No contacts or promises recorded.</td></tr>";
+    } catch (e) { say('#lcOut', 'warn', e.message); }
+  }
+  $('#lcContact').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!colLoan) return;
+    try {
+      await api('POST', '/collections/' + encodeURIComponent(colLoan) + '/contacts', { reference: 'console-' + Date.now(), date: today, channel: $('#lcChannel').value, note: $('#lcNote').value });
+      $('#lcNote').value = '';
+      await loadLoanCollections(colLoan);
+      say('#lcOut', 'ok', 'Contact logged.');
+    } catch (err) { say('#lcOut', 'warn', err.message); }
+  });
+  $('#lcPromise').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!colLoan) return;
+    try {
+      await api('POST', '/collections/' + encodeURIComponent(colLoan) + '/promises', { reference: 'console-' + Date.now(), date: today, amount: minor($('#lcAmt').value), payBy: $('#lcBy').value, note: $('#lcPNote').value });
+      $('#lcAmt').value = '';
+      $('#lcPNote').value = '';
+      await loadLoanCollections(colLoan);
+      say('#lcOut', 'ok', 'Promise recorded.');
+    } catch (err) { say('#lcOut', 'warn', err.message); }
+  });
 
   // ---------------------------------------------------------------- Branch and teller: cash deposit posts to the ledger
   var tAcct = $('#tAcct');
@@ -574,6 +657,7 @@
     paintSession();
     if (!signedIn()) return;
     try { await loadApprovals(); } catch (e) { fail('Load approvals')(e); }
+    await loadQueue();
   }
 
   F.live = { active: signedIn, submitProduct: submitProduct };
