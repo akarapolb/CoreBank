@@ -1,59 +1,98 @@
 # Fabor console: demo script for bank clients
 
-About 25 minutes for the full script, 5 minutes for the executive version. Open `index.html` (or the published link) in a desktop browser at full width; with no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data; nothing is posted. In presenter mode a ribbon at the top says so.
-
-**Executive version (5 steps):** in the presenter panel, choose *Executive · 5*: Workbench and tour, Settle early, Ledger drill-down, Customer app, Before and after.
+The full route is 31 steps in seven chapters, about 40 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
 
 ## Before the meeting
 
-- Pick the tenant that matches the client: **Demo Retail Bank** for retail and auto finance, **Demo Commercial Bank** for corporate, trade and treasury, **Demo Virtual Bank** for a digital-only bank. Switch it from the tenant button at the top left.
-- Open the avatar menu (bottom left), choose **Settings**, and set the language the audience reads. Thai switches labels and dates, with Buddhist years.
-- Put the client's brand on it: **Admin → Branding** (bank name, two-letter mark, colour, logo). It only changes this browser, and **Back to Fabor** undoes it.
-- Turn on **Presenter mode** from the avatar menu. The panel over the sidebar lists the steps below; clicking a step takes the console there and sets it up (opens the dialog, the panel or the tour), with a one-line prompt of what to say.
-- Before each meeting, **Reset demo data** (presenter panel or Settings) clears saved views, pins, branding and settings, and signs out so you start on the sign-in screen.
+- **Reset demo** (presenter panel or Settings) clears saved views, pins, branding and settings and signs out, so you start on the sign-in screen. Changes made during a demo (a loan settled, a policy published) last until the page is reloaded.
+- Pick the tenant that matches the client: **Demo Retail Bank** (the default; retail and auto finance), **Demo Commercial Bank** (corporate, trade and treasury) or **Demo Virtual Bank** (digital only). Presenter steps set the tenant they need, so this only matters when you click around yourself.
+- Set the language in **Settings** if the audience reads Thai: labels and dates switch together, with Buddhist years.
+- Put the client's brand on it: **Admin → Branding** (name, two-letter mark, colour, logo). It only changes this browser; **Back to Fabor** undoes it.
+- Turn on **Presenter mode** from the avatar menu. Each step takes the console to the right screen as the right person, opens the dialog or panel, and shows one line to say. *Full* lists the chapters; *Executive* the short route.
 
-## The story
+## Executive route: 7 steps, about 10 minutes
 
-| # | Show | Say |
+1. **Workbench and tour**: the day starts with what needs this person, from every system.
+2. **Open an account**: identity from the card and DOPA; every field shows where it came from; the risk score moves with the answers.
+3. **Credit review**: adjust overtime to 0% and the ratios follow; the approver depends on the amount and each deviation, not on a person's say-so.
+4. **Settle early**: the quote line by line; savings ฿1,545.98 short, so it is blocked; at the branch it is within authority; the loan id is typed to confirm.
+5. **Customer app**: pay an instalment and it lands on the loan and the ledger at once.
+6. **Ledger drill-down**: from a GL figure to the journal, the balanced postings and the loan that caused it.
+7. **Before and after**: the same settlement, about 40 minutes and a night in a typical core, against a minute. Say the times are illustrative.
+
+## Full route
+
+### 1. Opening (3 steps)
+
+| Step | Show | Say |
 |---|---|---|
-| 1 | Sign in: bank SSO, or staff ID and the six-digit code | Staff sign in with the bank's own identity provider and a second factor. Sessions end after 15 minutes idle. |
-| 2 | Workbench, then **Take the tour** | The day starts with what needs this person, from every system. The tour walks the main ideas in nine steps; skip it if time is short. |
-| 3 | Avatar menu → **Preview as** Collector, then Teller | The Workbench and the pinned systems change with the role. Same core, different job. |
-| 4 | Press **G** → open **Lending → Loans → LN-A-C10** | One page per record: the figures that matter on top, a tab for each facet. 144 days late, Stage 3, the car repossessed. |
-| 5 | **Settle early** → Next | The review shows the quote line by line. Paying from savings is blocked because the account is ฿1,545.98 short. Go back, choose the branch: the review now says the amount is within an operations checker's authority. Type the loan id to confirm. Preview as Collector and the same step goes to a credit officer instead (**Admin → Limits and authorities** shows the table). |
-| 6 | **History** on the same page | Every change with who made it, who approved it, and the values before and after. |
-| 7 | **Copilot** → *Draft a restructuring* → *Open for review* | Copilot reads what is on screen and drafts. It cannot post; its draft goes through the same review and approval as a person's. |
-| 8 | **Leasing → Floor plan → FP-DEMO** → *Pay off* the sold Fortuner | Dealer stock finance: the payoff with interest to the day, the dealer's account balance checked, the VIN typed to confirm. |
-| 9 | **Collections → Queue**: tick two rows → *Send reminder* | Bulk actions keep the review step. Press J and K to move through the queue, P to record a promise. |
-| 9a | Preview as **Collector** → **Collections → Strategy**, then **Queue → LN-A-C11** | Each bucket has its day-by-day steps and a live strategy test. On Malee's case the console says calls are allowed now (Saturday, 08:00–18:00). Log a call as *hardship*: a second call the same day is refused by the one-contact-a-day rule. *Hardship* finds what she can pay (฿4,130 against an instalment of ฿4,725.91); *Restructure* shows three offers with their TFRS 9 effect, sent to her app before the loan turns NPL on 18 Nov, as the BOT requires. |
-| 9b | **Collections → Legal → LN-A-C14**, then **Repossessions → R-A4** | Notice, offers, termination and suit; record the mediation; write off against the 100% allowance (no new loss), then record a recovery or sell the debt to an AMC. For the repossessed Triton: notice of sale with the right to take it back, a bid below the reserve goes for approval, and the sale leaves a shortfall still owed. The regulatory points are to confirm with counsel. |
-| 9c | **Customers → Onboarding → ONB-7731**, then **Deposits → Account opening → AO-26-0412** | Napat's onboarding: identity from the card, DOPA and the face match, then personal details, occupation, expected activity, due diligence, accounts and services, consents; each field tagged with where it came from. *Review and open* lists what is missing with Fix links; set *opening for someone else* and *transfers with Myanmar* and the risk turns high. For the business: company, documents, directors, shareholders traced to beneficial owners, FATCA/CRS, the signing mandate; a near match to clear, shareholdings that must add to 100%, and a PEP owner that sends it to compliance. Both print as a field dictionary for the backend. |
-| 9d | **Deposits → Holds and orders → ORD-26-0191**, then **Dormant accounts** and **Term deposits → TD-88201** | An AMLO freeze: verify through AMLO's channel, apply, and a second person checks; the customer is never told and the available balance falls to zero. A dormant account is reactivated only with identity and fraud checks. Anan's TD pays into his home loan at maturity after 15% withholding tax: the same ฿201,713.97 the loan expects. |
-| 10 | **Finance & Risk → General ledger → 1300 → Journals** → a journal → *Source* | From a GL figure to its journal, its balanced postings, and the loan that caused it. |
-| 10a | **Compliance & AML → Alerts → AML-ALR-7712** | Nine cash deposits just under the ฿2,000,000 report threshold. The case shows what the investigator did; *File a suspicious transaction report* goes to AMLO and the customer is never told. |
-| 10b | **Payments → Held payments → TR-9918210** | A sanctions name match stops a $1.18m payment. The screening tab shows only the name matches. Releasing it is above an operations checker's limit, so it goes to the head of operations. |
-| 10c | **Lending → Applications → APP-30413** | Policy rules with the applicant's figures, a recommendation, then the decision: an operations checker cannot approve credit, a credit officer can. Disbursement opens after approval. |
-| 10d | **Lending → Overview** | The day's pipeline from received to disbursed, the book by product with arrears and NPL, and what needs someone, each a click from its record. |
-| 10e | **New application** (Lending) | A full application in ten steps, prefilled from the customer record, DOPA, the credit bureau and statements (each value tagged with its source). *Review and submit* lists the 14 answers still missing, with *Fix* links: emergency contact, work phone, the PEP, FATCA, related-party and bankruptcy declarations, the confirmation. Fill them and the ฿300,000 personal loan is approved automatically; documents still to come become conditions before disbursement. Answer *yes* to the PEP question and it is referred to compliance; switch to a home loan with a co-borrower and the documents list grows and it goes to a credit officer. The same catalogue prints the field dictionary for the backend (`docs/design/loan-application-fields.md`). |
-| 10f | **Lending → Loans → LN-77120 → Servicing** | A performing home loan. *Prepay* ฿200,000 from the maturing term deposit: shorter term (33 months sooner, about ฿413,000 of interest saved) or a lower instalment. *Review the rate* answers a refinance threat with a retention offer and shows the TFRS 9 modification loss. Payment holiday, due date, e-DDA direct debit, fee waiver and letters work the same way, each checked against the person's authority. |
-| 10g | **Lending → Facilities → FAC-B2031** | A corporate customer's limits under one umbrella, across Lending, Trade and Treasury. *Covenants → Test Q3 2026*: DSCR comes out at 1.14x against 1.20x, a draw stop follows, and *Draw down* is now refused. *Ask for a waiver* goes to the credit committee. Collateral shows lending values and what is coming due; the annual review has Copilot's draft memo. |
-| 10h | Preview as **Credit officer** → **Lending → Credit review → APP-30409** | A joint home-loan application referred by the engine. *Income and debts*: count overtime at 0% and the ratios and History follow. *Approve* is blocked until each deviation has a written mitigant and the employer is called on a number the bank found itself. At ฿2,150,000 with LTV 93.5% it goes to the Head of retail credit; a *Counter-offer* of ฿2,000,000 (LTV 87%) is within the officer's own authority. *Decline* shows the letter with the main reason and the right to the NCB report. |
-| 10h2 | **Lending → Disbursements → DSB-30409** (or *Open the disbursement* after approving APP-30409) | Conditions are received by one person and verified by another: try verifying your own and the console refuses. Waiving one needs credit authority. The Land Office registration is refused until the contract is signed and the insurance verified; the payout is refused until the mortgage is registered. Then the cashier's cheque goes to the seller and LN-77455 starts. Fees and relief measures at the Land Office are to confirm. |
-| 10i | **Lending → Credit committee → CC-2026-21** | One member declares a conflict and does not vote on that item; quorum and the chair's casting vote are checked. After the FAC-B2031 covenant breach and waiver request, the committee's vote lifts the facility's draw stop. Minutes write themselves from the votes. |
-| 10j | Preview as **Product maker** → **Product Factory → Credit policy → POL-RETAIL** | Every limit the other screens use is here. Raise the credit officer's limit to ฿2,500,000, the first-home LTV to 95% and lower the hardship share to 60%; *Impact* re-decides 90 days of applications. Try loosening the BOT personal-loan cap: refused. *Submit*, then try to approve it yourself: refused; preview as Credit officer to approve and publish. APP-30409 now needs only the credit officer, and Malee's affordable instalment drops. |
-| 11 | **Operations → Exception centre** | Every break, failed task, integration fault and limit breach in one queue, each with an owner and a clock. Resolve the ITMX break. |
-| 12 | **Customer App → App preview** → *Pay an instalment* | What the customer sees. The payment lands on LN-A-C10 and in the Workbench's live postings at once; there is no overnight sync. |
-| 13 | **Reports & Analytics → Vintage**, then **Roll rates** | The Q2 2026 vintage is worsening faster; the roll-rate matrix shows where accounts move. |
-| 14 | **Finance & Risk → Month-end close** | With no batch window there is no close night: the close is a checklist of controls. The suspense step unblocks once the ITMX break is resolved; run the loss allowance as finance controller. |
-| 14a | Preview as **Finance controller** → **Finance & Risk → Loss allowance → ECL-2026-10** | Each loan's stage follows the demo: Malee in Stage 2, Kittipong gone after his write-off, Siam Freight in Stage 2 after its covenant breach, the new home loan in Stage 1. Switch to the severe weights to see the sensitivity (posting is refused); back to the board's, *Post the allowance*. Then *Regulatory reports → DS-LOAN-2026-10*: the rules catch Malee's missing restructuring code and Kittipong still listed; fix at source, generate, and a second person submits. *Month-end close* follows each step to the CFO's sign-off. |
-| 15 | Switch tenant to **Demo Commercial Bank** → **Trade Finance → LC-26-0412** | Same console, more systems: an import LC with a discrepant document and a 5-day deadline. Then **Treasury → New deal** for the FX to pay it. |
-| 15a | **LN-A-C10 → What if** | Move term and rate: the instalment, the share of income and the TFRS 9 modification loss follow. *Propose these terms* opens the review. |
-| 15b | **Workbench → Before and after** | The same early settlement: about 40 minutes, three systems and a night in a typical core, against a minute here. Times are illustrative; say so. |
-| 16 | Toggle Thai at the top, then dark mode on the rail | Thai and English, light and dark, compact rows for people who work a queue all day. |
+| Sign in | Bank SSO, or staff ID with the six-digit code | The bank's own identity provider and a second factor; idle sessions end after 15 minutes. |
+| Workbench and tour | **Take the tour** (nine short steps; skip if time is short) | Work arrives from every system in one place; nobody hunts across screens. |
+| One console, many roles | The collector's Workbench | Same core, different job: the Workbench and pinned systems follow the role. |
+
+### 2. A customer joins (2)
+
+| Step | Show | Say |
+|---|---|---|
+| Open an account | **ONB-7731**, Weerapong at branch 0123: *Identity*, then *Due diligence*, then *Review and open* | 98 fields, each tagged DOPA, NDID, staff or customer, much of it prefilled. Set *opening for someone else* and *transfers with Myanmar*: the risk turns high, the most common mule-account pattern. *Review and open* lists what is missing with Fix links; low risk opens at once. |
+| A business customer | **AO-26-0412**, Lanna Craft Export: *Owners*, *Due diligence*, *Signing mandate* | Ownership traced through a Hong Kong company to the people behind it; a screening near match to clear; shareholdings must add to 100%; a PEP owner sends it to compliance. Both journeys print as a field dictionary for the backend. |
+
+### 3. Lending (7)
+
+| Step | Show | Say |
+|---|---|---|
+| New loan application | **APP-30416**: the product, then *Review and submit* | 166 fields; the instalment and debt ratio update as you type. Fill the 14 missing answers and ฿300,000 is approved automatically; a PEP answer is referred; a home loan goes to a credit officer. |
+| Credit review | **APP-30409** as the credit officer: *Income and debts*, *Policy and deviations*, *Decision* | Approve is blocked until each deviation has a mitigant and the employer is called on a number the bank found itself. ฿2,150,000 at LTV 93.5% needs the head of retail credit; a ฿2,000,000 counter-offer is within the officer's authority. |
+| Credit committee | **CC-2026-21** | A member with a conflict does not vote on that item; quorum and the chair's casting vote are checked; the minutes write themselves. |
+| Approval to payout | **DSB-30409** | One person receives a condition and another verifies it; the Land Office registration and the payout are each refused until what comes before is done. |
+| Servicing a home loan | **LN-77120**, *Prepay* | ฿200,000 from the maturing deposit: 33 months sooner, about ฿413,000 of interest saved; or a lower instalment. Rate review, holiday, due date, direct debit and letters work the same way. |
+| Commercial facilities | **FAC-B2031**, *Test Q3 2026* | DSCR 1.14x against 1.20x: a draw stop, then a waiver to the committee. Limits sit under one umbrella across lending, trade and treasury. |
+| Dealer floor plan | **FP-DEMO**, *Pay off* the sold Fortuner | Payoff with interest to the day, the dealer's balance checked, the VIN typed to confirm. |
+
+### 4. When payments stop (6)
+
+| Step | Show | Say |
+|---|---|---|
+| Collections strategy | **Collections → Strategy** as the collector | Day by day for each bucket; a strategy test in the 1–30 bucket. The console enforces calling hours and one successful contact a day. |
+| Hardship and restructuring | **LN-A-C11**, Malee: *Contact*, *Hardship*, *Restructure* | She can pay ฿4,130 against ฿4,725.91; three offers that fit, with their TFRS 9 effect, sent before the loan turns non-performing on 18 Nov, as the BOT requires. |
+| Settle early | **LN-A-C10** | The quote line by line; savings short so it is blocked; at the branch, within an operations checker's authority. *History* shows who did what. |
+| Copilot drafts | The Copilot panel | Copilot reads the screen and drafts a restructuring; it cannot post. *What if* moves term and rate live. |
+| Legal and write-off | **LN-A-C14** | Notice, offers, suit; written off against the 100% allowance with no new loss; recoveries or a debt sale afterwards. |
+| Repossession and auction | **R-A4** | Notice of sale with the right to take the car back; a bid below the reserve needs approval; the shortfall stays owed. |
+
+### 5. Deposits and payments (4)
+
+| Step | Show | Say |
+|---|---|---|
+| Legal orders | **ORD-26-0191** | An AMLO freeze: verified through AMLO's channel, applied, checked by a second person; the customer is not told and the available balance falls to zero. Dormant accounts and term deposits (TD-88201 pays into Anan's home loan, after 15% withholding tax) are in the same system. |
+| AML case | **AML-2026-0418** | Nine cash deposits just under the reporting threshold; *File a suspicious transaction report*, and the customer is never told. |
+| Held payment | **TR-9918210** | A sanctions name match stops a $1.18m payment; releasing it is above an operations checker's limit, so it goes to the head of operations. |
+| Customer app | **Customer App → App preview** | Pay an instalment: it lands on the loan and in the live postings at once. |
+
+### 6. Control and the books (6)
+
+| Step | Show | Say |
+|---|---|---|
+| Credit policy | **POL-RETAIL** as the product maker | Every limit the screens use, in one versioned place. Raise the officer's limit to ฿2,500,000 and the first-home LTV to 95%; *Impact* decides 90 days of applications again. Loosening the BOT cap is refused, and so is approving your own change. Published, APP-30409 needs only the officer. |
+| Loss allowance | **ECL-2026-10** as the finance controller | Stages follow this demo: Malee Stage 2, Siam Freight Stage 2 after its breach, Kittipong gone after his write-off. Severe weights show the sensitivity but cannot be posted. |
+| BOT data set | **DS-LOAN-2026-10** | Validation catches the demo's own changes; fix at the source, generate, and a second person submits. |
+| Month-end close | **Finance & Risk → Month-end close** | No close night: the checklist follows the run, the reconciliation and the report to the CFO's sign-off. |
+| Ledger drill-down | **GL 1300 → Journals** | From a GL figure to its journal, the balanced postings and the loan. |
+| Exception centre | **Operations → Exception centre** | Every break and breach with an owner and a clock; resolving the ITMX break unblocks the close. |
+
+### 7. Closing (3)
+
+| Step | Show | Say |
+|---|---|---|
+| Commercial bank | **LC-26-0412** in Demo Commercial Bank | Same console, more systems: an import LC with a discrepancy and a five-day deadline. |
+| Thai | The Workbench in Thai | Labels and dates switch together, with Buddhist years; dark mode and compact rows are on the rail and the top bar. |
+| Before and after | **Workbench → Before and after** | About 40 minutes, three systems and a night, against a minute. The times are illustrative. |
 
 ## If they ask
 
-- **Is this the product?** It is the agreed design, built as a clickable prototype. The production console is React on the same patterns and already runs Loans, Collections and Floor plan against the live core.
-- **Where does the data come from?** In the prototype, sample data computed so the figures agree (the schedule, the settlement quote and the loss allowance reconcile). In the product, the immutable ledger and the core services.
-- **Can we change the look?** Settings offers Modern and Calm styles. A bank's own colours are a change to a few design tokens, not to the screens.
-- **Rule-pack values** (rate caps, rebate tiers) are configuration to confirm with counsel, not legal advice.
+- **Is this the product?** It is the agreed design as a clickable prototype. The production console is React on the same patterns and already runs Loans, Collections and Floor plan against the live core.
+- **Where do the numbers come from?** Sample data computed so the figures agree across screens: the schedules, quotes, tax, loss allowance and data set reconcile, and a change in one place (a write-off, a policy) shows up in the others. In the product they come from the immutable ledger and the core services.
+- **Is the Copilot real AI?** Not in the prototype: its answers are written in. The design point is that it drafts and a person approves, through the same review and authority checks.
+- **How do the forms map to our data?** The application and account-opening forms are generated from field catalogues that also print as field dictionaries (`docs/design/loan-application-fields.md`, `docs/design/account-opening-fields.md`), with each field's source and the reason it is collected.
+- **Are the rules right for Thailand?** They are the prototype's reading of BOT, AMLO, PDPA, consumer and tax rules, marked "to confirm" throughout. Limits, risk weights and fees are the bank's to set, through the credit policy.
+- **Can we change the look?** Settings offers Modern and Calm styles; a bank's colours are a few design tokens, not new screens.

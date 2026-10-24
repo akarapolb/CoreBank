@@ -82,7 +82,7 @@ const BANDS_IN = O(["b1", "Under ฿15,000", "ต่ำกว่า ฿15,000"],
 const bandN = (v) => (v ? +String(v).slice(1) : 0);
 const isEmpI = (f) => ["salaried", "civil"].includes(f.occType), isWorkingI = (f) => !["student", "homemaker", "retired", "none"].includes(f.occType);
 
-/* ---------------- ONB-7731: Napat Srisuk opens a savings account at branch 0123 ---------------- */
+/* ---------------- ONB-7731: Weerapong Chaisiri opens a savings account at branch 0123 ---------------- */
 const IND_STEPS = [["identity", "Identity", "ยืนยันตัวตน"], ["personal", "Personal details", "ข้อมูลส่วนตัว"], ["contact", "Contact and address", "การติดต่อและที่อยู่"], ["work", "Occupation and income", "อาชีพและรายได้"], ["purpose", "Purpose and activity", "วัตถุประสงค์และธุรกรรม"],
   ["dd", "Due diligence", "การตรวจสอบลูกค้า"], ["products", "Accounts and services", "บัญชีและบริการ"], ["consents", "Consents", "ความยินยอม"], ["review", "Review and open", "ตรวจทานและเปิดบัญชี"]];
 const isThai = (f) => f.docType === "thai-id";
@@ -208,7 +208,7 @@ const IND_CAT = [
     { k: "certify", en: "The customer confirms the information is true, the account is for their own use, and they will not let anyone else use it", th: "ลูกค้ารับรองว่าข้อมูลถูกต้อง เปิดบัญชีเพื่อใช้เอง และจะไม่ให้ผู้อื่นใช้บัญชี", t: "check", req: true, src: "customer", why: "aml", wide: true }] },
 ];
 const IND_DEFAULTS = () => ({ docType: "thai-id", citizenId: "3101200456789", laser: "ME0-1234567-89", passportNo: "", passportCountry: "", visaType: "", workPermit: "", idIssued: "2021-04-14", idExpiry: "2029-04-13", method: "branch", dopaResult: tt("Card active; laser code matches", "บัตรใช้งานได้ รหัสหลังบัตรตรงกัน"), faceScore: "97.4% (threshold 90%)", liveness: tt("Passed, 1 attempt", "ผ่าน 1 ครั้ง"), ndidIal: "",
-  title: "mr", firstTh: "นภัทร", lastTh: "ศรีสุข", firstEn: "Napat", lastEn: "Srisuk", prevName: "", dob: "1991-04-14", gender: "m", nationality: "TH", nationality2: "", marital: "single", education: "bachelor",
+  title: "mr", firstTh: "วีระพงษ์", lastTh: "ชัยศิริ", firstEn: "Weerapong", lastEn: "Chaisiri", prevName: "", dob: "1991-04-14", gender: "m", nationality: "TH", nationality2: "", marital: "single", education: "bachelor",
   mobile: "0819917731", mobileOtp: true, email: "", lineId: "", lang: "th", regNo: "41/7", regSub: "Lat Yao", regDist: "Chatuchak", regProv: "Bangkok", regPost: "10900", curSame: true, curLine: "", curProv: "", curPost: "", residence: "rent", mailTo: "current",
   occType: "salaried", employer: "Bangkok Freight Forwarding Co., Ltd.", industry: "logistics", position: "", workProv: "Bangkok", school: "", incomeBand: "b3", incomeSource: "salary", incomeOther: "",
   purpose: "salary", purposeOther: "", depBand: "b3", txBand: "t2", cash: "none", intl: "no", intlCountry: "", intlWhy: "", initAmount: "5000", initSource: "savings", initHow: "cash",
@@ -379,5 +379,5 @@ Object.assign(RECS, {
   "ONB-7731": { sys: "customers", sec: "onboarding", label: "ONB-7731", kind: "Onboarding", match: ["ONB-7731"], view: () => obView("ind"), tabs: IND_STEPS.map(([k, en]) => [k, en]) },
   "AO-26-0412": { sys: "deposits", sec: "opening", label: "AO-26-0412", kind: "Account opening", match: ["AO-26-0412"], view: () => obView("biz"), tabs: BIZ_STEPS.map(([k, en]) => [k, en]) },
 });
-Object.assign(TH, { "Identity": "ยืนยันตัวตน", "Personal details": "ข้อมูลส่วนตัว", "Contact and address": "การติดต่อและที่อยู่", "Occupation and income": "อาชีพและรายได้", "Due diligence": "การตรวจสอบลูกค้า", "Accounts and services": "บัญชีและบริการ", "Consents": "ความยินยอม", "Review and open": "ตรวจทานและเปิดบัญชี",
+Object.assign(TH, { "Weerapong Chaisiri": "วีระพงษ์ ชัยศิริ", "Identity": "ยืนยันตัวตน", "Personal details": "ข้อมูลส่วนตัว", "Contact and address": "การติดต่อและที่อยู่", "Occupation and income": "อาชีพและรายได้", "Due diligence": "การตรวจสอบลูกค้า", "Accounts and services": "บัญชีและบริการ", "Consents": "ความยินยอม", "Review and open": "ตรวจทานและเปิดบัญชี",
   "Company": "นิติบุคคล", "Directors and signatories": "กรรมการและผู้มีอำนาจลงนาม", "Owners": "ผู้ถือหุ้นและผู้รับผลประโยชน์", "Expected activity": "ธุรกรรมที่คาดหมาย", "Signing mandate": "เงื่อนไขการลงนาม", "Declarations": "คำรับรอง" });

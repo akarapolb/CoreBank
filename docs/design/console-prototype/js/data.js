@@ -42,7 +42,7 @@ const ROLES = [
   { id: "collector", name: "Nok Saelim", first: "Nok", th: "นก", title: "Collector", av: "NS", pins: ["workbench", "collections", "customers", "lending", "payments"],
     needs: [["collections", "Accounts in your queue", "42", "crit", "9 promises due today · oldest 144 days", "collections/queue"], ["collections", "Promises broken yesterday", "3", "warn", "Call before 12:00 to keep the cure rate", "collections/promises"], ["lending", "Loans to review for restructuring", "2", "warn", "LN-A-C10 and LN-A-C14, past 120 days", "rec:LN-A-C10"]] },
   { id: "credit", name: "Wanida Kaewmanee", first: "Wanida", th: "วนิดา", title: "Credit officer", av: "WK", pins: ["workbench", "customers", "lending", "leasing", "collections", "trade"],
-    needs: [["lending", "Applications to decide", "14", "warn", "3 over your ฿2,000,000 authority go to committee", "lending/credit"], ["lending", "Restructuring proposals", "3", "info", "1 drafted by the RM copilot", "lending/restructuring"], ["lending", "Covenant test due", "1", "warn", "FAC-B2031 · Q3 2026, by 14 Nov", "rec:FAC-B2031"], ["collections", "Write-off waiting", "1", "crit", "LN-A-C14 · 135 days late", "collections/writeoffs"]] },
+    needs: [["lending", "Applications to decide", "14", "warn", "3 over your ฿2,000,000 authority go to the head of retail credit", "lending/credit"], ["lending", "Restructuring proposals", "3", "info", "1 drafted by the RM copilot", "lending/restructuring"], ["lending", "Covenant test due", "1", "warn", "FAC-B2031 · Q3 2026, by 14 Nov", "rec:FAC-B2031"], ["collections", "Write-off waiting", "1", "crit", "LN-A-C14 · 135 days late", "collections/writeoffs"]] },
   { id: "product", name: "Krit Sombat", first: "Krit", th: "กฤษ", title: "Product maker", av: "KS", pins: ["workbench", "products", "finance", "lending", "leasing"],
     needs: [["products", "Drafts in progress", "3", "info", "EV_HP_NEW has not been simulated", "products/builder"], ["products", "Waiting for checkers", "1", "warn", "AUTO_HP_USED v2 with Compliance", "rec:AUTO_HP_USED_v2"], ["products", "Simulation failed", "1", "crit", "12 scenarios over the 15% cap on draft 1", "products/simulations"]] },
   { id: "finance", name: "Arunee Thongdee", first: "Arunee", th: "อรุณี", title: "Finance controller", av: "AT", pins: ["workbench", "finance", "treasury", "deposits", "lending", "ops"],
@@ -81,7 +81,7 @@ Object.assign(TH, {
   "Operations checker": "ผู้ตรวจปฏิบัติการ", "Collector": "เจ้าหน้าที่ติดตามหนี้", "Product maker": "ผู้ออกแบบผลิตภัณฑ์", "Finance controller": "ผู้ควบคุมการเงิน", "Teller · Branch 0123": "พนักงานสาขา · สาขา 0123",
   "Accounts in your queue": "บัญชีในคิวของคุณ", "9 promises due today · oldest 144 days": "นัดชำระครบวันนี้ 9 รายการ · เก่าสุด 144 วัน", "Promises broken yesterday": "ผิดนัดเมื่อวาน",
   "Call before 12:00 to keep the cure rate": "โทรก่อน 12:00 เพื่อรักษาอัตรากลับมาปกติ", "Loans to review for restructuring": "สัญญาที่ต้องพิจารณาปรับโครงสร้าง", "LN-A-C10 and LN-A-C14, past 120 days": "LN-A-C10 และ LN-A-C14 ค้างเกิน 120 วัน",
-  "Applications to decide": "ใบสมัครรอพิจารณา", "3 over your ฿2,000,000 authority go to committee": "3 รายการเกินอำนาจ ฿2,000,000 ส่งคณะกรรมการ", "Restructuring proposals": "ข้อเสนอปรับโครงสร้างหนี้",
+  "Applications to decide": "ใบสมัครรอพิจารณา", "3 over your ฿2,000,000 authority go to the head of retail credit": "3 รายการเกินอำนาจ ฿2,000,000 ส่งหัวหน้าฝ่ายสินเชื่อรายย่อย", "Restructuring proposals": "ข้อเสนอปรับโครงสร้างหนี้",
   "1 drafted by the RM copilot": "1 รายการร่างโดยผู้ช่วย RM", "Write-off waiting": "รอตัดหนี้สูญ", "LN-A-C14 · 135 days late": "LN-A-C14 · ค้าง 135 วัน", "Drafts in progress": "ฉบับร่างที่กำลังทำ",
   "EV_HP_NEW has not been simulated": "EV_HP_NEW ยังไม่ได้จำลอง", "Waiting for checkers": "รอผู้ตรวจ", "AUTO_HP_USED v2 with Compliance": "AUTO_HP_USED v2 อยู่ที่ฝ่ายกำกับ", "Simulation failed": "การจำลองไม่ผ่าน",
   "12 scenarios over the 15% cap on draft 1": "12 สถานการณ์เกินเพดาน 15% ในร่างที่ 1", "Regulatory reports due": "รายงานทางการที่ครบกำหนด", "AMLO CTR by 27 Oct · NPL Q3 by 15 Nov": "รายงาน ปปง. ภายใน 27 ต.ค. · NPL ไตรมาส 3 ภายใน 15 พ.ย.",
@@ -212,14 +212,14 @@ function lists() {
       [who("Malee Wongsa"), R("C11"), "Retail", "Savings · Loan", P("warn", "Review due"), "20 Jul 2024"], [who("Bangna Motors"), R("D-0007"), "SME", "Floor plan · Current", P("good", "Verified"), "3 Jun 2025"],
       [who("Pimchanok Rattana"), R("C13"), "Virtual only", "Savings · Loan", P("good", "Verified"), "15 Oct 2026"]] },
     "customers/onboarding": { cols: ["Application", "Applicant", "Channel", "Step", "Waiting", "State"], rows: [
-      [R("ONB-7731"), who("Napat Srisuk"), "Branch 0123", "Liveness check", "4 min", P("info", "In progress")], [R("ONB-7728"), who("Wanida Kaewmanee"), "Branch 0123", "Sanctions and PEP", "18 min", P("warn", "Possible match")],
+      [R("ONB-7731"), who("Weerapong Chaisiri"), "Branch 0123", "Due diligence", "4 min", P("info", "In progress")], [R("ONB-7728"), who("Wanida Kaewmanee"), "Branch 0123", "Sanctions and PEP", "18 min", P("warn", "Possible match")],
       [R("ONB-7733"), who("Thanakorn Ruang"), "App", "Consents", "1 min", P("info", "In progress")], [R("ONB-7690"), who("Korat Isuzu Co., Ltd."), "RM", "Beneficial owners", "2 days", P("warn", "Documents missing")]] },
     "customers/kyc": { cols: ["Customer", "Reason", "Risk", "Due", "Owner"], rows: [
       [who("Malee Wongsa"), "Periodic review", P("good", "Low"), "31 Oct 2026", "KYC team"], [who("Siam Energy PCL"), "Ownership change", P("warn", "Medium"), "28 Oct 2026", "Wanida K."],
       [who("Pacific Import Trading"), "Adverse media", P("crit", "High"), "25 Oct 2026", "Compliance"], [who("Anan Chaiyo"), "Address changed", P("good", "Low"), "6 Nov 2026", "KYC team"]] },
     "deposits/accounts": { cols: ["Account", "Customer", "Product", "Balance", "Rate", "Status"], rows: [
       [R("SAV-C10"), t("Somchai Prasert"), "Savings Standard", baht(LOAN.sav), "0.50%", P("good", "Active")], [R("CUR-B2031"), t("Siam Freight Logistics"), "Business Current", baht(18240612), "—", P("good", "Active")],
-      [R("SAV-C14"), t("Kittipong Siri"), "Savings Standard", baht(1003806.11), "0.50%", P("good", "Active")], [R("SAV-P9"), "Arthit Wong", "Savings Standard", baht(0), "0.50%", P("warn", "Dormant")],
+      [R("SAV-C14"), t("Kittipong Siri"), "Savings Standard", baht(3806.11), "0.50%", P("good", "Active")], [R("SAV-P9"), "Arthit Wong", "Savings Standard", baht(0), "0.50%", P("warn", "Dormant")],
       [R("FCD-B2031"), t("Siam Freight Logistics"), "USD Deposit", "$412,880.00", "1.10%", P("good", "Active")]] },
     "lending/applications": { cols: ["Application", "Applicant", "Product", "Amount", "Score", "Decision"], rows: [
       [R("APP-30412"), "Thanakorn Ruang", t("Personal loan"), baht(150000), "702", P("good", "Approved")], [R("APP-30413"), "Napat Srisuk", "Car hire purchase", baht(890000), "655", P("info", "Needs documents")],

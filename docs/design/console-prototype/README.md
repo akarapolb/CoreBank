@@ -22,7 +22,7 @@ A clickable prototype of the staff console across every Fabor system, used to ag
 | `js/onboarding.js` | Opening accounts: a small form engine over field catalogues for the individual onboarding ONB-7731 (98 fields: identity incl. foreigners, personal, contact, occupation, expected activity, due diligence, accounts and services, consents) and the business account opening AO-26-0412 (115 fields: company, documents, directors, owners and beneficial owners, activity, FATCA/CRS and risk indicators, services, mandate), with validation, a live risk score, review and approval routing |
 | `tools/account-opening-fields.mjs` | Prints both catalogues as [`../account-opening-fields.md`](../account-opening-fields.md) |
 | `tools/application-fields.mjs` | Prints the catalogue as [`../loan-application-fields.md`](../loan-application-fields.md); run it with `node` after changing the form |
-| `js/shell.js` | Side panels, sign-in, tour, presenter mode, live feel, rendering and events; starts the app |
+| `js/shell.js` | Side panels, sign-in, tour, presenter mode (the 31-step route in seven chapters and the 7-step executive route, each step setting its own tenant and role), live feel, rendering and events; starts the app |
 | `demo-script.md` | How to present it to a bank |
 | `build-offline.py` | Builds `offline/fabor-console.html`, one file with fonts inlined, for rooms without internet |
 | `fonts/` | Geist, Geist Mono, Bricolage Grotesque and IBM Plex Sans Thai (SIL Open Font License), used by the offline build |

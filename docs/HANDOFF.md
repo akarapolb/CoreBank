@@ -28,7 +28,8 @@ The detail of each item, and what each one still lacks, is in the git history an
 - the shell: a system rail and switcher with a short sidebar per system, tenants and roles, pinning, search, and Thai and English with Buddhist-year dates;
 - record pages, and every action as enter, review and confirm, with an authority check per role;
 - Copilot, the exception centre, month-end close, an AML case, a held payment, loan origination, a customer app and analytics;
-- light, dark and Calm themes, sign-in with MFA, presenter and executive modes, and bank branding.
+- light, dark and Calm themes, sign-in with MFA, presenter and executive modes, and bank branding;
+- the presenter route is one story in seven chapters (31 steps) with a 7-step executive cut; each step sets its own tenant and role. Between 860 and 1180px wide the sections fold into the menu button so pages keep their width. `demo-script.md` follows the route.
 
 Lending goes deeper than the other systems (`js/lending.js`):
 - servicing on the home loan LN-77120: prepay, rate review, payment holiday, due date, e-DDA, fee waiver, letters;
