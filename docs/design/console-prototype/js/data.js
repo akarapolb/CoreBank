@@ -8,7 +8,7 @@ const SYS = [
   { id: "deposits", name: "Deposits", group: "Retail & business banking", icon: "i-vault", desc: "Savings, current and term deposits", sections: [["overview", "Overview"], ["accounts", "Accounts"], ["term", "Term deposits"], ["interest", "Interest and fees"], ["statements", "Statements"]] },
   { id: "lending", name: "Lending", group: "Retail & business banking", icon: "i-loan", desc: "Applications, loans and servicing", sections: [["overview", "Overview"], ["applications", "Applications", 14], ["credit", "Credit review", 4], ["committee", "Credit committee"], ["loans", "Loans"], ["facilities", "Facilities"], ["servicing", "Servicing", 4], ["restructuring", "Restructuring", 3], ["disbursements", "Disbursements"]] },
   { id: "leasing", name: "Leasing & Asset Finance", group: "Retail & business banking", icon: "i-truck", desc: "Leases, hire purchase, fleet, floor plan", sections: [["overview", "Overview"], ["leases", "Leases"], ["hp", "Hire purchase"], ["fleet", "Fleet agreements"], ["floorplan", "Floor plan", 1, true], ["assets", "Assets"], ["dealers", "Dealers"]] },
-  { id: "collections", name: "Collections & Recovery", group: "Retail & business banking", icon: "i-phone", desc: "Arrears, promises, repossession", sections: [["overview", "Overview"], ["queue", "Queue", 128, true], ["promises", "Promises", 31], ["repossessions", "Repossessions", 6], ["writeoffs", "Write-offs"]] },
+  { id: "collections", name: "Collections & Recovery", group: "Retail & business banking", icon: "i-phone", desc: "Arrears, promises, repossession", sections: [["overview", "Overview"], ["queue", "Queue", 128, true], ["promises", "Promises", 31], ["hardship", "Hardship and restructuring", 12], ["legal", "Legal", 9], ["repossessions", "Repossessions", 6], ["writeoffs", "Write-offs"], ["strategy", "Strategy"]] },
   { id: "payments", name: "Payments", group: "Retail & business banking", icon: "i-swap", desc: "PromptPay, transfers, reconciliation", sections: [["overview", "Overview"], ["held", "Held payments", 1, true], ["transfers", "Transfers"], ["promptpay", "PromptPay"], ["recon", "Reconciliation", 1, true], ["limits", "Limits"]] },
   { id: "channels", name: "Customer App", group: "Retail & business banking", icon: "i-mobile", desc: "What customers see, on the same ledger", sections: [["preview", "App preview"], ["releases", "Releases"]] },
   { id: "trade", name: "Trade Finance", group: "Corporate & markets", icon: "i-globe", desc: "Letters of credit and guarantees", sections: [["overview", "Overview"], ["lc", "Letters of credit"], ["guarantees", "Guarantees"], ["docs", "Documentary collections"]] },
@@ -209,7 +209,7 @@ function lists() {
   const base = {
     "customers/directory": { cols: ["Customer", "Party id", "Segment", "Products", "KYC", "Since"], rows: [
       [who("Somchai Prasert"), R("C10"), "Retail", "Savings · Loan", P("good", "Verified"), "1 Dec 2025"], [who("Siam Freight Logistics"), R("B-2031"), "Corporate", "Fleet · Trade · Deposits", P("good", "Verified"), "11 Jan 2024"],
-      [who("Malee Wongsa"), R("C11"), "Retail", "Savings · Loan", P("warn", "Review due"), "20 Jul 2026"], [who("Bangna Motors"), R("D-0007"), "SME", "Floor plan · Current", P("good", "Verified"), "3 Jun 2025"],
+      [who("Malee Wongsa"), R("C11"), "Retail", "Savings · Loan", P("warn", "Review due"), "20 Jul 2024"], [who("Bangna Motors"), R("D-0007"), "SME", "Floor plan · Current", P("good", "Verified"), "3 Jun 2025"],
       [who("Pimchanok Rattana"), R("C13"), "Virtual only", "Savings · Loan", P("good", "Verified"), "15 Oct 2026"]] },
     "customers/onboarding": { cols: ["Application", "Applicant", "Channel", "Step", "Waiting", "State"], rows: [
       [R("ONB-7731"), who("Napat Srisuk"), "Branch 0123", "Liveness check", "4 min", P("info", "In progress")], [R("ONB-7728"), who("Wanida Kaewmanee"), "Branch 0123", "Sanctions and PEP", "18 min", P("warn", "Possible match")],
@@ -228,7 +228,7 @@ function lists() {
       [R("APP-30412"), "Thanakorn Ruang", t("Personal loan"), baht(150000), "702", P("good", "Approved")], [R("APP-30413"), "Napat Srisuk", "Car hire purchase", baht(890000), "655", P("info", "Needs documents")],
       [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000), "—", P("warn", "Credit committee")], [R("APP-30415"), "Arthit Wong", t("Personal loan"), baht(80000), "541", P("crit", "Declined")]] },
     "lending/loans": { cols: ["Loan", "Customer", "Product", "Outstanding", "Overdue", "Status"], rows: [
-      [R("LN-A-C10"), t("Somchai Prasert"), t("Personal loan"), baht(LOAN.principalOut), baht(LOAN.overdue), lateP(LATE_DAYS)], [R("LN-A-C11"), t("Malee Wongsa"), t("Personal loan"), baht(95000), baht(26128.80), lateP(65)],
+      [R("LN-A-C10"), t("Somchai Prasert"), t("Personal loan"), baht(LOAN.principalOut), baht(LOAN.overdue), lateP(LATE_DAYS)], [R("LN-A-C11"), t("Malee Wongsa"), t("Personal loan"), baht(MAL.principalOut), baht(MAL.due), lateP(MAL.dpd)],
       [R("LN-A-C13"), t("Pimchanok Rattana"), t("Personal loan"), baht(125000), "—", P("good", "Active")], [R("LN-77120"), t("Anan Chaiyo"), t("Home loan"), baht(HOME.bal), "—", P("good", "Active")], [R("MS-1"), t("Siam Freight Logistics"), t("Fleet schedule"), baht(67219.50), "—", P("good", "Active")],
       [R("LN-A-C14"), t("Kittipong Siri"), t("Personal loan"), baht(140000), baht(64201.65), P("crit", "Non-accrual")]] },
     "lending/credit": { cols: ["Application", "Applicant", "Product", "Amount", "Flags", "State"], rows: uwListRows() },
@@ -263,7 +263,7 @@ function lists() {
       [R("HP-2025-004812"), "Napat Srisuk", "Toyota Hilux Revo 2.4", baht(HP.receivable), "Tiered 60/70/100", P("good", "Active")], [R("HP-2026-000233"), t("Anan Chaiyo"), "Honda City", baht(381220), "Tiered 60/70/100", lateP(12)]] },
     "collections/queue": { cols: ["Loan", "Customer", "Days late", "Overdue", "Next step", "Promise"], rows: [
       [R("LN-A-C10"), t("Somchai Prasert"), String(LATE_DAYS), baht(LOAN.overdue), P("crit", "Review for restructuring"), "—"], [R("LN-A-C14"), t("Kittipong Siri"), "135", baht(64201.65), P("crit", "Review for restructuring"), "—"],
-      [R("LN-A-C11"), t("Malee Wongsa"), "65", baht(26128.80), P("warn", "Send letter"), P("info", lang === "th" ? "ภายใน 31 ต.ค." : "By 31 Oct")], [R("LN-A-C12"), t("Anan Chaiyo"), "29", baht(10084.80), P("info", "Remind"), "—"]] },
+      [R("LN-A-C11"), t("Malee Wongsa"), String(MAL.dpd), baht(MAL.due), P("warn", tt("Hardship offer", "เสนอปรับโครงสร้าง")), P("info", lang === "th" ? "ภายใน 31 ต.ค." : "By 31 Oct")], [R("LN-A-C12"), t("Anan Chaiyo"), "29", baht(10084.80), P("info", "Remind"), "—"]] },
     "collections/promises": { cols: ["Loan", "Customer", "Promised", "Pay by", "Made", "State"], rows: [
       [R("LN-A-C11"), t("Malee Wongsa"), baht(5000), "31 Oct 2026", "24 Oct 2026", P("info", "Open ")], [R("LN-77012"), "Arthit Wong", baht(12000), "20 Oct 2026", "13 Oct 2026", P("crit", "Broken")],
       [R("LN-76998"), "Suda Panya", baht(8400), "18 Oct 2026", "11 Oct 2026", P("good", "Kept")]] },
@@ -298,7 +298,7 @@ function lists() {
       [who("Wanida Kaewmanee"), "RM, credit-officer", "Customers, Lending, Trade", "12 min", P("good", "On"), P("good", "Active")]] },
     "admin/tenants": { cols: ["Tenant", "Name", "Systems", "Users", "Region", "State"], rows: TENANTS.map((x) => [R(x.mark), esc(t(x.name)), String(x.systems.length), x.id === "commercial" ? "1,240" : x.id === "retail" ? "3,912" : "184", "TH", P("good", "Active")]) },
   };
-  return Object.assign(base, moreLists());
+  return Object.assign(base, moreLists(), colLists());
 }
 
 // the sections that complete every system
