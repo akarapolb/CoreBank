@@ -653,8 +653,22 @@
 
   // ---------------------------------------------------------------- Assets: a third tab on the Fleet and floor plan screen
   var afSeg = $('#view-assetfin .seg');
-  var assetsTab = el('<button type="button" data-af="assets" aria-pressed="false">Assets</button>');
-  afSeg.appendChild(assetsTab);
+  var extraTabs = [];
+  function addTab(key, label, box, load) {
+    var btn = el('<button type="button" data-af="' + key + '" aria-pressed="false">' + label + '</button>');
+    afSeg.appendChild(btn);
+    $('#view-assetfin').appendChild(box);
+    extraTabs.push(box);
+    btn.addEventListener('click', function () {
+      extraTabs.forEach(function (x) { x.hidden = x !== box; });
+      $('#af-fleet').hidden = true; $('#af-floor').hidden = true;
+      $$('#view-assetfin [data-af]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === btn)); });
+      if (signedIn() && load) load();
+    });
+  }
+  $$('#view-assetfin [data-af=fleet], #view-assetfin [data-af=floor]').forEach(function (b) {
+    b.addEventListener('click', function () { extraTabs.forEach(function (x) { x.hidden = true; }); });
+  });
   var assetsBox = el(
     '<div id="af-assets" class="grid" style="gap:20px" hidden>' +
     '<div class="panel" id="assetTools"><h2>Open an asset</h2>' +
@@ -697,19 +711,8 @@
     '<h3 style="margin-bottom:6px">Active assets with no insurance today</h3><div class="tbl-wrap"><table><thead><tr><th>Asset</th><th>Make and model</th><th>Contract</th><th>Location</th></tr></thead><tbody id="asUninsured"></tbody></table></div>' +
     '<h3 style="margin:14px 0 6px">Cover ending within 30 days</h3><div class="tbl-wrap"><table><thead><tr><th>Asset</th><th>Make and model</th><th>Contract</th><th>Location</th></tr></thead><tbody id="asExpiring"></tbody></table></div></div>' +
     '</div>');
-  $('#af-floor').after(assetsBox);
+  addTab('assets', 'Assets', assetsBox, function () { loadAttention(); });
   var currentAsset = null;
-  $$('#view-assetfin [data-af]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var which = b.getAttribute('data-af');
-      assetsBox.hidden = which !== 'assets';
-      if (which === 'assets') {
-        $('#af-fleet').hidden = true; $('#af-floor').hidden = true;
-        $$('#view-assetfin [data-af]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-        if (signedIn()) loadAttention();
-      }
-    });
-  });
   $('#assetLookup').addEventListener('submit', function (e) { e.preventDefault(); openAsset($('#asId').value.trim()); });
   var attentionRows = function (list) {
     return list.map(function (a) {
@@ -792,6 +795,139 @@
       toast('Asset ' + a.id + ' registered');
       openAsset(a.id);
     } catch (e) { say('#asOut', 'warn', e.message); }
+  });
+
+  // ---------------------------------------------------------------- Leases: a fourth tab on the Fleet and floor plan screen
+  var leasesBox = el(
+    '<div id="af-leases" class="grid" style="gap:20px" hidden>' +
+    '<div class="panel" id="leaseTools"><h2>Open a lease</h2>' +
+    '<form class="row" id="leaseLookup"><div class="field" style="flex:1"><label for="lsId">Lease id</label><input id="lsId" autocomplete="off" placeholder="F1"></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Open</button></form>' +
+    '<div class="result" id="lsOut" hidden></div></div>' +
+    '<div class="kpis k4" id="leaseKpis" hidden>' +
+    '<div class="kpi"><span class="label">Lease</span><span class="v" id="lkLease" style="font-size:20px"></span><span class="d" id="lkLeaseD"></span></div>' +
+    '<div class="kpi"><span class="label">Status</span><span class="v" id="lkStatus" style="font-size:20px"></span><span class="d" id="lkStatusD"></span></div>' +
+    '<div class="kpi"><span class="label">Due now</span><span class="v" id="lkDue"></span><span class="d">Accrued periods not yet collected</span></div>' +
+    '<div class="kpi"><span class="label">Net investment carried</span><span class="v" id="lkCarry"></span><span class="d" id="lkCarryD"></span></div></div>' +
+    '<div class="panel" id="leaseActions" hidden><h2>Actions on this lease</h2>' +
+    '<div class="row"><button class="btn" type="button" id="lsAccrue">Accrue every period that is due</button><span class="muted" id="lsAccrueNote"></span></div>' +
+    '<form class="row" id="lsCollect" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="lsPay">Payment, THB</label><input id="lsPay" type="number" min="0.01" step="0.01"></div>' +
+    '<button class="btn" type="submit" style="align-self:flex-end">Collect from the customer account</button></form>' +
+    '<form class="row" id="lsEnd" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="lsFee">Termination fee, THB</label><input id="lsFee" type="number" min="0" step="0.01" value="0"></div>' +
+    '<button class="btn" type="submit" style="align-self:flex-end">Terminate early (finance lease)</button>' +
+    '<div class="field"><label for="lsPrice">Purchase price, THB</label><input id="lsPrice" type="number" min="0.01" step="0.01"></div>' +
+    '<button class="btn" type="button" id="lsBuy" style="align-self:flex-end">Record purchase option</button></form></div>' +
+    '<div class="panel" id="leasePeriods" hidden><h2>Periods</h2><div class="tbl-wrap"><table><thead><tr><th>#</th><th>Due</th><th class="num">Payment</th><th class="num">Income or rent recognised</th>' +
+    '<th class="num">Depreciation</th><th>Accrued</th><th class="num">Paid</th></tr></thead><tbody id="lsBody"></tbody></table></div></div>' +
+    '<div class="grid g2"><div class="panel"><h2>Book a finance lease</h2><form class="form" id="lsFinForm">' +
+    '<div class="field"><label for="fnId">Lease id</label><input id="fnId" required></div><div class="field"><label for="fnParty">Party id</label><input id="fnParty" required></div>' +
+    '<div class="field"><label for="fnAcct">Customer account</label><input id="fnAcct" required placeholder="SAV-P1"></div>' +
+    '<div class="field"><label for="fnFair">Fair value, THB</label><input id="fnFair" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="fnCosts">Initial direct costs, THB</label><input id="fnCosts" type="number" min="0" step="0.01" value="0"></div>' +
+    '<div class="field"><label for="fnPay">Payment per period, THB</label><input id="fnPay" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="fnN">Periods</label><input id="fnN" type="number" min="1" value="36" required></div>' +
+    '<div class="field"><label for="fnRes">Residual value, THB</label><input id="fnRes" type="number" min="0" step="0.01" value="0"></div>' +
+    '<div class="field"><label for="fnStart">Start date</label><input id="fnStart" type="date" required></div>' +
+    '<div class="field"><label for="fnFreq">Frequency</label><select id="fnFreq"><option>MONTHLY</option><option>QUARTERLY</option><option>SEMI_ANNUAL</option><option>ANNUAL</option></select></div></form>' +
+    '<div class="row"><button class="btn primary" type="button" id="fnGo"><svg class="ico"><use href="#i-plus"/></svg><span>Book finance lease</span></button></div></div>' +
+    '<div class="panel"><h2>Book an operating lease</h2><form class="form" id="lsOpForm">' +
+    '<div class="field"><label for="opId">Lease id</label><input id="opId" required></div><div class="field"><label for="opParty">Party id</label><input id="opParty" required></div>' +
+    '<div class="field"><label for="opAcct">Customer account</label><input id="opAcct" required placeholder="SAV-P1"></div>' +
+    '<div class="field"><label for="opCost">Asset cost, THB</label><input id="opCost" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="opRes">Residual value, THB</label><input id="opRes" type="number" min="0" step="0.01" value="0"></div>' +
+    '<div class="field"><label for="opRents">Rent per period, THB (comma separated)</label><input id="opRents" required placeholder="0, 5000, 5000, 5000"></div>' +
+    '<div class="field"><label for="opStart">Start date</label><input id="opStart" type="date" required></div>' +
+    '<div class="field"><label for="opFreq">Frequency</label><select id="opFreq"><option>MONTHLY</option><option>QUARTERLY</option><option>SEMI_ANNUAL</option><option>ANNUAL</option></select></div></form>' +
+    '<div class="row"><button class="btn primary" type="button" id="opGo"><svg class="ico"><use href="#i-plus"/></svg><span>Book operating lease</span></button></div></div></div>' +
+    '</div>');
+  addTab('leases', 'Leases', leasesBox, null);
+  $('#fnStart').value = today; $('#opStart').value = today;
+  var currentLease = null;
+  $('#leaseLookup').addEventListener('submit', function (e) { e.preventDefault(); openLease($('#lsId').value.trim()); });
+  async function openLease(id) {
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var base = '/leases/' + encodeURIComponent(id);
+      var l = await api('GET', base);
+      var due = await api('GET', base + '/due');
+      var carry = l.kind === 'FINANCE' ? await api('GET', base + '/carrying?date=' + today) : null;
+      currentLease = l.id;
+      $('#lsId').value = l.id;
+      $('#leaseKpis').hidden = false; $('#leaseActions').hidden = false; $('#leasePeriods').hidden = false;
+      $('#lkLease').textContent = l.id;
+      $('#lkLeaseD').textContent = l.kind.toLowerCase() + ' lease · party ' + l.party + ' · from ' + l.startDate;
+      $('#lkStatus').textContent = l.status.toLowerCase();
+      $('#lkStatusD').textContent = l.periods.filter(function (p) { return p.accrued; }).length + ' of ' + l.periods.length + ' periods accrued';
+      $('#lkDue').textContent = '฿' + thb(due.dueMinor);
+      $('#lkCarry').textContent = carry ? '฿' + thb(carry.carryingMinor) : 'not applicable';
+      $('#lkCarryD').textContent = carry ? 'What an early termination would clear, before any fee' : 'Operating leases keep the asset on the books';
+      var next = l.periods.find(function (p) { return !p.accrued; });
+      $('#lsAccrueNote').textContent = next ? 'Next to accrue: period ' + next.number + ', due ' + next.dueDate + '.' : 'Every period is accrued.';
+      $('#lsBody').innerHTML = l.periods.map(function (p) {
+        return "<tr><td class='mono'>" + p.number + "</td><td class='mono'>" + esc(p.dueDate) + "</td><td class='num'>" + thb(p.payment) + "</td><td class='num'>" + thb(l.kind === 'FINANCE' ? p.income : p.rentRecognised) +
+          "</td><td class='num'>" + (l.kind === 'FINANCE' ? '—' : thb(p.depreciation)) + '</td><td>' + (p.accrued ? "<span class='chip good'>Accrued</span>" : "<span class='chip'>Scheduled</span>") +
+          "</td><td class='num'>" + thb(p.paid) + '</td></tr>';
+      }).join('');
+      $('#lsOut').hidden = true;
+    } catch (e) { fail('Open lease')(e); }
+  }
+  async function leaseCall(path, body, done) {
+    if (!currentLease) { say('#lsOut', 'warn', 'Open a lease first.'); return; }
+    try {
+      await api('POST', '/leases/' + encodeURIComponent(currentLease) + path, body);
+      await openLease(currentLease);
+      say('#lsOut', 'ok', done);
+    } catch (e) { say('#lsOut', 'warn', e.message); }
+  }
+  $('#lsAccrue').addEventListener('click', async function () {
+    if (!currentLease) return;
+    var done = 0;
+    try {
+      var base = '/leases/' + encodeURIComponent(currentLease);
+      var l = await api('GET', base);
+      var due = l.periods.filter(function (p) { return !p.accrued && p.dueDate <= today; });
+      if (!due.length) { say('#lsOut', 'warn', 'No period is due for accrual yet.'); return; }
+      for (var k = 0; k < due.length; k++) { await api('POST', base + '/accrual/' + due[k].number + '?asOf=' + today); done++; }
+      await openLease(currentLease);
+      say('#lsOut', 'ok', 'Accrued ' + done + ' period' + (done === 1 ? '' : 's') + ', oldest first.');
+    } catch (e) { await openLease(currentLease); say('#lsOut', 'warn', (done ? 'Accrued ' + done + ' before stopping. ' : '') + e.message); }
+  });
+  $('#lsCollect').addEventListener('submit', function (e) {
+    e.preventDefault();
+    leaseCall('/collections', { reference: 'console-' + Date.now(), amountMinor: minor($('#lsPay').value), date: today }, 'Collected ฿' + $('#lsPay').value + ' from the customer account.');
+  });
+  $('#lsEnd').addEventListener('submit', function (e) {
+    e.preventDefault();
+    leaseCall('/termination', { reference: 'console-' + Date.now(), feeMinor: minor($('#lsFee').value || '0'), date: today }, 'Lease terminated: the net investment was cleared and the unaccrued periods cancelled.');
+  });
+  $('#lsBuy').addEventListener('click', function () {
+    leaseCall('/purchase', { reference: 'console-' + Date.now(), priceMinor: minor($('#lsPrice').value), date: today }, 'Purchase recorded: the residual was released and the difference booked as a gain or loss.');
+  });
+  $('#fnGo').addEventListener('click', async function () {
+    var f = $('#lsFinForm');
+    if (!f.reportValidity()) return;
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var l = await api('POST', '/leases/finance', { id: $('#fnId').value.trim(), party: $('#fnParty').value.trim(), depositAccountId: $('#fnAcct').value.trim(),
+        fairValueMinor: minor($('#fnFair').value), directCostsMinor: minor($('#fnCosts').value || '0'), paymentMinor: minor($('#fnPay').value), periods: Number($('#fnN').value),
+        residualMinor: minor($('#fnRes').value || '0'), start: $('#fnStart').value, frequency: $('#fnFreq').value });
+      say('#lsOut', 'ok', 'Booked finance lease ' + l.id + ' with ' + l.periods.length + ' periods.');
+      toast('Lease ' + l.id + ' booked');
+      openLease(l.id);
+    } catch (e) { say('#lsOut', 'warn', e.message); }
+  });
+  $('#opGo').addEventListener('click', async function () {
+    var f = $('#lsOpForm');
+    if (!f.reportValidity()) return;
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var rents = $('#opRents').value.split(',').map(function (x) { return minor(x.trim() || '0'); });
+      var l = await api('POST', '/leases/operating', { id: $('#opId').value.trim(), party: $('#opParty').value.trim(), depositAccountId: $('#opAcct').value.trim(),
+        assetCostMinor: minor($('#opCost').value), residualMinor: minor($('#opRes').value || '0'), rentsMinor: rents, start: $('#opStart').value, frequency: $('#opFreq').value });
+      say('#lsOut', 'ok', 'Booked operating lease ' + l.id + ' with ' + l.periods.length + ' periods.');
+      toast('Lease ' + l.id + ' booked');
+      openLease(l.id);
+    } catch (e) { say('#lsOut', 'warn', e.message); }
   });
 
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
