@@ -422,7 +422,7 @@ const EXC = [
   ["crit", "Reconciliation break", "ITMX 05:00 · ฿4,200.00 unmatched", "PromptPay credit to SAV-C14", "Payments ops", 280, 480, "payments/recon"],
   ["crit", "Payoff overdue", "FP-2026-0011 · Rama 9 Trucks", "Unit sold 4 days ago and not paid off", "Asset finance", 5760, 2880, "leasing/floorplan"],
   ["warn", "Dead letter", "capitalize:SAV-P9 failed 5 times", "The account is dormant", "Operations", 1440, 2880, "ops/scheduler"],
-  ["warn", "Nostro break", "NOS-EUR-01 · €1,200.00", "Deutsche Bank statement differs", "Treasury ops", 190, 1440, "treasury/nostro"],
+  ["warn", "Nostro break", "NOS-EUR-01 · €1,200.00", "Deutsche Bank statement differs", "Treasury ops", 190, 1440, "rec:NOS-EUR-01"],
   ["warn", "Integration", "DOPA error rate 1.20%", "Above the 0.5% threshold", "Integration team", 95, 240, "admin/integrations"],
   ["info", "Limit warning", "Bangna Motors at 92% of group limit", "Above the 90% warning level", "Credit risk", 2100, 4320, "rec:DLR-1"],
   ["info", "Document discrepancy", "LC-26-0412 insurance certificate", "The bank must answer by 29 Oct", "Trade operations", 1300, 7200, "rec:LC-26-0412"],
