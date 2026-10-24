@@ -43,7 +43,7 @@ class MasterController {
     record CallOffRequest(String loanId, String vehicleClass, List<String> assetIds, long principalMinor, int term, LocalDate date,
                           String customerAccountId, String payoutAccountId) { }
 
-    record CollectRequest(String reference, long amountMinor, LocalDate date) { }
+    record MasterCollectRequest(String reference, long amountMinor, LocalDate date) { }
 
     @PostMapping
     MasterAgreement sign(Actor actor, @RequestBody SignRequest r) {
@@ -67,7 +67,7 @@ class MasterController {
     }
 
     @PostMapping("/{id}/collections")
-    Map<String, Object> collect(Actor actor, @PathVariable String id, @RequestBody CollectRequest r) {
+    Map<String, Object> collect(Actor actor, @PathVariable String id, @RequestBody MasterCollectRequest r) {
         actor.require(ROLE);
         if (r.reference() == null || r.reference().isBlank()) {
             throw new IllegalArgumentException("reference is required");

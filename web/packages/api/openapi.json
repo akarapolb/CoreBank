@@ -1,0 +1,6041 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fabor OS API",
+    "description": "Core banking services: customers, deposits, loans, leases, asset finance, collections, products, ledger.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:18080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/v1/repossessions": {
+      "post": {
+        "tags": [
+          "repossession-controller"
+        ],
+        "operationId": "repossess",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepossessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repossession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/repossessions/{reference}/sale": {
+      "post": {
+        "tags": [
+          "repossession-controller"
+        ],
+        "operationId": "sell",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetSaleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repossession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{product}/versions/{version}/retire": {
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "retire",
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts": {
+      "get": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "drafts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DraftView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/yaml": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts/{id}/yaml": {
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/yaml": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts/{id}/submit": {
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "submit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts/{id}/publish": {
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "publish",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts/{id}/approve": {
+      "post": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "approve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/loans/{id}/repayments": {
+      "post": {
+        "tags": [
+          "me-controller"
+        ],
+        "operationId": "repay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Repayment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters": {
+      "post": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "sign",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterAgreement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/evaluation": {
+      "post": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "evaluate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterAgreement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/cure": {
+      "post": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "cure",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterAgreement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/collections": {
+      "post": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "collect",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MasterCollectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/call-offs": {
+      "post": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "callOff",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallOffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Loan"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/write-off": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "writeOff",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteOffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/settlement": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "settle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoneyMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/restructure": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "restructure",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestructureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/repayments": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "repay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoneyMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/recoveries": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "recover",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoneyMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/applications": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "apply",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/termination": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "terminate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/purchase": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "purchase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/collections": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "collect_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseCollectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/accrual/{number}": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "accrue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/operating": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "bookOperating",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/finance": {
+      "post": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "bookFinance",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "lines",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FloorPlanLine"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "open",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanLine"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "units",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FloorPlanUnit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "draw",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrawRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/sale": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "sale",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitSaleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/retail-settlement": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "settleFromRetail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/repayments": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "repay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/payoff": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "payoff",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/accrual": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "accrue_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "upTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/unfreeze": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "unfreeze",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanLine"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/stock-audit": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "stockAudit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/freeze": {
+      "post": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "freeze",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanLine"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ecl/run": {
+      "post": {
+        "tags": [
+          "ecl-controller"
+        ],
+        "operationId": "runNow",
+        "parameters": [
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Summary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dealers": {
+      "get": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "all",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Dealer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "onboard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dealer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dealers/{id}/suspension": {
+      "post": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dealer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dealers/{id}/reinstatement": {
+      "post": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "reinstate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dealer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dealers/payments": {
+      "post": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "pay",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers": {
+      "post": {
+        "tags": [
+          "customers-controller"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}/release": {
+      "post": {
+        "tags": [
+          "customers-controller"
+        ],
+        "operationId": "release",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}/consents/{purpose}/withdraw": {
+      "post": {
+        "tags": [
+          "customers-controller"
+        ],
+        "operationId": "withdraw",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "purpose",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{loanId}/promises": {
+      "post": {
+        "tags": [
+          "collections-controller"
+        ],
+        "operationId": "promise",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromiseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEvent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{loanId}/contacts": {
+      "post": {
+        "tags": [
+          "collections-controller"
+        ],
+        "operationId": "contact",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionEvent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "order",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/title-transfer": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "transferTitle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TitleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/return": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "returnToLessor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/policies": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "addPolicy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/location": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "relocate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/delivery": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "deliver",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/condition": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "recondition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConditionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/activation": {
+      "post": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "activate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/scheduler/backfill": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "operationId": "backfill",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/withdrawals": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "withdraw_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoneyMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/deposits": {
+      "post": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "deposit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoneyMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/console/config.json": {
+      "get": {
+        "tags": [
+          "console-config-controller"
+        ],
+        "operationId": "config",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/config.json": {
+      "get": {
+        "tags": [
+          "console-config-controller"
+        ],
+        "operationId": "appConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/repossessions/{reference}": {
+      "get": {
+        "tags": [
+          "repossession-controller"
+        ],
+        "operationId": "one",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repossession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/repossessions/loan/{loanId}": {
+      "get": {
+        "tags": [
+          "repossession-controller"
+        ],
+        "operationId": "ofLoan",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Repossession"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{product}/versions": {
+      "get": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "versions",
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VersionView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{product}/versions/{version}/disclosure": {
+      "get": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "disclosure",
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "principal",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/drafts/{id}/check": {
+      "get": {
+        "tags": [
+          "products-controller"
+        ],
+        "operationId": "check",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/overview": {
+      "get": {
+        "tags": [
+          "overview-controller"
+        ],
+        "operationId": "overview",
+        "parameters": [
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "operationId": "profile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/loans": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "operationId": "myLoans",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoanSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/balance": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "operationId": "balance",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Balance"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/activity": {
+      "get": {
+        "tags": [
+          "me-controller"
+        ],
+        "operationId": "activity",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Activity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}": {
+      "get": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "one_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterAgreement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/schedules": {
+      "get": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "schedules",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Schedule"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/invoice": {
+      "get": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsolidatedInvoice"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/facility": {
+      "get": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "facility",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/masters/{id}/co-terminus-term": {
+      "get": {
+        "tags": [
+          "master-controller"
+        ],
+        "operationId": "coTerminus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans": {
+      "get": {
+        "tags": [
+          "staff-view-controller"
+        ],
+        "operationId": "loans",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "overdue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoanRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}": {
+      "get": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "loan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/settlement-quote": {
+      "get": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "settlementQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loans/{id}/detail": {
+      "get": {
+        "tags": [
+          "staff-view-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ledger/batches": {
+      "get": {
+        "tags": [
+          "staff-view-controller"
+        ],
+        "operationId": "batches",
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BatchView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}": {
+      "get": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "one_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lease"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/due": {
+      "get": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "due",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{id}/carrying": {
+      "get": {
+        "tags": [
+          "lease-controller"
+        ],
+        "operationId": "carrying",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "line",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanLine"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "unit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlanUnit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/units/{unitId}/payoff-quote": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "payoffQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/statement": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "statement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Statement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/overdue-sales": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "overdueSales",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FloorPlanUnit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floorplans/{id}/exposure": {
+      "get": {
+        "tags": [
+          "floor-plan-controller"
+        ],
+        "operationId": "exposure",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ecl/loans/{loanId}": {
+      "get": {
+        "tags": [
+          "ecl-controller"
+        ],
+        "operationId": "preview",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "riskIncreased",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dealers/{id}": {
+      "get": {
+        "tags": [
+          "dealer-controller"
+        ],
+        "operationId": "one_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dealer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}": {
+      "get": {
+        "tags": [
+          "staff-view-controller"
+        ],
+        "operationId": "customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/{loanId}": {
+      "get": {
+        "tags": [
+          "collections-controller"
+        ],
+        "operationId": "history",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionEvent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/collections/queue": {
+      "get": {
+        "tags": [
+          "collections-controller"
+        ],
+        "operationId": "queue",
+        "parameters": [
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "one_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/title-history": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "titleHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TitleEvent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{id}/coverage": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "coverage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/uninsured": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "uninsured",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/expiring-cover": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "expiring",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/contract/{contractId}": {
+      "get": {
+        "tags": [
+          "asset-controller"
+        ],
+        "operationId": "ofContract",
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/balance": {
+      "get": {
+        "tags": [
+          "banking-controller"
+        ],
+        "operationId": "balance_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceView"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RepossessRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "loanId": {
+            "type": "string"
+          },
+          "assetId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "GOOD",
+              "FAIR",
+              "POOR",
+              "DAMAGED"
+            ]
+          }
+        }
+      },
+      "Repossession": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "loanId": {
+            "type": "string"
+          },
+          "assetId": {
+            "type": "string"
+          },
+          "repossessedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "SOLD"
+            ]
+          },
+          "soldOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "proceeds": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "costs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "owed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "shortfall": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "surplus": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AssetSaleRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "proceeds": {
+            "type": "number"
+          },
+          "costs": {
+            "type": "number"
+          }
+        }
+      },
+      "DraftView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "approvals": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "author": {
+            "type": "string"
+          }
+        }
+      },
+      "VersionView": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "goldenHash": {
+            "type": "string"
+          },
+          "publishedBy": {
+            "type": "string"
+          },
+          "retired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApproveRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "Repayment": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LoanSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outstandingMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "instalments": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "payableMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "next": {
+            "$ref": "#/components/schemas/NextDue"
+          }
+        }
+      },
+      "NextDue": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "overdue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RateCardRow": {
+        "type": "object",
+        "properties": {
+          "vehicleClass": {
+            "type": "string"
+          },
+          "minTerm": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxTerm": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rate": {
+            "type": "number"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "SignRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "limitMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "crossDefaultDpd": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rateCard": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateCardRow"
+            }
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "MasterAgreement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "crossDefaultDpd": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rateCard": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateCardRow"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DEFAULTED",
+              "CLOSED"
+            ]
+          },
+          "signedOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "MasterCollectRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "CallOffRequest": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "vehicleClass": {
+            "type": "string"
+          },
+          "assetIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "term": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "customerAccountId": {
+            "type": "string"
+          },
+          "payoutAccountId": {
+            "type": "string"
+          }
+        }
+      },
+      "Instalment": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "principalDue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestDue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "principalPaid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestPaid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "penaltyAccrued": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "penaltyPaid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "billed": {
+            "type": "boolean"
+          },
+          "vatDue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "vatPaid": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Loan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          },
+          "disbursedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "principal": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "instalments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Instalment"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CLOSED",
+              "NON_ACCRUAL",
+              "WRITTEN_OFF"
+            ]
+          },
+          "rateOverride": {
+            "type": "number"
+          },
+          "generation": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WriteOffRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "override": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoanView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "principal": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "instalments": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paidInstalments": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dpd": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MoneyMove": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "valueDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RestructureRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "newRate": {
+            "type": "number"
+          },
+          "newTerm": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ApplicationRequest": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "string"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "termMonths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "monthlyInstalmentMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthlyIncomeMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "existingDebtMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthsAtEmployer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "DecisionView": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReasonView"
+            }
+          },
+          "loanId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReasonView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "TerminateRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "feeMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "Lease": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FINANCE",
+              "OPERATING"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "assetCost": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "residual": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Period"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "COMPLETED",
+              "TERMINATED",
+              "PURCHASED"
+            ]
+          }
+        }
+      },
+      "Period": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "payment": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "income": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rentRecognised": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "depreciation": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "accrued": {
+            "type": "boolean"
+          },
+          "paid": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PurchaseRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "priceMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "LeaseCollectRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "OperatingRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          },
+          "assetCostMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "residualMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rentsMinor": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "BI_WEEKLY",
+              "MONTHLY",
+              "QUARTERLY",
+              "SEMI_ANNUAL",
+              "ANNUAL"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "FinanceRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          },
+          "fairValueMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "directCostsMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "paymentMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "periods": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "residualMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "WEEKLY",
+              "BI_WEEKLY",
+              "MONTHLY",
+              "QUARTERLY",
+              "SEMI_ANNUAL",
+              "ANNUAL"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "LineRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dealerId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "limitMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "annualRate": {
+            "type": "number"
+          },
+          "payoffWindowDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "settlementAccountId": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TermsRequest"
+            }
+          },
+          "curtailments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            }
+          },
+          "signedOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "Step": {
+        "type": "object",
+        "properties": {
+          "atDay": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cumulativePercent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TermsRequest": {
+        "type": "object",
+        "properties": {
+          "subLimitMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestFreeDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FloorPlanLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dealerId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "annualRate": {
+            "type": "number"
+          },
+          "payoffWindowDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "settlementAccountId": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UnitTerms"
+            }
+          },
+          "curtailments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "FROZEN",
+              "CLOSED"
+            ]
+          },
+          "signedOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "UnitTerms": {
+        "type": "object",
+        "properties": {
+          "subLimit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestFreeDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DrawRequest": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "USED",
+              "DEMO"
+            ]
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "supplierAccountId": {
+            "type": "string"
+          }
+        }
+      },
+      "FloorPlanUnit": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "unitId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "USED",
+              "DEMO"
+            ]
+          },
+          "drawn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "principalPaid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "drawnOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "interestThrough": {
+            "type": "string",
+            "format": "date"
+          },
+          "interestAccrued": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestPaid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "subvention": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "soldOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "PAID"
+            ]
+          }
+        }
+      },
+      "UnitSaleRequest": {
+        "type": "object",
+        "properties": {
+          "soldOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RetailRequest": {
+        "type": "object",
+        "properties": {
+          "retailLoanId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RepayRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PayoffRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "AuditRequest": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "found": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "assessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage1": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage2": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage3": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inactive": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "allowanceByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "failures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OnboardRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "taxId": {
+            "type": "string"
+          },
+          "commissionRate": {
+            "type": "number"
+          }
+        }
+      },
+      "Dealer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "taxId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          },
+          "commissionRate": {
+            "type": "number"
+          }
+        }
+      },
+      "PayRequest": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ConsentGrant": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "channel": {
+            "type": "string"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "documentRef": {
+            "type": "string"
+          },
+          "consents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsentGrant"
+            }
+          }
+        }
+      },
+      "PartyView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          }
+        }
+      },
+      "PromiseRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "payBy": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "CollectionEvent": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "CONTACT",
+              "PROMISE"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "CALL",
+              "SMS",
+              "LETTER",
+              "VISIT",
+              "EMAIL",
+              "NONE"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "promisedAmount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "payBy": {
+            "type": "string",
+            "format": "date"
+          },
+          "overdueAtPromise": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ContactRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "CALL",
+              "SMS",
+              "LETTER",
+              "VISIT",
+              "EMAIL",
+              "NONE"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "VEHICLE",
+              "EQUIPMENT"
+            ]
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNo": {
+            "type": "string"
+          },
+          "dealerId": {
+            "type": "string"
+          },
+          "costMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "VEHICLE",
+              "EQUIPMENT"
+            ]
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNo": {
+            "type": "string"
+          },
+          "engineNo": {
+            "type": "string"
+          },
+          "registrationNo": {
+            "type": "string"
+          },
+          "dealerId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contractId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ORDERED",
+              "DELIVERED",
+              "ACTIVE",
+              "RETURNED",
+              "REPOSSESSED",
+              "DISPOSED"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "GOOD",
+              "FAIR",
+              "POOR",
+              "DAMAGED"
+            ]
+          },
+          "titleHolder": {
+            "type": "string",
+            "enum": [
+              "LESSOR",
+              "CUSTOMER"
+            ]
+          }
+        }
+      },
+      "TitleRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reference": {
+            "type": "string"
+          }
+        }
+      },
+      "PolicyRequest": {
+        "type": "object",
+        "properties": {
+          "insurer": {
+            "type": "string"
+          },
+          "policyNo": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "sumInsuredMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "premiumMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "financed": {
+            "type": "boolean"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "Policy": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string"
+          },
+          "insurer": {
+            "type": "string"
+          },
+          "policyNo": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "sumInsured": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "premium": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "financed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LocationRequest": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "DeliveryRequest": {
+        "type": "object",
+        "properties": {
+          "registrationNo": {
+            "type": "string"
+          },
+          "engineNo": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ConditionRequest": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "GOOD",
+              "FAIR",
+              "POOR",
+              "DAMAGED"
+            ]
+          }
+        }
+      },
+      "ActivationRequest": {
+        "type": "object",
+        "properties": {
+          "contractId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "insuranceRequired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "ERROR",
+              "WARNING"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewReport": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScenarioResult"
+            }
+          },
+          "goldenHash": {
+            "type": "string"
+          },
+          "yamlHash": {
+            "type": "string"
+          }
+        }
+      },
+      "ScenarioResult": {
+        "type": "object",
+        "properties": {
+          "scenario": {
+            "type": "string"
+          },
+          "instalments": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "interest": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "upfrontFees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lateCharges": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "settlementFee": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPaidByCustomer": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "effectiveRate": {
+            "type": "number"
+          },
+          "finalBalance": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          }
+        }
+      },
+      "Balance": {
+        "type": "object",
+        "properties": {
+          "minor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "label": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "minor": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "masterId": {
+            "type": "string"
+          },
+          "loanId": {
+            "type": "string"
+          },
+          "vehicleClass": {
+            "type": "string"
+          },
+          "lockedRate": {
+            "type": "number"
+          },
+          "term": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "calledOffOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "assetIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConsolidatedInvoice": {
+        "type": "object",
+        "properties": {
+          "masterId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Line"
+            }
+          },
+          "vehicleVat": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VehicleVat"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Line": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "instalment": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "principal": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interest": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "penalty": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "vat": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "VehicleVat": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "instalment": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assetId": {
+            "type": "string"
+          },
+          "vat": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LoanRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "disbursedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outstandingMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "overdueMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dpd": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "QuoteView": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "InstalmentView": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "principalPaidMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interestPaidMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "penaltyMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "billed": {
+            "type": "boolean"
+          },
+          "settled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoanDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "productCode": {
+            "type": "string"
+          },
+          "productVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "disbursedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outstandingMinor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rateOverride": {
+            "type": "number"
+          },
+          "generation": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dpd": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "instalments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstalmentView"
+            }
+          }
+        }
+      },
+      "BatchView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "valueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Leg"
+            }
+          }
+        }
+      },
+      "Leg": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "balanceType": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "minor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "Statement": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatementRow"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "StatementRow": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string"
+          },
+          "interestDue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "principalDue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "saleOverdue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ContractRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "principalMinor": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CustomerView": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "depositAccountId": {
+            "type": "string"
+          },
+          "loans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractRef"
+            }
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "loanId": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "daysPastDue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bucket": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recommended": {
+            "type": "string",
+            "enum": [
+              "REMIND",
+              "CALL",
+              "LETTER",
+              "FIELD_VISIT",
+              "RESTRUCTURE_REVIEW",
+              "WRITE_OFF_REVIEW"
+            ]
+          },
+          "contacts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastContact": {
+            "type": "string",
+            "format": "date"
+          },
+          "openPromiseBy": {
+            "type": "string",
+            "format": "date"
+          },
+          "promiseBroken": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TitleEvent": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string"
+          },
+          "on": {
+            "type": "string",
+            "format": "date"
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "LESSOR",
+              "CUSTOMER"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "LESSOR",
+              "CUSTOMER"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "BalanceView": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "minor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}

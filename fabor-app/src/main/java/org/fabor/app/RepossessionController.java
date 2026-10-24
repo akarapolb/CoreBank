@@ -34,7 +34,7 @@ class RepossessionController {
     record RepossessRequest(String reference, String loanId, String assetId, LocalDate date, String location,
                             Asset.Condition condition) { }
 
-    record SaleRequest(LocalDate date, BigDecimal proceeds, BigDecimal costs) { }
+    record AssetSaleRequest(LocalDate date, BigDecimal proceeds, BigDecimal costs) { }
 
     @PostMapping
     Repossession repossess(Actor actor, @RequestBody RepossessRequest r) {
@@ -47,7 +47,7 @@ class RepossessionController {
     }
 
     @PostMapping("/{reference}/sale")
-    Repossession sell(Actor actor, @PathVariable String reference, @RequestBody SaleRequest r) {
+    Repossession sell(Actor actor, @PathVariable String reference, @RequestBody AssetSaleRequest r) {
         actor.require("repossession-officer");
         Repossession found = service.find(reference).orElseThrow(() -> new IllegalArgumentException("Unknown repossession " + reference));
         Currency cur = Currency.of(loans.find(found.loanId()).orElseThrow().currency());

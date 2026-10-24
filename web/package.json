@@ -1,0 +1,16 @@
+{
+  "name": "fabor-web",
+  "private": true,
+  "description": "Fabor OS front ends (ADR-0011): the staff console and, later, the customer app.",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @fabor/console dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "api:gen": "pnpm --filter @fabor/api gen"
+  }
+}

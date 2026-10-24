@@ -1,0 +1,90 @@
+/*
+ * Design tokens. Colours, radius, shadows and fonts start from the prototype's console.css; the scales for space and type,
+ * the information tone and the focus ring are added by the UX foundation (docs/design/ux-foundation.md, section 5).
+ */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --surface-3: #e7eaef;
+  --line: #e3e6eb;
+  --line-strong: #cfd5de;
+  --fg: #0f1729;
+  --muted: #5a6577;
+  --faint: #7f899a;
+  --accent: #3156f5;
+  --accent-hover: #2445d8;
+  --accent-ink: #ffffff;
+  --accent-soft: #ebefff;
+  --money: #0c9a80;
+  --good: #11804a;
+  --good-soft: #e3f5ea;
+  --warn: #9a6200;
+  --warn-soft: #fdf2dc;
+  --crit: #c8333a;
+  --crit-soft: #fde7e8;
+  --info: #2a5bd7;
+  --info-soft: #e8efff;
+  --neutral-soft: #eef0f3;
+
+  --font-ui: "Geist Variable", "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --r: 10px;
+  --r-sm: 6px;
+  --r-lg: 16px;
+  --shadow: 0 1px 2px rgba(15, 23, 41, 0.04), 0 2px 8px -2px rgba(15, 23, 41, 0.06);
+  --shadow-lg: 0 24px 64px -16px rgba(15, 23, 41, 0.28), 0 2px 6px rgba(15, 23, 41, 0.06);
+  --focus: 0 0 0 3px rgba(49, 86, 245, 0.35);
+
+  --row-h: 44px;
+  --sidebar-w: 248px;
+}
+
+/* Compact density for people who work queues all day. */
+:root[data-density="compact"] {
+  --row-h: 36px;
+  --text-md: 13px;
+  --space-4: 12px;
+  --space-5: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0c11; --surface: #11141b; --surface-2: #171b24; --surface-3: #1f2430; --line: #252a36; --line-strong: #343b4b;
+    --fg: #e9ecf2; --muted: #9aa3b5; --faint: #747d90;
+    --accent: #7e98ff; --accent-hover: #9aafff; --accent-ink: #0a0c11; --accent-soft: #1a2140; --money: #3ad0b2;
+    --good: #43d68e; --good-soft: #0f2a1b; --warn: #f2b544; --warn-soft: #2d230c; --crit: #ff6e72; --crit-soft: #331416;
+    --info: #8fb0ff; --info-soft: #17213d; --neutral-soft: #1c212c;
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 24px 64px -12px rgba(0, 0, 0, 0.7);
+    --focus: 0 0 0 3px rgba(126, 152, 255, 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0c11; --surface: #11141b; --surface-2: #171b24; --surface-3: #1f2430; --line: #252a36; --line-strong: #343b4b;
+  --fg: #e9ecf2; --muted: #9aa3b5; --faint: #747d90;
+  --accent: #7e98ff; --accent-hover: #9aafff; --accent-ink: #0a0c11; --accent-soft: #1a2140; --money: #3ad0b2;
+  --good: #43d68e; --good-soft: #0f2a1b; --warn: #f2b544; --warn-soft: #2d230c; --crit: #ff6e72; --crit-soft: #331416;
+  --info: #8fb0ff; --info-soft: #17213d; --neutral-soft: #1c212c;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px -12px rgba(0, 0, 0, 0.7);
+  --focus: 0 0 0 3px rgba(126, 152, 255, 0.45);
+  color-scheme: dark;
+}

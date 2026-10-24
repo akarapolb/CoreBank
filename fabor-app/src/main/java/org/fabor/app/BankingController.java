@@ -100,6 +100,16 @@ class BankingController {
         return loan(id, m.valueDate());
     }
 
+    record QuoteView(String loanId, LocalDate date, long amountMinor, String currency) { }
+
+    /** What settling the loan early on {@code date} would take from the customer's account, without doing it. */
+    @GetMapping("/loans/{id}/settlement-quote")
+    QuoteView settlementQuote(Actor actor, @PathVariable String id, @RequestParam LocalDate date) {
+        actor.require("ops");
+        Money q = loans.settlementQuote(id, date);
+        return new QuoteView(id, date, q.minor(), q.currency().code());
+    }
+
     @PostMapping("/loans/{id}/settlement")
     LoanView settle(Actor actor, @PathVariable String id, @RequestBody MoneyMove m) {
         actor.require("ops");

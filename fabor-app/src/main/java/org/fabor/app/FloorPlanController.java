@@ -44,7 +44,7 @@ class FloorPlanController {
 
     record DrawRequest(String unitId, FloorPlanLine.UnitType type, long amountMinor, LocalDate date, String supplierAccountId) { }
 
-    record SaleRequest(LocalDate soldOn) { }
+    record UnitSaleRequest(LocalDate soldOn) { }
 
     record RepayRequest(String reference, long amountMinor, LocalDate date) { }
 
@@ -94,7 +94,7 @@ class FloorPlanController {
     }
 
     @PostMapping("/{id}/units/{unitId}/sale")
-    FloorPlanUnit sale(Actor actor, @PathVariable String id, @PathVariable String unitId, @RequestBody SaleRequest r) {
+    FloorPlanUnit sale(Actor actor, @PathVariable String id, @PathVariable String unitId, @RequestBody UnitSaleRequest r) {
         actor.require(ROLE);
         return floorPlan.recordSale(id, unitId, r.soldOn() == null ? LocalDate.now() : r.soldOn());
     }

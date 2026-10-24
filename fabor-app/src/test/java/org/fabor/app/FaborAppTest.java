@@ -86,6 +86,7 @@ class FaborAppTest {
 
     @Autowired TestRestTemplate http;
     @Autowired DataSource ds;
+    @Autowired org.springframework.context.ApplicationContext context;
     @LocalServerPort int port;
 
     static String resource(String name) throws IOException {
@@ -236,6 +237,16 @@ class FaborAppTest {
                 List.class).getBody().get(0);
         assertThat(row.get("id")).isEqualTo("LN-APP1");
         assertThat(((Number) row.get("outstandingMinor")).longValue()).isEqualTo(10_000_000L);
+        // a settlement quote without settling: the remaining principal on the day of disbursement (no interest yet due)
+        Map<String, Object> quote = call(HttpMethod.GET, "/api/v1/loans/LN-APP1/settlement-quote?date=2026-01-15", "ops", null,
+                MediaType.APPLICATION_JSON);
+        assertThat(((Number) quote.get("amountMinor")).longValue()).isEqualTo(10_000_000L);
+        // the OpenAPI document names schemas by simple class name, so two request or view records with the same name would
+        // silently share one schema and give the generated client the wrong shape for one of them
+        java.util.Map<String, Long> names = context.getBeansWithAnnotation(org.springframework.web.bind.annotation.RestController.class)
+                .values().stream().flatMap(b -> java.util.Arrays.stream(org.springframework.aop.support.AopUtils.getTargetClass(b).getDeclaredClasses()))
+                .filter(Class::isRecord).collect(java.util.stream.Collectors.groupingBy(Class::getSimpleName, java.util.stream.Collectors.counting()));
+        assertThat(names.entrySet().stream().filter(e -> e.getValue() > 1).map(java.util.Map.Entry::getKey)).isEmpty();
         // the OpenAPI document the console client is generated from: behind sign-in, and the caller is not a parameter
         assertThat(http.getForEntity("/api/v1/openapi", String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         String openapi = http.exchange("/api/v1/openapi", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),

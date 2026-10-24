@@ -41,7 +41,7 @@ class LeaseController {
     record OperatingRequest(String id, String party, String depositAccountId, long assetCostMinor, long residualMinor,
                             List<Long> rentsMinor, LocalDate start, Frequency frequency, String currency) { }
 
-    record CollectRequest(String reference, long amountMinor, LocalDate date) { }
+    record LeaseCollectRequest(String reference, long amountMinor, LocalDate date) { }
 
     record TerminateRequest(String reference, long feeMinor, LocalDate date) { }
 
@@ -76,7 +76,7 @@ class LeaseController {
     }
 
     @PostMapping("/{id}/collections")
-    Lease collect(Actor actor, @PathVariable String id, @RequestBody CollectRequest r) {
+    Lease collect(Actor actor, @PathVariable String id, @RequestBody LeaseCollectRequest r) {
         actor.require(ROLE);
         return leases.collect(id, reference(r.reference()), money(id, r.amountMinor()), r.date() == null ? LocalDate.now() : r.date());
     }

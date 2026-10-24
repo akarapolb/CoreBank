@@ -1,0 +1,23 @@
+{
+  "name": "@fabor/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed client for the Fabor OS HTTP API, generated from its OpenAPI document (ADR-0011).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "gen": "node scripts/fetch-openapi.mjs && openapi-typescript openapi.json --properties-required-by-default -o src/schema.d.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

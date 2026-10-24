@@ -85,3 +85,32 @@ WCAG 2.2 AA: contrast checked for both themes, visible focus, every control reac
 ## 7. How we will know it is better
 
 Measured with the roles above, before (current console) and after, on the same tasks: find a late account and record a promise; take a payment; settle early; repossess and record a sale; check a dealer's stock. Track task success, time on task, errors and a System Usability Scale score. Target: every task completed without help, half the time of today for the queue tasks, SUS above 80.
+
+## 8. Milestone 1: what is built
+
+The React console at `/console-next/` (code in `web/`): sign-in, the new navigation, Home, Loans (list and detail with Summary, Schedule and Collections tabs), Collections (the queue) and Floor plan (lines and a line with its vehicles). Checked by hand in the browser against the demo app, light and dark; unit tests cover money parsing and formatting, the message rewrites, the action dialog's safeguards and the table's link rows.
+
+| Finding | How milestone 1 answers it |
+|---|---|
+| F1 navigation by module | Sidebar by the work: Home; Lending (Loans, Collections); Asset finance (Floor plan). Areas not rebuilt yet are listed under "Not rebuilt yet" and open the classic console, so nothing leads nowhere. |
+| F2 no starting point | Home shows what needs the person (overdue loans, broken promises, products waiting for approval, assets without cover), the top of the queue, then the bank's figures. |
+| F3 typing exact ids | Lists with search and filters (with counts) for loans, the queue and dealer lines; the filter is in the address; global search in the top bar. |
+| F4 live and sample mixed | Only live data once signed in; loading skeletons instead of placeholders. |
+| F5 irreversible actions inline | Every action goes through enter, review and confirm; the review states the consequence in figures (the settlement quote, the payoff amount, what stays unpaid); settling and paying off ask for the loan id or VIN to be typed. |
+| F6, F7 overloaded screens | One job per page: a loan page does only that loan, a line page only that line. |
+| F8 codes and satang | `lib/labels.ts` maps codes to words; `@fabor/api` rewrites service messages that carry satang or ledger ids into baht and plain words. |
+| F9 feedback off screen | The result appears in the dialog where the person is looking; the page behind refreshes. |
+| F10 inconsistent dates and amounts | One formatter for money and dates; amounts are typed in baht and parsed strictly. |
+| F11 rows not keyboard reachable | Rows are real links (stretched over the row); row actions carry the record in their accessible name. |
+| F13 no states | Loading, empty, error and not-found states on every page; counts and all-clear messages wait for the data. |
+
+Departures from the prototype, and why:
+- **Status shows arrears.** A live loan that is late is "Late · 29 days" or "205 days late", never a green "Active" (it would say the opposite of the truth).
+- **Navigation lists only working destinations**, grouped by the work, instead of every module.
+- **Home is about the person's work**; the prototype's bank-wide tiles and posting stream move below or out (the stream had no real source).
+- **Fonts are self-hosted** and there are no inline styles, so the console runs under a stricter content security policy than the prototype allowed.
+- **Colours for good, warning and critical text are darker** than the prototype's to reach WCAG AA contrast on their soft backgrounds.
+
+Found and fixed while checking in the browser: "all clear" text and zero counts shown while data was still loading; a page widened by a wide table (actions off screen); row actions all named "Pay off" for screen readers; a deep link losing its target at sign-in; a two-record name clash in the API that gave the generated client the wrong body for one endpoint (the app test now fails on such a clash).
+
+Next: Customers (search and customer page), leases, fleet agreements, assets and dealers on the same patterns, then switch `/console/` to the new console; OIDC sign-in; Playwright end-to-end and axe checks in CI; Thai translations; route-level code splitting (the bundle is 122 kB gzipped).

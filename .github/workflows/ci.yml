@@ -52,6 +52,29 @@ jobs:
             git log -1 --format=%B $c | grep -q '^Signed-off-by:' || { echo "Missing Signed-off-by on $c"; exit 1; }
           done
 
+  web:
+    # The React console (ADR-0011): types, unit tests and the production build. The API client is generated from the
+    # committed openapi.json; regenerating it against a running app and diffing is a later step.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm --filter @fabor/console build
+
   licences:
     runs-on: ubuntu-latest
     timeout-minutes: 15
