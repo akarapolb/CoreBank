@@ -365,9 +365,10 @@
       };
       var tg = $('#schedToggle'), fresh = tg.cloneNode(true); tg.replaceWith(fresh);          // drop the prototype's handler, which redraws sample rows
       fresh.addEventListener('click', function () { showAll = !showAll; paint(); });
-      $('#view-contract thead th:nth-child(6)').textContent = 'VAT';
+      $('#schedBody').closest('table').querySelector('thead th:nth-child(6)').textContent = 'VAT';          // the schedule's own header, not the queue's
       paint();
       loadLoanCollections(d.id);
+      loadRepossession(d.id);
     } catch (e) { fail('Open contract')(e); }
   }
 
@@ -928,6 +929,119 @@
       toast('Lease ' + l.id + ' booked');
       openLease(l.id);
     } catch (e) { say('#lsOut', 'warn', e.message); }
+  });
+
+  // ---------------------------------------------------------------- Dealers: a fifth tab on the Fleet and floor plan screen
+  var dealersBox = el(
+    '<div id="af-dealers" class="grid" style="gap:20px" hidden>' +
+    '<div class="panel"><div class="panel-head"><h2>Dealers</h2><button class="btn" type="button" id="dlRefresh">Refresh</button></div>' +
+    '<div class="tbl-wrap"><table><thead><tr><th>Dealer</th><th>Name</th><th>Tax id</th><th class="num">Commission</th><th>Status</th><th></th></tr></thead><tbody id="dlBody"></tbody></table></div>' +
+    '<div class="result" id="dlOut" hidden></div></div>' +
+    '<div class="grid g2"><div class="panel"><h2>Onboard a dealer</h2><form class="form" id="dlForm">' +
+    '<div class="field"><label for="dlId">Dealer id</label><input id="dlId" required></div><div class="field"><label for="dlName">Name</label><input id="dlName" required></div>' +
+    '<div class="field"><label for="dlTax">Tax id</label><input id="dlTax" required inputmode="numeric"></div>' +
+    '<div class="field"><label for="dlRate">Commission, % of asset cost (0 to 20)</label><input id="dlRate" type="number" min="0" max="20" step="0.01" value="2" required></div></form>' +
+    '<div class="row"><button class="btn primary" type="button" id="dlGo"><svg class="ico"><use href="#i-plus"/></svg><span>Onboard dealer</span></button></div></div>' +
+    '<div class="panel"><h2>Pay a dealer</h2><p class="muted">Pays the dealer of an active asset the whole cost plus the commission, once per asset. A suspended dealer is not paid.</p>' +
+    '<form class="row" id="dlPay"><div class="field" style="flex:1"><label for="dlAsset">Asset id</label><input id="dlAsset" autocomplete="off" placeholder="A2" required></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Pay dealer</button></form></div></div></div>');
+  addTab('dealers', 'Dealers', dealersBox, function () { loadDealers(); });
+  async function loadDealers() {
+    try {
+      var list = await api('GET', '/dealers');
+      $('#dlBody').innerHTML = list.map(function (d) {
+        var on = d.status === 'ACTIVE';
+        return "<tr><td class='mono'>" + esc(d.id) + '</td><td>' + esc(d.name) + "</td><td class='mono'>" + esc(d.taxId) + "</td><td class='num'>" + (d.commissionRate * 100).toFixed(2) + '%</td><td>' +
+          "<span class='chip " + (on ? 'good' : 'warn') + "'>" + esc(d.status.toLowerCase()) + "</span></td><td><button class='btn' type='button' data-dealer='" + esc(d.id) + "' data-do='" + (on ? 'suspension' : 'reinstatement') + "'>" +
+          (on ? 'Suspend' : 'Reinstate') + '</button></td></tr>';
+      }).join('') || "<tr><td colspan='6' class='muted'>No dealers onboarded yet.</td></tr>";
+      $$('#dlBody [data-dealer]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          try {
+            await api('POST', '/dealers/' + encodeURIComponent(b.getAttribute('data-dealer')) + '/' + b.getAttribute('data-do'));
+            await loadDealers();
+            say('#dlOut', 'ok', 'Dealer ' + b.getAttribute('data-dealer') + (b.getAttribute('data-do') === 'suspension' ? ' suspended.' : ' reinstated.'));
+          } catch (e) { say('#dlOut', 'warn', e.message); }
+        });
+      });
+    } catch (e) { fail('Load dealers')(e); }
+  }
+  $('#dlRefresh').addEventListener('click', function () { if (signedIn()) loadDealers(); else toast('Sign in under Settings first'); });
+  $('#dlGo').addEventListener('click', async function () {
+    var f = $('#dlForm');
+    if (!f.reportValidity()) return;
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var d = await api('POST', '/dealers', { id: $('#dlId').value.trim(), name: $('#dlName').value.trim(), taxId: $('#dlTax').value.trim(), commissionRate: Number($('#dlRate').value) / 100 });
+      await loadDealers();
+      say('#dlOut', 'ok', 'Onboarded ' + d.name + ' (' + d.id + ').');
+      toast('Dealer ' + d.id + ' onboarded');
+    } catch (e) { say('#dlOut', 'warn', e.message); }
+  });
+  $('#dlPay').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var r = await api('POST', '/dealers/payments', { assetId: $('#dlAsset').value.trim(), date: today });
+      say('#dlOut', 'ok', 'Paid ฿' + thb(r.paidMinor) + ' for asset ' + r.assetId + ' (cost plus commission).');
+    } catch (err) { say('#dlOut', 'warn', err.message); }
+  });
+
+  // ---------------------------------------------------------------- Repossession and sale, on the Contracts screen under collections
+  var repoPanel = el(
+    '<div class="panel" id="loanRepossession" hidden><h2>Repossession and sale</h2><p class="muted" id="rpStatus"></p>' +
+    '<form class="row" id="rpForm" style="flex-wrap:wrap"><div class="field"><label for="rpAsset">Asset under this loan</label><select id="rpAsset"></select></div>' +
+    '<div class="field"><label for="rpLoc">Where it is held</label><input id="rpLoc" autocomplete="off"></div>' +
+    '<div class="field"><label for="rpCond">Condition found</label><select id="rpCond"><option>GOOD</option><option selected>FAIR</option><option>POOR</option><option>DAMAGED</option></select></div>' +
+    '<button class="btn" type="submit" style="align-self:flex-end">Repossess</button></form>' +
+    '<form class="row" id="rpSale" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="rpCase">Open case</label><select id="rpCase"></select></div>' +
+    '<div class="field"><label for="rpProceeds">Sale proceeds, THB</label><input id="rpProceeds" type="number" min="0.01" step="0.01"></div>' +
+    '<div class="field"><label for="rpCosts">Costs of recovery and sale, THB</label><input id="rpCosts" type="number" min="0" step="0.01" value="0"></div>' +
+    '<div class="field check"><input id="rpOk" type="checkbox"><label for="rpOk">I understand the sale settles the loan or writes it off</label></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Record sale</button></form>' +
+    '<div class="tbl-wrap"><table><thead><tr><th>Case</th><th>Asset</th><th>Taken</th><th>Status</th><th class="num">Proceeds</th><th class="num">Costs</th><th class="num">Owed at sale</th><th class="num">Shortfall</th><th class="num">Surplus</th></tr></thead>' +
+    '<tbody id="rpBody"></tbody></table></div><div class="result" id="rpOut" hidden></div></div>');
+  $('#loanCollections').after(repoPanel);
+  var rpLoan = null;
+  async function loadRepossession(id) {
+    rpLoan = id;
+    $('#loanRepossession').hidden = false;
+    $('#rpOut').hidden = true;
+    try {
+      var got = await Promise.all([api('GET', '/repossessions/loan/' + encodeURIComponent(id)), api('GET', '/assets/contract/' + encodeURIComponent(id))]);
+      var cases = got[0], assets = got[1].filter(function (a) { return a.status === 'ACTIVE'; }), open = cases.filter(function (c) { return c.status === 'OPEN'; });
+      $('#rpStatus').textContent = open.length ? 'An asset is held and waiting for sale.' : assets.length ? 'Assets under this loan can be repossessed once an installment is overdue.' : 'No active asset is recorded under this loan.';
+      $('#rpAsset').innerHTML = assets.map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.id + ' · ' + a.make + ' ' + a.model) + '</option>'; }).join('');
+      $('#rpCase').innerHTML = open.map(function (c) { return '<option value="' + esc(c.reference) + '">' + esc(c.reference + ' · ' + c.assetId) + '</option>'; }).join('');
+      $('#rpBody').innerHTML = cases.map(function (c) {
+        var sold = c.status === 'SOLD';
+        return "<tr><td class='mono'>" + esc(c.reference) + "</td><td class='mono'>" + esc(c.assetId) + "</td><td class='mono'>" + esc(c.repossessedOn) + "</td><td><span class='chip " + (sold ? 'good' : 'warn') + "'>" +
+          esc(c.status.toLowerCase()) + "</span></td><td class='num'>" + (sold ? thb(c.proceeds) : '—') + "</td><td class='num'>" + (sold ? thb(c.costs) : '—') + "</td><td class='num'>" + (sold ? thb(c.owed) : '—') +
+          "</td><td class='num'>" + (sold ? thb(c.shortfall) : '—') + "</td><td class='num'>" + (sold ? thb(c.surplus) : '—') + '</td></tr>';
+      }).join('') || "<tr><td colspan='9' class='muted'>No repossession cases on this loan.</td></tr>";
+    } catch (e) { say('#rpOut', 'warn', e.message); }
+  }
+  $('#rpForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!rpLoan || !$('#rpAsset').value) { say('#rpOut', 'warn', 'There is no active asset under this loan to repossess.'); return; }
+    try {
+      var r = await api('POST', '/repossessions', { reference: 'console-' + Date.now(), loanId: rpLoan, assetId: $('#rpAsset').value, date: today, location: $('#rpLoc').value.trim(), condition: $('#rpCond').value });
+      await loadRepossession(rpLoan);
+      say('#rpOut', 'ok', 'Repossessed ' + r.assetId + '. Record the sale when it is sold.');
+    } catch (err) { say('#rpOut', 'warn', err.message); }
+  });
+  $('#rpSale').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!$('#rpCase').value) { say('#rpOut', 'warn', 'There is no open case to sell.'); return; }
+    if (!$('#rpOk').checked) { say('#rpOut', 'warn', 'Tick the confirmation first: the sale settles the loan or writes it off.'); return; }
+    try {
+      var r = await api('POST', '/repossessions/' + encodeURIComponent($('#rpCase').value) + '/sale', { date: today, proceeds: Number($('#rpProceeds').value), costs: Number($('#rpCosts').value || '0') });
+      $('#rpOk').checked = false;
+      await loadRepossession(rpLoan);
+      say('#rpOut', r.shortfall > 0 ? 'warn' : 'ok', r.shortfall > 0 ? 'Sold. The loan was written off; ฿' + thb(r.shortfall) + ' stays owed by the customer.' :
+        'Sold. The loan is settled' + (r.surplus > 0 ? '; ฿' + thb(r.surplus) + ' stays in the customer account.' : '.'));
+      openLoan(rpLoan);
+    } catch (err) { say('#rpOut', 'warn', err.message); }
   });
 
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
