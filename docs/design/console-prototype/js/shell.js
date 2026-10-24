@@ -366,6 +366,7 @@ function render() {
     : current.sys === "analytics" && current.sec !== "scheduled" ? viewAnalytics(current.sec)
     : page === "branch/counter" ? viewCounter() : page === "branch/drawer" ? viewDrawer() : page === "account/settings" ? viewSettings()
     : page === "admin/authorities" ? viewAuthorities() : page === "admin/branding" ? viewBranding() : page === "ops/exceptions" ? viewExceptions()
+    : PAGE_VIEWS[page] ? PAGE_VIEWS[page]()
     : page === "lending/overview" ? viewLendingOverview() : page === "lending/monitoring" ? viewMonitoring() : page === "collections/overview" ? viewCollectionsOverview() : page === "collections/strategy" ? viewStrategy() : page === "finance/close" ? viewClose() : page === "channels/preview" ? viewApp() : page === "workbench/compare" ? viewCompare()
     : current.sys === "workbench" && current.sec === "today" ? viewToday()
       : current.sys === "workbench" && current.sec === "approvals" ? viewApprovals()

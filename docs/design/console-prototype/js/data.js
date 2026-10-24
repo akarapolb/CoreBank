@@ -27,6 +27,8 @@ const sysById = Object.fromEntries(SYS.map((s) => [s.id, s]));
 
 /* ---------------- tenants: each bank licenses its own set of systems ---------------- */
 const ALL = SYS.filter((s) => !s.hidden).map((s) => s.id);
+// later files register list sections and full-page views here instead of editing this file and the router
+const EXTRA_LISTS = [], PAGE_VIEWS = {};
 const TENANTS = [
   { id: "virtual", name: "Demo Virtual Bank", mark: "VB", sub: "Digital only, retail and SME", systems: ALL.filter((x) => !["branch", "leasing", "trade", "treasury", "syndication"].includes(x)), pinned: ["workbench", "customers", "deposits", "lending", "payments", "collections"] },
   { id: "retail", name: "Demo Retail Bank", mark: "RB", sub: "Branches, retail lending and auto finance", systems: ALL.filter((x) => !["trade", "syndication"].includes(x)), pinned: ["workbench", "customers", "deposits", "lending", "leasing", "collections"] },
@@ -293,7 +295,7 @@ function lists() {
       [who("Wanida Kaewmanee"), "RM, credit-officer", "Customers, Lending, Trade", "12 min", P("good", "On"), P("good", "Active")]] },
     "admin/tenants": { cols: ["Tenant", "Name", "Systems", "Users", "Region", "State"], rows: TENANTS.map((x) => [R(x.mark), esc(t(x.name)), String(x.systems.length), x.id === "commercial" ? "1,240" : x.id === "retail" ? "3,912" : "184", "TH", P("good", "Active")]) },
   };
-  return Object.assign(base, moreLists(), colLists(), finLists(), depLists());
+  return Object.assign(base, moreLists(), colLists(), finLists(), depLists(), ...EXTRA_LISTS.map((f) => f()));
 }
 
 // the sections that complete every system
