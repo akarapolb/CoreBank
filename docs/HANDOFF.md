@@ -30,7 +30,15 @@ The detail of each item, and what each one still lacks, is in the git history an
 - Copilot, the exception centre, month-end close, an AML case, a held payment, loan origination, a customer app and analytics;
 - light, dark and Calm themes, sign-in with MFA, presenter and executive modes, and bank branding.
 
-It is published privately at https://claude.ai/artifact/R7VtX5SGT2mSrgcFSe2w1L (sharing is set from the page). `demo-script.md` is the meeting script. `build-offline.py` writes a single offline file (the output is git-ignored).
+Lending goes deeper than the other systems (`js/lending.js`):
+- servicing on the home loan LN-77120: prepay, rate review, payment holiday, due date, e-DDA, fee waiver, letters;
+- a new application APP-30416 from product through affordability, decision and e-signature to disbursement;
+- the commercial facility FAC-B2031, with limits across Lending, Trade and Treasury, drawdowns, covenants (the Q3 test breaches DSCR and sets a draw stop), collateral and the annual review;
+- a Lending overview with the pipeline and the book.
+
+These screens add four authority actions (servicing, fee waivers, drawdowns, covenant waivers) that the backend authority check will need.
+
+It is published privately at https://claude.ai/artifact/TV87zHeb7PuDxkSDe2YnUy (sharing is set from the page). `demo-script.md` is the meeting script. `build-offline.py` writes a single offline file (the output is git-ignored).
 
 ## Standing instructions from the user
 
