@@ -131,7 +131,7 @@ const AF = [
   { s: "work", id: "pension", en: "Pension", th: "บำนาญ", when: (f) => f.occType === "retired", fields: [
     { k: "pension", en: "Monthly pension", th: "บำนาญต่อเดือน", t: "money", req: true, src: "statement", why: "policy" },
     { k: "pensionSource", en: "Paid by", th: "ผู้จ่ายบำนาญ", t: "text", req: true, src: "customer", why: "policy" }] },
-  { s: "work", id: "income", en: "Income", th: "รายได้", sub: ["Variable income is counted at 70% and other income at 50%, by credit policy.", "รายได้ไม่ประจำนับ 70% และรายได้อื่นนับ 50% ตามนโยบายสินเชื่อ"], when: (f) => f.occType !== "retired", fields: [
+  { s: "work", id: "income", en: "Income", th: "รายได้", sub: () => [`Variable income is counted at ${POLICY.haircut.variable}% and other income at ${POLICY.haircut.other}%, by credit policy.`, `รายได้ไม่ประจำนับ ${POLICY.haircut.variable}% และรายได้อื่นนับ ${POLICY.haircut.other}% ตามนโยบายสินเชื่อ`], when: (f) => f.occType !== "retired", fields: [
     { k: "salary", en: "Monthly salary", th: "เงินเดือน", t: "money", req: true, when: isEmp, src: "statement", why: "policy" },
     { k: "allowance", en: "Fixed allowances", th: "ค่าตอบแทนประจำอื่น", t: "money", when: isEmp, src: "statement", why: "policy" },
     { k: "variable", en: "Overtime, commission, bonus (6-month average)", th: "ค่าล่วงเวลา คอมมิชชัน โบนัส (เฉลี่ย 6 เดือน)", t: "money", when: isEmp, src: "statement", why: "policy" },
@@ -289,14 +289,14 @@ function intakeCalc() {
   const I = INTAKE, f = I.f, p = INTAKE_PRODUCTS[I.product], amount = num(f.amount), term = +f.term || p.term;
   const rate = I.product === "car" && f.carCond === "used" ? 0.0649 : p.rate, inst = r2(pmt(rate / 12, term, amount)), total = r2(inst * term);
   const co = f.hasCo === "yes" && I.product !== "personal";
-  const own = f.occType === "retired" ? num(f.pension) : isSelf(f) ? num(f.bizProfit) + 0.5 * num(f.otherInc) : num(f.salary) + num(f.allowance) + 0.7 * num(f.variable) + 0.5 * num(f.otherInc);
+  const own = f.occType === "retired" ? num(f.pension) : isSelf(f) ? num(f.bizProfit) + POLICY.haircut.other / 100 * num(f.otherInc) : num(f.salary) + num(f.allowance) + POLICY.haircut.variable / 100 * num(f.variable) + POLICY.haircut.other / 100 * num(f.otherInc);
   const income = r2(own + (co ? num(f.coIncome) : 0));
   const ncb = NCB_DEBTS.reduce((s, d) => s + d[6], 0), declared = num(f.coopLoan) + num(f.studentLoan) + num(f.informal) + num(f.otherObl);
   const debts = r2(ncb + declared + (co ? num(f.coDebts) : 0)), dsr = income ? (debts + inst) / income * 100 : 999;
   const age = f.dob ? ageAt(f.dob) : 0, ageEnd = age + Math.ceil(term / 12), service = isEmp(f) && f.startDate ? (BIZ - Date.parse(f.startDate)) / 864e5 / 365.25 : isSelf(f) && f.bizStart ? (BIZ - Date.parse(f.bizStart)) / 864e5 / 365.25 : 99;
-  const ltvLim = I.product === "home" ? { 1: 90, 2: 80, 3: 70 }[f.mortgageNo] || 90 : I.product === "car" ? (f.carCond === "used" ? 80 : 85) : 0;
+  const ltvLim = I.product === "home" ? POLICY.ltvHome[f.mortgageNo] || POLICY.ltvHome[1] : I.product === "car" ? POLICY.ltvCar[f.carCond === "used" ? "used" : "new"] : 0;
   const ltvBase = I.product === "home" ? Math.min(num(f.appraisal), num(f.price) || Infinity) : I.product === "car" ? (f.carCond === "used" ? num(f.redbook) || num(f.carPrice) : num(f.carPrice)) : 0, ltv = ltvBase ? amount / ltvBase * 100 : 0;
-  const capX = own >= 30000 ? 5 : 1.5;
+  const capX = own >= POLICY.reg.capThreshold ? POLICY.reg.capHigh : POLICY.reg.capLow;
   const checks = [[tt(`Debt service ratio up to ${p.dsr}%`, `ภาระหนี้ต่อรายได้ไม่เกิน ${p.dsr}%`), `${dsr.toFixed(1)}%`, dsr <= p.dsr, "hard"],
     [tt(`Income at least ${baht(p.minIncome, 0)}`, `รายได้อย่างน้อย ${baht(p.minIncome, 0)}`), baht(income, 0), income >= p.minIncome, "hard"],
     ...(I.product === "personal" ? [[tt(`Up to ${capX} times monthly income (BOT)`, `ไม่เกิน ${capX} เท่าของรายได้ต่อเดือน (ธปท.)`), baht(own * capX, 0), amount <= own * capX, "hard"]] : []),
@@ -348,7 +348,7 @@ function fieldHtml(x) {
     control = `<input class="input${x.t === "money" ? " money" : ""}" id="${id}" data-f="${x.k}" type="${type}" ${mode ? `inputmode="${mode}"` : ""} value="${esc(shownV)}" autocomplete="off" ${aria}>`; }
   return `<div class="field${x.wide ? " wide" : ""}"><label for="${id}">${label}</label>${control}${hint}${errHtml}</div>`;
 }
-const sectionHtml = (sec) => `<section class="form-sec" aria-labelledby="sec-${sec.id}"><h3 id="sec-${sec.id}">${esc(tt(sec.en, sec.th))}</h3>${sec.sub ? `<p>${esc(tt(...sec.sub))}</p>` : ""}<div class="form-grid">${sec.fields.filter((x) => shown(x, INTAKE.f)).map(fieldHtml).join("")}</div></section>`;
+const sectionHtml = (sec) => `<section class="form-sec" aria-labelledby="sec-${sec.id}"><h3 id="sec-${sec.id}">${esc(tt(sec.en, sec.th))}</h3>${sec.sub ? `<p>${esc(tt(...(typeof sec.sub === "function" ? sec.sub() : sec.sub)))}</p>` : ""}<div class="form-grid">${sec.fields.filter((x) => shown(x, INTAKE.f)).map(fieldHtml).join("")}</div></section>`;
 function summaryHtml() {
   const c = intakeCalc(), k = completeness(), tone = c.dsr > c.p.dsr ? "crit" : c.dsr > c.p.dsr * 0.85 ? "warn" : "";
   return `<section class="card sticky" aria-label="${esc(tt("Application summary", "สรุปใบสมัคร"))}"><div class="card-head"><div><div class="card-title">${esc(tt(c.p.name, c.p.th))}</div><div class="card-sub">${esc(c.p.code)}</div></div></div><div class="card-body" style="display:grid;gap:14px">
