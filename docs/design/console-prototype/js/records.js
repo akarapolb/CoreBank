@@ -19,8 +19,6 @@ const RECS = {
     tabs: [["tx", "Transactions", 9], ["holds", "Holds", 1], ["interest", "Interest"], ["statement", "Statement"]] },
   "LC-26-0412": { sys: "trade", sec: "lc", label: "LC-26-0412", kind: "Import letter of credit", match: ["LC-26-0412"], view: () => viewLC(),
     tabs: [["summary", "Summary"], ["docs", "Documents", 7], ["amend", "Amendments", 1], ["charges", "Charges", 3]] },
-  "ONB-7731": { sys: "customers", sec: "onboarding", label: "ONB-7731", kind: "Onboarding", match: ["ONB-7731"], view: () => viewOnboarding(),
-    tabs: [["id", "ID card"], ["dopa", "DOPA check"], ["ndid", "NDID"], ["face", "Liveness"], ["screen", "Sanctions and PEP"], ["consent", "Consents"], ["open", "Open account"]] },
   "F2": { sys: "leasing", sec: "leases", label: "F2", kind: "Finance lease", match: ["F2"], view: () => viewLease(),
     tabs: [["summary", "Summary"], ["schedule", "Schedule", 12], ["accounting", "Accounting"], ["asset", "Asset"]] },
   "MA-1": { sys: "leasing", sec: "fleet", label: "MA-1", kind: "Fleet master agreement", match: ["MA-1"], view: () => viewFleet(),
@@ -246,26 +244,6 @@ function viewLC() {
   return recordPage({ title: "LC-26-0412", mono: true, lede: esc(tt("Siam Freight Logistics → Hino Motors (JP) · sight LC under UCP 600", "สยามเฟรท โลจิสติกส์ → Hino Motors (JP) · LC ชนิดชำระเมื่อเห็น ตาม UCP 600")), pills: P("good", "Issued") + P("crit", tt("1 discrepancy", "เอกสารไม่ตรง 1")),
     actions: `<button class="btn" type="button">${esc(tt("Refuse documents", "ปฏิเสธเอกสาร"))}</button><button class="btn primary" type="button" data-flow="lcWaiver">${esc(tt("Ask for a waiver", "ขอให้ยอมรับ"))}</button>`,
     facts: [[t("Amount"), "$2,400,000.00"], [tt("THB equivalent", "เทียบเท่าบาท"), baht(86400000, 0), "", "@ 36.00"], [t("Expiry"), fd(Date.UTC(2026, 11, 30))], [t("Documents"), tt("6 of 7 comply", "ตรง 6 จาก 7"), "crit"], [tt("Answer by", "ตอบภายใน"), fd(Date.UTC(2026, 9, 29))], [tt("Margin", "เงินประกัน"), "10%"]], panels });
-}
-
-/* ---------------- onboarding ONB-7731: one step at a time ---------------- */
-function viewOnboarding() {
-  const def = RECS["ONB-7731"], steps = def.tabs, i = Math.max(0, steps.findIndex(([k]) => k === current.tab)), done = (k) => steps.findIndex(([x]) => x === k) < i;
-  const content = {
-    id: [tt("Card read at counter 3", "อ่านบัตรที่ช่อง 3"), kvHtml([[t("Name"), "Napat Srisuk · นภัทร ศรีสุข"], [tt("Card number", "เลขบัตร"), "3-1012-xxxxx-xx-8"], [tt("Date of birth", "วันเกิด"), fd(Date.UTC(1991, 3, 14))], [tt("Card expires", "บัตรหมดอายุ"), fd(Date.UTC(2029, 3, 13))]])],
-    dopa: [tt("DOPA confirms the card is valid", "กรมการปกครองยืนยันบัตรใช้ได้"), notice("good", tt("Card active, laser code matches", "บัตรใช้งานได้ รหัสหลังบัตรตรงกัน"), tt("Checked 09:31, response 410 ms", "ตรวจ 09:31 ใช้เวลา 410 ms"))],
-    ndid: [tt("Identity proofed with NDID", "พิสูจน์ตัวตนผ่าน NDID"), kvHtml([[tt("Identity provider", "ผู้ให้บริการยืนยันตัวตน"), "Krungthai NEXT"], ["IAL / AAL", "2.3 / 2.2"], [t("Result"), tt("Accepted", "ผ่าน")]])],
-    face: [tt("Face matches the card photo", "ใบหน้าตรงกับรูปบนบัตร"), `${factsHtml([[tt("Match score", "คะแนนความเหมือน"), "97.4%", "", tt("threshold 90%", "เกณฑ์ 90%")], [tt("Liveness", "การตรวจมีชีวิต"), tt("Passed", "ผ่าน")], [tt("Attempts", "จำนวนครั้ง"), "1"]])}`],
-    screen: [tt("No sanctions or PEP match", "ไม่พบในรายชื่อคว่ำบาตรหรือ PEP"), notice("good", tt("Screened against UN, OFAC, EU and the AMLO lists", "ตรวจกับรายชื่อ UN, OFAC, EU และ ปปง."), tt("1 near match on name was cleared: different date of birth.", "พบชื่อใกล้เคียง 1 รายการ ตรวจแล้ววันเกิดไม่ตรง"))],
-    consent: [tt("Consents, explained in Thai", "ความยินยอม อธิบายเป็นภาษาไทย"), `<div>${[[tt("Credit bureau check (NCB)", "ตรวจเครดิตบูโร (NCB)"), true], [tt("Marketing by SMS and email", "การตลาดทาง SMS และอีเมล"), false], [tt("Share data with insurance partner", "ส่งข้อมูลให้พันธมิตรประกัน"), false]].map(([n, on]) => `<label class="switch"><span>${esc(n)}</span><input type="checkbox" ${on ? "checked" : ""}></label>`).join("")}</div>`],
-    open: [tt("Open the account", "เปิดบัญชี"), kvHtml([["Product", "Savings Standard"], [tt("Account number", "เลขบัญชี"), tt("Assigned on opening", "ได้รับเมื่อเปิดบัญชี")], ["PromptPay", tt("Link mobile 08x-xxx-7731", "ผูกเบอร์ 08x-xxx-7731")], [tt("Passbook", "สมุดบัญชี"), tt("Printed at the counter", "พิมพ์ที่เคาน์เตอร์")]])],
-  };
-  const [title, body] = content[steps[i][0]];
-  return `<button class="back" type="button" data-go="customers/onboarding">${icon("i-back")}${esc(t("Onboarding"))}</button>
-    <div class="head"><div>${eyebrow(sysById.customers, "ONB-7731")}<h1 class="title">${esc(tt("New customer: Napat Srisuk", "ลูกค้าใหม่: นภัทร ศรีสุข"))}</h1><p class="lede">${esc(tt("Branch 0123 · each step saves as you go, so the customer can finish in the app.", "สาขา 0123 · บันทึกทุกขั้นตอน ลูกค้าทำต่อในแอปได้"))}</p></div></div>
-    <div class="steps" style="padding:0;border:0" aria-label="${esc(tt("Steps", "ขั้นตอน"))}">${steps.map(([k, l], n) => `<button class="step ${n === i ? "on" : n < i ? "done" : ""}" type="button" data-tab="${k}" style="border:0;background:transparent;padding:0" ${n === i ? 'aria-current="step"' : ""}><b>${n < i ? "✓" : n + 1}</b>${esc(t(l))}</button>`).join("")}</div>
-    ${card(title, body)}
-    <div class="actions" style="justify-content:flex-end">${i > 0 ? `<button class="btn" type="button" data-tab="${steps[i - 1][0]}">${esc(t("Back"))}</button>` : ""}${i < steps.length - 1 ? `<button class="btn primary" type="button" data-tab="${steps[i + 1][0]}">${esc(t("Next"))}</button>` : `<button class="btn primary" type="button" data-flow="openAccount">${esc(tt("Open the account", "เปิดบัญชี"))}</button>`}</div>`;
 }
 
 /* ---------------- GL 1300: from a figure to its postings and source records ---------------- */
