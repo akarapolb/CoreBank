@@ -193,6 +193,17 @@ class FloorPlanServiceTest {
     }
 
     @Test
+    void unitsListsEveryUnitOfTheLineIncludingPaidOnes() {
+        draw("VIN2", UnitType.NEW, 10_000_000, D0.plusDays(1));
+        draw("VIN1", UnitType.NEW, 10_000_000, D0);
+        svc.recordSale("FP-1", "VIN1", D0.plusDays(5));
+        svc.payoff("FP-1", "VIN1", "po1", D0.plusDays(5));
+        assertThat(svc.units("FP-1")).extracting(FloorPlanUnit::unitId).containsExactly("VIN1", "VIN2");   // oldest draw first
+        assertThat(svc.units("FP-1").get(0).status()).isEqualTo(FloorPlanUnit.Status.PAID);
+        assertThatThrownBy(() -> svc.units("NOPE")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void aStockAuditFlagsMissingUnitsOverdueSalesAndStrangers() {
         draw("VIN1", UnitType.NEW, 10_000_000, D0);
         draw("VIN2", UnitType.NEW, 10_000_000, D0);

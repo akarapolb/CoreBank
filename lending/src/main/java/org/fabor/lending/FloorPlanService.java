@@ -270,6 +270,12 @@ public final class FloorPlanService {
         return new Statement(lineId, asOf, List.copyOf(rows), rows.stream().mapToLong(StatementRow::total).sum());
     }
 
+    /** Every unit of the line, paid ones included, oldest draw first. */
+    public List<FloorPlanUnit> units(String lineId) {
+        line(lineId);
+        return repo.units(lineId);
+    }
+
     /** Units sold and not paid off within the line's window. */
     public List<FloorPlanUnit> overdueSales(String lineId, LocalDate asOf) {
         FloorPlanLine line = line(lineId);

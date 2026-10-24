@@ -125,6 +125,12 @@ class FloorPlanController {
         return floorPlan.findLine(id).orElseThrow(() -> new IllegalArgumentException("Unknown line " + id));
     }
 
+    @GetMapping("/{id}/units")
+    List<FloorPlanUnit> units(Actor actor, @PathVariable String id) {
+        actor.require(ROLE);
+        return floorPlan.units(id);
+    }
+
     @GetMapping("/{id}/units/{unitId}")
     FloorPlanUnit unit(Actor actor, @PathVariable String id, @PathVariable String unitId) {
         actor.require(ROLE);

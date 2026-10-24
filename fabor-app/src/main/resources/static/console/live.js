@@ -53,7 +53,7 @@
     '<div class="set-row"><div><h3>Scheduler</h3><p>Queue any billing, accrual or penalty work that is due for active loans and accounts. Safe to repeat.</p></div>' +
     '<div><button class="btn" type="button" id="acBackfill">Run backfill</button><div class="result" id="acBackfillOut" hidden></div></div></div>' +
     '<div class="set-row"><div><h3>What is live</h3><p>Master Builder and Approvals, Customer 360 and Contracts (look up or create), Ledger (by account), and cash deposits in Branch and teller use the real services. ' +
-    'Overview, Product Studio, Fleet and floor plan, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
+    'Fleet and floor plan (open an agreement or a dealer line by id) is live too. Overview, Product Studio, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
     '</div></div>');
   $('#view-settings .panel').after(access);
 
@@ -392,6 +392,182 @@
   setInterval(fillAccounts, 1500);
 
   // the prototype's forms only prevent submission; keep that behaviour now that the inline handlers are gone
+  // ---------------------------------------------------------------- Fleet and floor plan
+  var fleetBox = $('#af-fleet'), floorBox = $('#af-floor');
+  var daysBetween = function (a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); };
+  function setKpi(box, i, label, value, note) {
+    var k = box.querySelectorAll('.kpi')[i];
+    if (label) k.querySelector('.label').textContent = label;
+    k.querySelector('.v').textContent = value;
+    k.querySelector('.d').textContent = note;
+  }
+  function say(id, cls, text) { var o = $(id); o.hidden = false; o.className = 'result ' + cls; o.textContent = text; }
+
+  // fleet: one master agreement and its schedules
+  fleetBox.prepend(el(
+    '<div class="panel" id="fleetTools"><h2>Open a master agreement</h2>' +
+    '<form class="row" id="fleetLookup"><div class="field" style="flex:1"><label for="maId">Agreement id</label><input id="maId" autocomplete="off" placeholder="MA-1"></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Open</button></form>' +
+    '<div class="row" id="fleetActions" hidden style="margin-top:12px"><div class="field"><label for="maPay">Payment, THB</label><input id="maPay" type="number" min="0.01" step="0.01"></div>' +
+    '<button class="btn" type="button" id="maCollect" style="align-self:flex-end">Collect payment</button>' +
+    '<button class="btn" type="button" id="maEval" style="align-self:flex-end">Evaluate cross-default</button>' +
+    '<button class="btn" type="button" id="maCure" style="align-self:flex-end">Cure</button></div>' +
+    '<div class="result" id="maOut" hidden></div></div>'));
+  var currentMaster = null;
+  $('#fleetLookup').addEventListener('submit', function (e) { e.preventDefault(); openMaster($('#maId').value.trim()); });
+  async function openMaster(id) {
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var base = '/masters/' + encodeURIComponent(id);
+      var m = await api('GET', base);
+      var got = await Promise.all([api('GET', base + '/facility'), api('GET', base + '/schedules'), api('GET', base + '/invoice?asOf=' + today)]);
+      var fac = got[0], schedules = got[1], inv = got[2];
+      var details = await Promise.all(schedules.map(function (s) { return api('GET', '/loans/' + encodeURIComponent(s.loanId) + '/detail'); }));
+      currentMaster = m.id;
+      var units = schedules.reduce(function (n, s) { return n + s.assetIds.length; }, 0);
+      setKpi(fleetBox, 0, null, m.id, m.party + ' · ' + m.status.toLowerCase() + ' · cross-default at ' + m.crossDefaultDpd + ' days');
+      setKpi(fleetBox, 1, null, String(units), schedules.length + ' schedule' + (schedules.length === 1 ? '' : 's'));
+      var pct = fac.limitMinor ? fac.utilisationMinor / fac.limitMinor * 100 : 0;
+      setKpi(fleetBox, 2, null, '฿' + thb(fac.utilisationMinor), 'of ฿' + thb(fac.limitMinor) + ' · ' + pct.toFixed(0) + '% used');
+      setKpi(fleetBox, 3, 'Invoice today', '฿' + thb(inv.total), inv.lines.length + ' instalment' + (inv.lines.length === 1 ? '' : 's') + ' due, oldest first');
+      $('#fTable').innerHTML = schedules.map(function (s, i) {
+        var d = details[i], n = s.assetIds.length, first = d.instalments[0];
+        return "<tr><td class='mono'>" + esc(s.loanId) + "</td><td>" + (n ? esc(s.assetIds.join(', ')) : "<span class='muted'>no vehicles recorded</span>") + "</td><td class='num'>" + (n || '—') +
+          "</td><td class='num'>" + (n ? thb(Math.round(d.principalMinor / n)) : '—') + "</td><td class='mono'>" + s.term + 'm · ' + (s.lockedRate * 100).toFixed(2) + "%</td><td class='mono'>" + esc(s.calledOffOn) +
+          "</td><td class='num'>" + (first ? thb(first.principalMinor + first.interestMinor) : '—') + "</td><td class='num'>" + thb(d.outstandingMinor) + "</td><td><span class='muted'>—</span></td></tr>";
+      }).join('') || "<tr><td colspan='9' class='muted'>No schedules drawn yet.</td></tr>";
+      $('#af-fleet thead th:nth-child(7)').textContent = 'First instalment';      // the loan view carries no VAT, so the prototype's "with VAT" would mislead
+      $('#fleetActions').hidden = false;
+      $('#maOut').hidden = true;
+    } catch (e) { fail('Open master agreement')(e); }
+  }
+  async function masterAction(path, ok) {
+    if (!currentMaster) return;
+    try {
+      var r = await api('POST', '/masters/' + encodeURIComponent(currentMaster) + path);
+      await openMaster(currentMaster);
+      say('#maOut', 'ok', ok(r));
+    } catch (e) { say('#maOut', 'warn', e.message); }
+  }
+  $('#maEval').addEventListener('click', function () {
+    masterAction('/evaluation?asOf=' + today, function (r) { return 'Agreement is ' + r.status + (r.status === 'DEFAULTED' ? ': a schedule is at or past ' + r.crossDefaultDpd + ' days.' : '.'); });
+  });
+  $('#maCure').addEventListener('click', function () {
+    masterAction('/cure?asOf=' + today, function (r) { return r.status === 'ACTIVE' ? 'Cured: the agreement is ACTIVE again.' : 'Not cured: the agreement is ' + r.status + '.'; });
+  });
+  $('#maCollect').addEventListener('click', async function () {
+    var amt = minor($('#maPay').value);
+    if (!currentMaster || !(amt > 0)) { say('#maOut', 'warn', 'Enter an amount above zero.'); return; }
+    try {
+      await api('POST', '/masters/' + encodeURIComponent(currentMaster) + '/collections', { reference: 'console-' + Date.now(), amountMinor: amt, date: today });
+      await openMaster(currentMaster);
+      say('#maOut', 'ok', 'Collected ฿' + thb(amt) + ' across the schedules, oldest first.');
+      toast('Payment collected');
+    } catch (e) { say('#maOut', 'warn', e.message); }
+  });
+
+  // floor plan: one dealer line and its units
+  floorBox.prepend(el(
+    '<div class="panel" id="floorTools"><h2>Open a dealer line</h2>' +
+    '<form class="row" id="floorLookup"><div class="field" style="flex:1"><label for="fpId">Line id</label><input id="fpId" autocomplete="off" placeholder="FP-1"></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Open</button></form>' +
+    '<div id="floorActions" hidden>' +
+    '<form class="row" id="fpDraw" style="margin-top:12px;flex-wrap:wrap"><div class="field"><label for="fpUnit">Unit (VIN)</label><input id="fpUnit" autocomplete="off" required></div>' +
+    '<div class="field"><label for="fpType">Type</label><select id="fpType"><option>NEW</option><option>USED</option><option>DEMO</option></select></div>' +
+    '<div class="field"><label for="fpAmt">Amount, THB</label><input id="fpAmt" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="fpSup">Distributor account</label><input id="fpSup" autocomplete="off" required></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Draw unit</button></form>' +
+    '<form class="row" id="fpAudit" style="margin-top:12px"><div class="field" style="flex:1"><label for="fpFound">Units found on the lot (VINs, separated by spaces or commas)</label><input id="fpFound" autocomplete="off"></div>' +
+    '<button class="btn" type="submit" style="align-self:flex-end">Run stock audit</button></form>' +
+    '<div class="row" style="margin-top:12px"><button class="btn" type="button" id="fpFreeze">Freeze line</button><button class="btn" type="button" id="fpUnfreeze">Unfreeze line</button></div></div>' +
+    '<div class="result" id="fpOut" hidden></div></div>'));
+  var currentLine = null;
+  $('#floorLookup').addEventListener('submit', function (e) { e.preventDefault(); openLine($('#fpId').value.trim()); });
+  async function openLine(id) {
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var base = '/floorplans/' + encodeURIComponent(id);
+      var line = await api('GET', base);
+      var got = await Promise.all([api('GET', base + '/units'), api('GET', base + '/statement?asOf=' + today), api('GET', base + '/exposure')]);
+      var units = got[0], st = got[1], exp = got[2];
+      currentLine = line.id;
+      var due = {};
+      st.rows.forEach(function (r) { due[r.unitId] = r; });
+      var stock = units.filter(function (u) { return u.status === 'OPEN' && !u.soldOn; });
+      var mix = ['NEW', 'USED', 'DEMO'].map(function (t) {
+        var n = stock.filter(function (u) { return u.type === t; }).length;
+        return n ? n + ' ' + t.toLowerCase() : '';
+      }).filter(Boolean).join(' · ');
+      setKpi(floorBox, 0, null, line.dealerId, 'Line ' + line.id + ' · ' + line.status.toLowerCase());
+      setKpi(floorBox, 1, null, String(stock.length), mix || 'no unsold units');
+      setKpi(floorBox, 2, null, '฿' + thb(exp.exposureMinor), 'of ฿' + thb(line.limit) + ' · ' + (line.limit ? (exp.exposureMinor / line.limit * 100).toFixed(0) : 0) + '% used');
+      setKpi(floorBox, 3, 'Due now', '฿' + thb(st.total), 'Interest plus curtailments as of today');
+      var steps = line.curtailments.map(function (c) { return c.cumulativePercent + '% at ' + c.atDay + ' days'; }).join(', ');
+      floorBox.querySelector('.panel-head .chip').textContent = (line.annualRate * 100).toFixed(2) + '% a year after each type\'s free days · ' + (steps ? 'curtailment ' + steps : 'no curtailment steps');
+      $('#pTable').innerHTML = units.map(function (u) {
+        var r = due[u.unitId], overdue = r && r.saleOverdue;
+        var chip = u.status === 'PAID' ? "<span class='chip good'>Paid</span>" : overdue ? "<span class='chip crit'>Sold, payoff overdue</span>" :
+          u.soldOn ? "<span class='chip warn'>Sold " + esc(u.soldOn) + "</span>" : "<span class='chip'>In stock</span>";
+        var acts = u.status === 'OPEN' ? (u.soldOn ? '' : "<button class='btn' type='button' data-fp-sale='" + esc(u.unitId) + "'>Record sale</button> ") +
+          "<button class='btn' type='button' data-fp-payoff='" + esc(u.unitId) + "'>Pay off</button>" : '';
+        return "<tr><td class='mono'>" + esc(u.unitId) + "</td><td><span class='muted'>—</span></td><td>" + esc(u.type.toLowerCase()) + "</td><td class='num'>" + thb(u.drawn) +
+          "</td><td class='num'>" + daysBetween(u.drawnOn, today) + "</td><td>" + chip + "</td><td class='num'>" + (r ? thb(r.interestDue) : '—') + "</td><td class='num'>" + (r ? thb(r.principalDue) : '—') +
+          "</td><td>" + acts + "</td></tr>";
+      }).join('') || "<tr><td colspan='9' class='muted'>No units drawn yet.</td></tr>";
+      $$('#pTable [data-fp-sale]').forEach(function (b) {
+        b.addEventListener('click', function () { unitAction(b.getAttribute('data-fp-sale'), '/sale', { soldOn: today }, 'Sale recorded'); });
+      });
+      $$('#pTable [data-fp-payoff]').forEach(function (b) {
+        b.addEventListener('click', function () { unitAction(b.getAttribute('data-fp-payoff'), '/payoff', { reference: 'console-' + Date.now(), date: today }, 'Unit paid off'); });
+      });
+      $('#af-floor thead th:nth-child(7)').textContent = 'Interest owed';          // accrued so far, not just this month
+      $('#sotAlert').hidden = true;
+      $('#floorActions').hidden = false;
+      $('#fpOut').hidden = true;
+    } catch (e) { fail('Open dealer line')(e); }
+  }
+  async function unitAction(unit, path, body, done) {
+    try {
+      await api('POST', '/floorplans/' + encodeURIComponent(currentLine) + '/units/' + encodeURIComponent(unit) + path, body);
+      await openLine(currentLine);
+      say('#fpOut', 'ok', done + ': ' + unit + '.');
+    } catch (e) { say('#fpOut', 'warn', e.message); }
+  }
+  $('#fpDraw').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var unit = $('#fpUnit').value.trim();
+    try {
+      await api('POST', '/floorplans/' + encodeURIComponent(currentLine) + '/units', { unitId: unit, type: $('#fpType').value,
+        amountMinor: minor($('#fpAmt').value), date: today, supplierAccountId: $('#fpSup').value.trim() });
+      await openLine(currentLine);
+      say('#fpOut', 'ok', 'Drew ' + unit + ' on the line.');
+      toast('Unit drawn');
+    } catch (err) { say('#fpOut', 'warn', err.message); }
+  });
+  $('#fpAudit').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    try {
+      var found = $('#fpFound').value.split(/[\s,]+/).filter(Boolean);
+      var a = await api('POST', '/floorplans/' + encodeURIComponent(currentLine) + '/stock-audit', { asOf: today, found: found });
+      var list = function (title, ids) { return ids.length ? '<p><strong>' + title + ':</strong> ' + ids.map(esc).join(', ') + '</p>' : ''; };
+      var panel = $('#sotAlert');
+      panel.innerHTML = '<div class="row"><span class="chip ' + (a.clean ? 'good' : 'warn') + '">Stock audit · ' + (a.clean ? 'clean' : 'findings') + '</span><span class="muted" style="font-size:12px">' +
+        a.checked + ' open unit' + (a.checked === 1 ? '' : 's') + ' checked against ' + found.length + ' found on the lot, as of ' + esc(a.asOf) + '</span></div>' +
+        (a.clean ? '<p>Every open unit is on the lot and no unknown unit was found.</p>' :
+          list('Possible sold out of trust (not on the lot)', a.missing) + list('Sold and not paid off in the window', a.saleOverdue) + list('On the lot but not on this line', a.unexpected));
+      panel.hidden = false;
+    } catch (err) { say('#fpOut', 'warn', err.message); }
+  });
+  async function lineStatus(path, text) {
+    try {
+      await api('POST', '/floorplans/' + encodeURIComponent(currentLine) + path);
+      await openLine(currentLine);
+      say('#fpOut', 'ok', text);
+    } catch (e) { say('#fpOut', 'warn', e.message); }
+  }
+  $('#fpFreeze').addEventListener('click', function () { lineStatus('/freeze', 'Line frozen: no new drawdowns.'); });
+  $('#fpUnfreeze').addEventListener('click', function () { lineStatus('/unfreeze', 'Line is active again.'); });
+
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
 
   async function refresh() {

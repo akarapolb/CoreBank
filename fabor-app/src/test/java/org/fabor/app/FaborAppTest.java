@@ -378,6 +378,8 @@ class FaborAppTest {
         Map<String, Object> paidOff = call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units/VIN1/payoff", "ops",
                 Map.of("reference", "po1", "date", "2026-04-26"), MediaType.APPLICATION_JSON);
         assertThat(paidOff.get("status")).isEqualTo("PAID");
+        assertThat(http.exchange("/api/v1/floorplans/FP-1/units", HttpMethod.GET,
+                new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class).getBody()).hasSize(2);          // paid ones too
         Map<String, Object> audit = call(HttpMethod.POST, "/api/v1/floorplans/FP-1/stock-audit", "ops",
                 Map.of("asOf", "2026-05-01", "found", List.of("VIN9")), MediaType.APPLICATION_JSON);
         assertThat(audit.get("missing")).isEqualTo(List.of("VIN2"));
