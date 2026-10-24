@@ -1,0 +1,151 @@
+// Fabor console prototype · Trade finance in depth: examining the documents under import LC-26-0412 check by check
+// (UCP 600), the waiver or refusal (MT734) within five banking days, settlement on a trust receipt, and a demand under
+// guarantee BG-26-1108 (URDG 758) paid on its terms and recovered from the applicant. Values are samples.
+// Classic scripts sharing one global scope; load order is set in index.html.
+
+/* ---------------- LC-26-0412: examination, decision, settlement ---------------- */
+const LCS = { flip: new Set(), decision: null, answer: null, settled: null };
+const LC_CHECKS = [["Commercial invoice", "Issued by the beneficiary", "ออกโดยผู้รับประโยชน์", "Hino Motors Ltd.", "Hino Motors Ltd.", "18(a)", true],
+  ["Commercial invoice", "Amount within the credit", "จำนวนเงินอยู่ในวงเงิน", "up to $2,520,000.00 (+5%)", "$2,398,560.00", "18(b), 30(b)", true],
+  ["Commercial invoice", "Goods as described in the credit", "รายละเอียดสินค้าตรงกับ LC", "12 Hino 500 FG8J trucks, CIF Laem Chabang", "12 Hino 500 FG8J trucks, CIF Laem Chabang", "18(c)", true],
+  ["Bill of lading", "Shipped on board by the latest date", "ขึ้นเรือภายในวันล่าสุด", "by 30 Nov 2026 (AMD-1)", "18 Oct 2026", "20(a)(ii)", true],
+  ["Bill of lading", "Ports of loading and discharge", "ท่าต้นทางและปลายทาง", "Nagoya to Laem Chabang", "Nagoya to Laem Chabang", "20(a)(iii)", true],
+  ["Bill of lading", "Clean, no clause on the goods", "ไม่มีหมายเหตุความเสียหาย", "clean on board", "clean on board", "27", true],
+  ["Bill of lading", "Consigned to the issuing bank's order", "ผู้รับตราส่งตามคำสั่งธนาคารผู้เปิด", "to order of Demo Commercial Bank", "to order of Demo Commercial Bank", "46A", true],
+  ["Insurance certificate", "Cover amount", "จำนวนเงินคุ้มครอง", "at least 110% of CIF", "100% of CIF, $2,398,560.00", "28(f)(ii)", false],
+  ["Insurance certificate", "Risks covered", "ความเสี่ยงที่คุ้มครอง", "Institute Cargo Clauses (A)", "Institute Cargo Clauses (A)", "46A", true],
+  ["Insurance certificate", "Dated no later than shipment", "ลงวันที่ไม่ช้ากว่าวันขึ้นเรือ", "on or before 18 Oct 2026", "17 Oct 2026", "28(e)", true],
+  ["Certificate of origin", "Form", "แบบฟอร์ม", "JTEPA", "JTEPA", "46A", true],
+  ["Inspection certificate", "Issued by", "ผู้ออก", "SGS", "SGS Japan", "46A", true],
+  ["Presentation", "Within 21 days of shipment and before expiry", "ภายใน 21 วันหลังขึ้นเรือและก่อนหมดอายุ", "by 8 Nov 2026", "22 Oct 2026", "14(c)", true],
+  ["Presentation", "Data in the documents do not conflict", "ข้อมูลในเอกสารไม่ขัดกัน", "—", ["consistent", "สอดคล้อง"], "14(d)", true]];
+const tx = (v) => (Array.isArray(v) ? tt(...v) : v);
+const lcOk = (i) => LC_CHECKS[i][6] !== LCS.flip.has(i);
+const lcDisc = () => LC_CHECKS.map((c, i) => i).filter((i) => !lcOk(i));
+const LC_INV = 2398560, LC_RATE = 36.08, LC_MARGIN = 8640000;
+const lcPayable = () => !LCS.settled && (lcDisc().length === 0 || LCS.answer === "accept");
+function lcState() {
+  if (LCS.settled) return ["good", tt("Settled", "ชำระแล้ว")];
+  if (lcPayable()) return ["info", tt("Ready to pay", "พร้อมชำระ")];
+  if (LCS.answer === "decline") return ["crit", tt("Documents refused, returning", "ปฏิเสธเอกสาร ส่งคืน")];
+  if (LCS.decision === "refused") return ["warn", tt("Refused, holding documents", "ปฏิเสธ ถือเอกสารไว้")];
+  if (LCS.decision === "waiver") return ["warn", tt("Waiting for the applicant", "รอผู้ขอเปิด")];
+  return ["crit", tt(`${lcDisc().length} discrepancy`, `เอกสารไม่ตรง ${lcDisc().length}`)];
+}
+function viewLC() {
+  const st = lcState(), n = lcDisc().length;
+  return recordPage({ title: "LC-26-0412", mono: true, lede: esc(tt("Siam Freight Logistics → Hino Motors (JP) · sight LC under UCP 600 · presented by MUFG Bank, Tokyo", "สยามเฟรท โลจิสติกส์ → Hino Motors (JP) · LC ชนิดชำระเมื่อเห็น ตาม UCP 600 · ยื่นโดย MUFG Bank โตเกียว")), pills: P("good", "Issued") + P(st[0], st[1]),
+    actions: `<button class="btn" type="button" data-flow="lcRefuse" ${n === 0 || LCS.decision === "refused" || LCS.settled || LCS.answer ? "disabled" : ""}>${esc(tt("Refuse documents", "ปฏิเสธเอกสาร"))}</button>${LCS.decision && !LCS.answer ? `<button class="btn" type="button" data-flow="lcAnswer">${esc(tt("Applicant's answer", "คำตอบผู้ขอเปิด"))}</button>` : ""}${lcPayable() ? `<button class="btn primary" type="button" data-flow="lcSettle">${esc(tt("Pay", "ชำระเงิน"))}</button>` : `<button class="btn primary" type="button" data-flow="lcWaiver" ${n === 0 || LCS.decision === "waiver" || LCS.answer || LCS.settled ? "disabled" : ""}>${esc(tt("Ask for a waiver", "ขอให้ยอมรับ"))}</button>`}`,
+    facts: [[t("Amount"), "$2,400,000.00", "", "± 5%"], [tt("Invoice", "ใบกำกับสินค้า"), "$2,398,560.00", "", `≈ ${baht(LC_INV * LC_RATE, 0)}`], [tt("Checks", "รายการตรวจ"), tt(`${LC_CHECKS.length - n} of ${LC_CHECKS.length} comply`, `ตรง ${LC_CHECKS.length - n} จาก ${LC_CHECKS.length}`), n ? "crit" : ""], [tt("Answer by", "ตอบภายใน"), fd(Date.UTC(2026, 9, 29)), LCS.decision || LCS.settled ? "" : "warn", tt("5 banking days, art. 14(b)", "5 วันทำการ ข้อ 14(b)")], [tt("Margin held", "เงินประกัน"), baht(LC_MARGIN, 0), "", "10%"], [t("Expiry"), fd(Date.UTC(2026, 11, 30))]],
+    panels: { summary: lcSummary, examine: lcExamine, decide: lcDecide, settle: lcSettleTab, amend: lcAmend, charges: lcCharges } });
+}
+function lcSummary() {
+  return `<div class="grid-main">${card(t("Contract"), kvHtml([[t("Applicant"), t("Siam Freight Logistics")], [t("Beneficiary"), "Hino Motors Ltd. (JP)"], [tt("Advising and presenting bank", "ธนาคารผู้แจ้งและผู้ยื่น"), "MUFG Bank, Tokyo"], [t("Amount"), "$2,400,000.00 ± 5%"], [tt("Goods", "สินค้า"), tt("12 Hino 500 trucks, CIF Laem Chabang", "รถบรรทุก Hino 500 จำนวน 12 คัน CIF แหลมฉบัง")], [tt("Available", "ชำระโดย"), tt("With us, by payment at sight", "ที่ธนาคาร ชำระเมื่อเห็น")], [tt("Limit", "วงเงิน"), tt("Trade line $5.0m under FAC-B2031's group limit", "วงเงินการค้า $5.0 ล้าน ภายใต้วงเงินกลุ่ม FAC-B2031")]]))}
+    ${card(t("What happens next"), tl([[Date.UTC(2026, 9, 22), tt("Documents presented", "ยื่นเอกสาร"), tt(`14 checks, ${lcDisc().length} discrepancy`, `14 รายการ ไม่ตรง ${lcDisc().length}`), "done"],
+      [BIZ, LCS.decision === "waiver" ? tt("Waiver asked for", "ขอให้ยอมรับแล้ว") : LCS.decision === "refused" ? tt("Refusal sent by MT734", "ส่งการปฏิเสธทาง MT734") : lcDisc().length ? tt("Ask for a waiver, or refuse", "ขอให้ยอมรับ หรือปฏิเสธ") : tt("Complying: pay", "เอกสารตรง: ชำระเงิน"), "", LCS.decision ? "done" : "now"],
+      [Date.UTC(2026, 9, 29), tt("Examination deadline, 5 banking days", "ครบกำหนดตรวจ 5 วันทำการ"), "UCP 600 art. 14(b)", LCS.decision || LCS.settled ? "done" : "warn"],
+      ...(LCS.settled ? [[BIZ, tt("Paid to MUFG Bank; documents released to the applicant", "ชำระให้ MUFG และส่งมอบเอกสารให้ผู้ขอเปิด"), LCS.settled.how === "usd" ? "TR-26-0412 · USD" : "TR-26-0412 · THB", "done"]] : [])]))}</div>`;
+}
+function lcExamine() {
+  return `<section class="card"><div class="card-head"><div><div class="card-title">${esc(tt("Examination", "การตรวจเอกสาร"))}</div><div class="card-sub">${esc(tt("Each check compares the document with the credit and cites the rule. The examiner can override a result; the override and the second checker are kept in History.", "ทุกรายการเทียบเอกสารกับ LC และอ้างอิงข้อกำหนด ผู้ตรวจปรับผลได้ โดยเก็บการปรับและผู้ตรวจคนที่สองไว้ในประวัติ"))}</div></div></div><div class="card-body flush">
+    ${table({ cols: ["Document", "Check", "LC terms", "Document says", "UCP 600", "Result"], rows: LC_CHECKS.map(([doc, en, th, want, got, art], i) => [t(doc), tt(en, th), want, tx(got), art, `<label class="check" style="white-space:nowrap"><input type="checkbox" data-lc-chk="${i}" ${lcOk(i) ? "checked" : ""} ${LCS.decision || LCS.settled ? "disabled" : ""}><span>${P(lcOk(i) ? "good" : "crit", lcOk(i) ? "Complies" : "Discrepant")}${LCS.flip.has(i) ? ` <span class="src-tag">${esc(tt("override", "ปรับ"))}</span>` : ""}</span></label>`]) }, tt("Checks", "รายการตรวจ"))}</div></section>`;
+}
+function lcDecide() {
+  const n = lcDisc().length;
+  if (!n) return notice("good", tt("A complying presentation", "เอกสารถูกต้องครบถ้วน"), tt("The bank must honour it: pay at sight, whatever the applicant says.", "ธนาคารต้องชำระเมื่อเห็น ไม่ว่าผู้ขอเปิดจะว่าอย่างไร"));
+  const opts = [[tt("Ask the applicant to waive", "ขอให้ผู้ขอเปิดยอมรับ"), tt("Usual for a minor discrepancy. The bank still decides by 29 Oct; the applicant's waiver does not bind it.", "ทำกันทั่วไปเมื่อเอกสารไม่ตรงเล็กน้อย ธนาคารยังต้องตัดสินภายใน 29 ต.ค. การยอมรับของผู้ขอเปิดไม่ผูกพันธนาคาร"), "14(b), 16(b)"],
+    [tt("Refuse and hold the documents", "ปฏิเสธและถือเอกสารไว้"), tt("One notice by MT734 listing every discrepancy, sent by 29 Oct. The bank may then pay if the applicant waives.", "แจ้งครั้งเดียวทาง MT734 ระบุความไม่ตรงทุกข้อ ภายใน 29 ต.ค. แล้วชำระได้หากผู้ขอเปิดยอมรับภายหลัง"), "16(c)(iii)(b), 16(d)"],
+    [tt("Miss the deadline", "ตอบไม่ทันกำหนด"), tt("The bank loses the right to refuse and must pay.", "ธนาคารเสียสิทธิ์ปฏิเสธและต้องชำระ"), "16(f)"]];
+  return `<section class="card"><div class="card-body flush">${table({ cols: ["Option", "What it means", "UCP 600"], rows: opts }, tt("Options", "ทางเลือก"))}</div></section>
+    ${LCS.answer ? notice(LCS.answer === "accept" ? "good" : "crit", LCS.answer === "accept" ? tt("Siam Freight accepted the documents", "สยามเฟรทยอมรับเอกสาร") : tt("Siam Freight declined; the documents go back to MUFG", "สยามเฟรทไม่ยอมรับ ส่งเอกสารคืน MUFG"), LCS.answer === "accept" ? tt("Pay from the Settle tab.", "ชำระได้ที่แท็บชำระเงิน") : "") : LCS.decision ? notice("info", LCS.decision === "waiver" ? tt("Waiver asked for", "ขอให้ยอมรับแล้ว") : tt("Refusal sent, documents held", "ส่งการปฏิเสธแล้ว ถือเอกสารไว้"), tt("Record the applicant's answer when it comes.", "บันทึกคำตอบของผู้ขอเปิดเมื่อได้รับ")) : ""}`;
+}
+function lcSettleTab() {
+  if (LCS.settled) { const s = LCS.settled; return card(tt("Settled", "ชำระแล้ว"), quoteRows([[tt("Paid to MUFG Bank, Tokyo", "ชำระให้ MUFG โตเกียว"), "$2,398,480.00"], [tt("Discrepancy fee deducted", "หักค่าธรรมเนียมเอกสารไม่ตรง"), LCS.answer ? "$80.00" : "$0.00"], [tt("Financed by", "แหล่งเงิน"), s.how === "usd" ? tt("USD trust receipt TR-26-0412, 120 days", "ทรัสต์รีซีท USD TR-26-0412 120 วัน") : tt("THB trust receipt TR-26-0412, 120 days", "ทรัสต์รีซีท บาท TR-26-0412 120 วัน")], [tt("Owed by Siam Freight", "สยามเฟรทต้องชำระ"), s.how === "usd" ? "$2,398,560.00" : baht(s.thb)]])); }
+  if (!lcPayable()) return `<section class="card"><div class="card-body"><div class="state"><span class="sev info">${icon("i-clock")}</span><strong>${esc(tt("Opens when the documents can be paid", "เปิดเมื่อชำระเอกสารได้"))}</strong><p class="muted">${esc(tt("A complying presentation, or the applicant's waiver.", "เอกสารถูกต้อง หรือผู้ขอเปิดยอมรับ"))}</p></div></div></section>`;
+  return card(tt("How Siam Freight pays", "สยามเฟรทชำระอย่างไร"), quoteRows([[tt("Invoice", "ใบกำกับสินค้า"), "$2,398,560.00"], [tt("At today's selling rate", "ที่อัตราขายวันนี้"), `${LC_RATE.toFixed(4)} · ${baht(LC_INV * LC_RATE)}`], [tt("Margin already held", "เงินประกันที่กันไว้"), baht(-LC_MARGIN)], [tt("To finance or debit", "ต้องจัดหาหรือตัดบัญชี"), baht(r2(LC_INV * LC_RATE - LC_MARGIN))]]) + `<p class="note" style="margin-top:12px">${esc(tt("The trucks clear customs on the bank's documents, so most importers take a trust receipt: the bank pays now, releases the documents, and is repaid in 120 days.", "รถผ่านพิธีการศุลกากรด้วยเอกสารของธนาคาร ผู้นำเข้าส่วนใหญ่จึงใช้ทรัสต์รีซีท: ธนาคารชำระก่อน ส่งมอบเอกสาร และรับชำระคืนใน 120 วัน"))}</p>`);
+}
+const lcAmend = () => `<section class="card"><div class="card-body flush">${table({ cols: ["Amendment", "Change", "Requested", "State"], rows: [[R("AMD-1"), tt("Latest shipment 15 Nov → 30 Nov 2026", "ส่งสินค้าล่าสุด 15 พ.ย. → 30 พ.ย. 2569"), "10 Oct 2026", P("good", tt("Accepted by beneficiary", "ผู้รับประโยชน์ยอมรับ"))]] }, t("Amendments"))}</div></section>`;
+const lcCharges = () => `<section class="card"><div class="card-body flush">${table({ cols: ["Charge", "Paid by", "Amount", "State"], rows: [["Issuance 0.125%", t("Siam Freight Logistics"), baht(103680), P("good", "Paid")], ["Amendment", t("Siam Freight Logistics"), baht(1500), P("good", "Paid")], ["Discrepancy fee", "Hino Motors Ltd.", "$80.00", P(LCS.settled && LCS.answer ? "good" : "info", LCS.settled && LCS.answer ? "Paid" : "Scheduled")], ...(LCS.settled ? [["Payment commission 0.25%", t("Siam Freight Logistics"), baht(r2(LC_INV * LC_RATE * 0.0025)), P("good", "Paid")]] : [])] }, t("Charges"))}</div></section>`;
+
+/* ---------------- BG-26-1108: a demand under a guarantee ---------------- */
+const BGC = { flip: new Set(), notified: false, paid: null };
+const BG_CHECKS = [["Demand in writing, signed by the beneficiary", "หนังสือเรียกร้องลงนามโดยผู้รับประโยชน์", "PTT PCL, two authorised signatories", "15(a)", true], ["Statement of the applicant's breach", "คำยืนยันว่าผู้ขอผิดสัญญา", ["“failed to complete the warehouse fit-out by 30 Sep 2026”", "“ไม่ได้ติดตั้งงานคลังสินค้าให้แล้วเสร็จภายใน 30 ก.ย. 2569”"], "15(a)", true],
+  ["Presented before expiry", "ยื่นก่อนหมดอายุ", ["21 Oct 2026; expires 30 Jun 2027", "21 ต.ค. 2569 หมดอายุ 30 มิ.ย. 2570"], "20(a)", true], ["Amount within the guarantee", "จำนวนเงินไม่เกินวงเงินค้ำประกัน", "฿4,500,000.00 of ฿4,500,000.00", "15, 17", true],
+  ["Presented at the place of issue", "ยื่นที่สาขาที่ออก", ["Bangkok head office, trade operations", "สำนักงานใหญ่ กรุงเทพฯ ฝ่ายปฏิบัติการการค้า"], "14(a)", true]];
+const bgOk = (i) => BG_CHECKS[i][4] !== BGC.flip.has(i);
+const bgCompliant = () => BG_CHECKS.every((c, i) => bgOk(i));
+const BG_MARGIN = 450000, BG_CASA = 1200000;
+function viewBGC() {
+  const ok = bgCompliant();
+  return recordPage({ title: "BG-26-1108", mono: true, lede: esc(tt("EEC Logistics Co., Ltd. → PTT PCL · performance guarantee under URDG 758 · RM Wanida K.", "บริษัท อีอีซี โลจิสติกส์ จำกัด → ปตท. · หนังสือค้ำประกันการปฏิบัติตามสัญญา ตาม URDG 758 · RM วนิดา ก.")),
+    pills: BGC.paid ? P(BGC.paid === "refused" ? "warn" : "good", BGC.paid === "refused" ? tt("Demand refused", "ปฏิเสธการเรียกร้อง") : tt("Demand paid", "ชำระตามการเรียกร้องแล้ว")) : P("crit", tt("Demand received 21 Oct", "ได้รับการเรียกร้อง 21 ต.ค.")),
+    actions: `<button class="btn" type="button" data-flow="bgNotify" ${BGC.notified ? "disabled" : ""}>${esc(tt("Tell the applicant", "แจ้งผู้ขอ"))}</button><button class="btn primary" type="button" data-flow="bgDecide" ${BGC.paid ? "disabled" : ""}>${esc(ok ? tt("Pay the demand", "ชำระตามการเรียกร้อง") : tt("Refuse the demand", "ปฏิเสธการเรียกร้อง"))}</button>`,
+    facts: [[t("Amount"), baht(4500000, 0)], [tt("Demanded", "เรียกร้อง"), baht(4500000, 0), "crit"], [tt("Decide by", "ตัดสินภายใน"), fd(Date.UTC(2026, 9, 28)), BGC.paid ? "" : "warn", tt("5 business days, art. 20", "5 วันทำการ ข้อ 20")], [tt("Margin held", "เงินประกัน"), baht(BG_MARGIN, 0), "", "10%"], [tt("Applicant's account", "บัญชีผู้ขอ"), baht(BG_CASA, 0), "", "CUR-EEC01"]],
+    panels: { demand: bgDemand, applicant: bgApplicant, recovery: bgRecovery, terms: bgTerms } });
+}
+function bgDemand() {
+  return `<section class="card"><div class="card-head"><div><div class="card-title">${esc(tt("Is the demand complying?", "การเรียกร้องถูกต้องหรือไม่"))}</div><div class="card-sub">${esc(tt("The bank looks only at the documents against the guarantee's terms, not at whether the warehouse work was really late.", "ธนาคารพิจารณาเฉพาะเอกสารเทียบกับเงื่อนไขหนังสือค้ำประกัน ไม่ใช่ว่างานคลังสินค้าล่าช้าจริงหรือไม่"))}</div></div></div><div class="card-body flush">
+    ${table({ cols: ["Check", "Demand says", "URDG 758", "Result"], rows: BG_CHECKS.map(([en, th, got, art], i) => [tt(en, th), tx(got), art, `<label class="check" style="white-space:nowrap"><input type="checkbox" data-bg-chk="${i}" ${bgOk(i) ? "checked" : ""} ${BGC.paid ? "disabled" : ""}><span>${P(bgOk(i) ? "good" : "crit", bgOk(i) ? "Complies" : "Discrepant")}</span></label>`]) }, tt("Checks", "รายการตรวจ"))}</div></section>
+    ${notice(bgCompliant() ? "info" : "crit", bgCompliant() ? tt("Complying: the bank pays", "ถูกต้อง: ธนาคารต้องชำระ") : tt("Not complying: the bank may refuse", "ไม่ถูกต้อง: ธนาคารปฏิเสธได้"), bgCompliant() ? tt("A guarantee is independent of the contract (art. 5). Only a court order stops payment.", "หนังสือค้ำประกันเป็นอิสระจากสัญญา (ข้อ 5) มีเพียงคำสั่งศาลที่ระงับการชำระได้") : tt("One refusal notice listing every discrepancy, by 28 Oct (art. 24).", "แจ้งปฏิเสธครั้งเดียวระบุทุกข้อ ภายใน 28 ต.ค. (ข้อ 24)"))}`;
+}
+function bgApplicant() {
+  return `<div class="grid-main">${card(tt("EEC Logistics' position", "ข้อโต้แย้งของอีอีซี โลจิสติกส์"), `<p style="font-size:14px;line-height:1.6;margin:0">${esc(tt("“The delay was caused by PTT's late design change on 12 Aug. We dispute the breach and ask the bank not to pay.”", "“ความล่าช้าเกิดจาก ปตท. เปลี่ยนแบบล่าช้าเมื่อ 12 ส.ค. เราโต้แย้งการผิดสัญญาและขอให้ธนาคารไม่ชำระ”"))}</p><p class="note" style="margin-top:12px">${esc(tt("A dispute about the contract is between EEC Logistics and PTT. The bank tells the applicant of the demand without delay (art. 16) but cannot hold payment for it; EEC Logistics may seek an injunction from the court.", "ข้อพิพาทตามสัญญาเป็นเรื่องระหว่างอีอีซี โลจิสติกส์กับ ปตท. ธนาคารต้องแจ้งผู้ขอโดยไม่ชักช้า (ข้อ 16) แต่ระงับการชำระด้วยเหตุนี้ไม่ได้ ผู้ขออาจยื่นขอคำสั่งศาลคุ้มครองชั่วคราว"))}</p>`)}
+    ${card(tt("Notified", "การแจ้ง"), BGC.notified ? tl([[BIZ, tt("Demand sent to EEC Logistics with copies", "ส่งสำเนาการเรียกร้องถึงอีอีซี โลจิสติกส์"), tt("By the trade portal and registered letter", "ทางพอร์ทัลการค้าและไปรษณีย์ลงทะเบียน"), "done"]]) : `<p class="muted">${esc(tt("Not yet. URDG 758 art. 16 asks for it without delay.", "ยังไม่ได้แจ้ง URDG 758 ข้อ 16 ให้แจ้งโดยไม่ชักช้า"))}</p>`)}</div>`;
+}
+function bgRecovery() {
+  const short = 4500000 - BG_MARGIN - BG_CASA;
+  return card(tt("Recovering the payment from the applicant", "การเรียกเงินคืนจากผู้ขอ"), quoteRows([[tt("Paid to PTT", "ชำระให้ ปตท."), baht(4500000)], [tt("Margin applied", "หักเงินประกัน"), baht(-BG_MARGIN)], [tt("Debited from CUR-EEC01", "ตัดบัญชี CUR-EEC01"), baht(-BG_CASA)], [tt("Left owing, a demand loan under the counter-indemnity", "คงค้าง เป็นเงินกู้เมื่อทวงถามตามสัญญาค้ำประกันกลับ"), baht(short)]]) + `<p class="note" style="margin-top:12px">${esc(BGC.paid === "paid" ? tt("Booked as LN-EEC-0101 at MOR + 2.00%, due on demand; handed to the credit officer and shown on the early-warning screen.", "บันทึกเป็น LN-EEC-0101 อัตรา MOR + 2.00% ชำระเมื่อทวงถาม ส่งให้เจ้าหน้าที่สินเชื่อและแสดงในหน้าสัญญาณเตือน") : tt("Shown before payment so the cost to EEC Logistics is clear.", "แสดงก่อนชำระเพื่อให้เห็นภาระของอีอีซี โลจิสติกส์"))}</p>`);
+}
+const bgTerms = () => card(tt("Terms", "เงื่อนไข"), kvHtml([[t("Beneficiary"), "PTT PCL"], [t("Amount"), baht(4500000)], [tt("Purpose", "วัตถุประสงค์"), tt("Performance of the warehouse fit-out contract W-2026-044, Rayong", "การปฏิบัติตามสัญญาติดตั้งงานคลังสินค้า W-2026-044 ระยอง")], [tt("Rules", "กฎ"), "URDG 758"], [tt("Demand needs", "การเรียกร้องต้องมี"), tt("A signed demand stating the applicant's breach", "หนังสือเรียกร้องที่ลงนามพร้อมคำยืนยันการผิดสัญญา")], [t("Expiry"), fd(Date.UTC(2027, 5, 30))], [tt("Counter-indemnity", "สัญญาค้ำประกันกลับ"), tt("Signed 4 Feb 2026; 10% cash margin", "ลงนาม 4 ก.พ. 2569 เงินประกัน 10%")]]));
+
+Object.assign(FLOWS, {
+  lcWaiver: () => ({ title: tt("Ask for a waiver", "ขอให้ยอมรับความไม่ตรง"), sub: "LC-26-0412 · " + t("Siam Freight Logistics"), init: { note: lcDisc().map((i) => `${LC_CHECKS[i][0]}: ${LC_CHECKS[i][4]} (${tt("credit says", "LC กำหนด")} ${LC_CHECKS[i][3]})`).join("\n") },
+    fields: (d) => area("wnote", tt("Discrepancies to explain", "ความไม่ตรงที่ต้องอธิบาย"), d.note, tt("Sent to the applicant's trade portal and RM.", "ส่งถึงพอร์ทัลการค้าของลูกค้าและ RM")),
+    read: (d) => { d.note = $("#wnote").value.trim(); return d.note ? "" : tt("Describe the discrepancy.", "อธิบายความไม่ตรง"); },
+    review: () => ({ html: `<p class="consequence">${tt("Asks Siam Freight Logistics to accept the documents as presented. The bank still answers MUFG by <b>29 Oct</b>: pay if they waive, refuse if they do not.", "ขอให้สยามเฟรทยอมรับเอกสารตามที่ยื่น ธนาคารยังต้องตอบ MUFG ภายใน <b>29 ต.ค.</b>: ชำระหากยอมรับ ปฏิเสธหากไม่ยอมรับ")}</p>`, confirm: tt("Send request", "ส่งคำขอ") }),
+    done: () => { if (!LCS.decision) { LCS.decision = "waiver"; setTimeout(render, 0); } return tt("Waiver request sent to Siam Freight Logistics.", "ส่งคำขอถึงสยามเฟรทแล้ว"); } }),
+  lcRefuse: () => ({ title: tt("Refuse the documents", "ปฏิเสธเอกสาร"), sub: tt("LC-26-0412 · MT734 to MUFG Bank, Tokyo", "LC-26-0412 · MT734 ถึง MUFG โตเกียว"), init: { hold: "hold" },
+    fields: (d) => select("rhold", tt("The documents", "เอกสาร"), [["hold", tt("Hold pending the applicant's waiver", "ถือไว้รอผู้ขอเปิดยอมรับ")], ["return", tt("Return to the presenter", "ส่งคืนผู้ยื่น")]], d.hold),
+    read: (d) => { d.hold = $("#rhold").value; return ""; },
+    review: (d) => ({ html: `<pre style="font-family:var(--font-data);font-size:12.5px;background:var(--surface-2);padding:12px;border-radius:8px;white-space:pre-wrap;margin:0">:20:LC260412\n:21:MUFG-TK-88213\n:32A:261029USD2398560,\n:77J:${lcDisc().map((i) => `${LC_CHECKS[i][0].toUpperCase()} ${LC_CHECKS[i][4].toUpperCase()}, CREDIT REQUIRES ${LC_CHECKS[i][3].toUpperCase()}`).join("\n")}\n:77B:${d.hold === "hold" ? "HOLD DOCUMENTS PENDING APPLICANT WAIVER, UCP 600 ART 16(C)(III)(B)" : "RETURNING DOCUMENTS"}</pre><p class="consequence">${esc(tt("One notice listing every discrepancy (art. 16(d)); a second notice cannot add any. Sent today, within the deadline.", "แจ้งครั้งเดียวระบุทุกข้อ (ข้อ 16(d)) จะเพิ่มข้อใหม่ภายหลังไม่ได้ ส่งวันนี้ภายในกำหนด"))}</p>`, confirm: tt("Send MT734", "ส่ง MT734") }),
+    done: (d) => { if (LCS.decision !== "refused") { LCS.decision = "refused"; if (d.hold === "return") LCS.answer = "decline"; setTimeout(render, 0); } return tt("MT734 sent to MUFG Bank, Tokyo.", "ส่ง MT734 ถึง MUFG โตเกียวแล้ว"); } }),
+  lcAnswer: () => ({ title: tt("The applicant's answer", "คำตอบผู้ขอเปิด"), sub: "LC-26-0412 · " + t("Siam Freight Logistics"), init: { a: "accept" },
+    fields: (d) => select("lans", tt("Siam Freight Logistics", "สยามเฟรท โลจิสติกส์"), [["accept", tt("Accepts the documents, signed on the trade portal", "ยอมรับเอกสาร ลงนามในพอร์ทัลการค้า")], ["decline", tt("Declines", "ไม่ยอมรับ")]], d.a),
+    read: (d) => { d.a = $("#lans").value; return ""; },
+    review: (d) => ({ html: `<p class="consequence">${esc(d.a === "accept" ? tt("The bank agrees to the waiver and may now pay. The $80 discrepancy fee comes off the proceeds to Hino.", "ธนาคารตกลงตามการยอมรับและชำระได้ ค่าธรรมเนียม $80 หักจากเงินที่จ่ายให้ Hino") : tt("The documents are refused and returned to MUFG.", "ปฏิเสธและส่งเอกสารคืน MUFG"))}</p>`, confirm: tt("Record", "บันทึก") }),
+    done: (d) => { if (!LCS.answer) { LCS.answer = d.a; setTimeout(render, 0); } return d.a === "accept" ? tt("Waiver accepted; ready to pay.", "ยอมรับแล้ว พร้อมชำระ") : tt("Documents refused.", "ปฏิเสธเอกสารแล้ว"); } }),
+  lcSettle: () => ({ title: tt("Pay under the credit", "ชำระตาม LC"), sub: "LC-26-0412 · $2,398,560.00", init: { how: "thb" },
+    fields: (d) => select("lhow", tt("Siam Freight pays by", "สยามเฟรทชำระโดย"), [["thb", tt("THB trust receipt, 120 days, MOR − 0.75%", "ทรัสต์รีซีทเงินบาท 120 วัน MOR − 0.75%")], ["usd", tt("USD trust receipt, 120 days, SOFR + 2.25%", "ทรัสต์รีซีท USD 120 วัน SOFR + 2.25%")], ["debit", tt("Debit its accounts now", "ตัดบัญชีทันที")]], d.how),
+    read: (d) => { d.how = $("#lhow").value; return ""; },
+    review: (d) => { const thb = r2(LC_INV * LC_RATE - LC_MARGIN), fee = LCS.answer === "accept" ? 80 : 0;
+      if (d.how === "debit") return { html: notice("crit", tt("Not enough in the accounts", "เงินในบัญชีไม่พอ"), tt(`Needs ${baht(thb)}; CUR-B2031 and the USD account hold about ฿18.65m together. Use a trust receipt.`, `ต้องใช้ ${baht(thb)} แต่ CUR-B2031 และบัญชี USD มีรวมประมาณ ฿18.65 ล้าน ให้ใช้ทรัสต์รีซีท`)), blocked: true };
+      d.thb = thb;
+      return { html: quoteRows([[tt("To MUFG Bank by MT202, value 26 Oct", "ถึง MUFG ทาง MT202 มูลค่า 26 ต.ค."), `$${(LC_INV - fee).toLocaleString("en-US", { minimumFractionDigits: 2 })}`], [tt("Trust receipt TR-26-0412", "ทรัสต์รีซีท TR-26-0412"), d.how === "usd" ? "$2,398,560.00" : baht(thb)], [tt("Due", "ครบกำหนด"), fd(Date.UTC(2027, 1, 22))], [tt("Trade line after", "วงเงินการค้าหลังรายการ"), tt("$2.40m of $5.0m: the LC becomes the trust receipt", "$2.40 ล้าน จาก $5.0 ล้าน: LC แปลงเป็นทรัสต์รีซีท")]]) + `<p class="consequence">${esc(tt("Pays MUFG, releases the bill of lading to Siam Freight so the trucks can clear customs, and books the trust receipt; the trucks are held in trust for the bank until it is repaid. The LC closes.", "ชำระให้ MUFG ส่งมอบใบตราส่งให้สยามเฟรทเพื่อออกรถจากศุลกากร และบันทึกทรัสต์รีซีท รถถือไว้แทนธนาคารจนกว่าจะชำระคืน ปิด LC"))}</p>`, confirm: tt("Pay", "ชำระเงิน"), auth: ["trade", r2(LC_INV * LC_RATE)] }; },
+    done: (d) => { if (!LCS.settled && !(d.auth && !d.auth.ok)) { LCS.settled = { how: d.how, thb: d.thb }; setTimeout(render, 0); } return tt("Paid to MUFG Bank; TR-26-0412 booked; documents released.", "ชำระให้ MUFG แล้ว บันทึก TR-26-0412 และส่งมอบเอกสารแล้ว"); } }),
+  bgNotify: () => ({ title: tt("Tell the applicant", "แจ้งผู้ขอ"), sub: "BG-26-1108 · EEC Logistics Co., Ltd.", init: {}, fields: () => kvHtml([[tt("To", "ถึง"), tt("EEC Logistics: managing director and finance", "อีอีซี โลจิสติกส์: กรรมการผู้จัดการและฝ่ายการเงิน")], [tt("With", "แนบ"), tt("Copy of the demand and the statement of breach", "สำเนาหนังสือเรียกร้องและคำยืนยันการผิดสัญญา")]]), read: () => "",
+    review: () => ({ html: `<p class="consequence">${esc(tt("Sends the demand to the applicant now (URDG 758 art. 16). This is information, not a request for permission: the decision stays with the bank.", "ส่งการเรียกร้องถึงผู้ขอทันที (URDG 758 ข้อ 16) เป็นการแจ้ง ไม่ใช่การขออนุญาต ธนาคารเป็นผู้ตัดสิน"))}</p>`, confirm: tt("Send", "ส่ง") }),
+    done: () => { if (!BGC.notified) { BGC.notified = true; setTimeout(render, 0); } return tt("EEC Logistics told of the demand.", "แจ้งอีอีซี โลจิสติกส์แล้ว"); } }),
+  bgDecide: () => { const ok = bgCompliant(); return { title: ok ? tt("Pay the demand", "ชำระตามการเรียกร้อง") : tt("Refuse the demand", "ปฏิเสธการเรียกร้อง"), sub: "BG-26-1108 · PTT PCL", init: {}, fields: () => kvHtml([[t("Amount"), baht(4500000)], [tt("Checks", "รายการตรวจ"), tt(`${BG_CHECKS.filter((c, i) => bgOk(i)).length} of ${BG_CHECKS.length} comply`, `ตรง ${BG_CHECKS.filter((c, i) => bgOk(i)).length} จาก ${BG_CHECKS.length}`)]]), read: () => "",
+    review: () => { if (ok && !BGC.notified) return { html: notice("crit", tt("Tell the applicant first", "แจ้งผู้ขอก่อน"), tt("URDG 758 art. 16: the applicant hears of the demand before the bank pays it.", "URDG 758 ข้อ 16: ผู้ขอต้องทราบการเรียกร้องก่อนธนาคารชำระ")), blocked: true };
+      return ok ? { html: quoteRows([[tt("To PTT PCL by BAHTNET", "ถึง ปตท. ทาง BAHTNET"), baht(4500000)], [tt("Margin applied", "หักเงินประกัน"), baht(-BG_MARGIN)], [tt("Debited from CUR-EEC01", "ตัดบัญชี CUR-EEC01"), baht(-BG_CASA)], [tt("Demand loan LN-EEC-0101", "เงินกู้เมื่อทวงถาม LN-EEC-0101"), baht(4500000 - BG_MARGIN - BG_CASA)]]) + `<p class="consequence">${esc(tt("Pays PTT, recovers what it can from EEC Logistics under the counter-indemnity, and books the rest as a loan. The guarantee is reduced to nil and closes.", "ชำระให้ ปตท. เรียกคืนจากอีอีซี โลจิสติกส์ตามสัญญาค้ำประกันกลับ และบันทึกส่วนที่เหลือเป็นเงินกู้ หนังสือค้ำประกันลดเป็นศูนย์และปิด"))}</p>`, confirm: tt("Pay", "ชำระเงิน"), auth: ["trade", 4500000] }
+        : { html: `<p class="consequence">${esc(tt("Sends one refusal notice to PTT listing each discrepancy (art. 24). PTT may present a new complying demand before expiry.", "ส่งหนังสือปฏิเสธครั้งเดียวถึง ปตท. ระบุทุกข้อ (ข้อ 24) ปตท. ยื่นการเรียกร้องใหม่ที่ถูกต้องได้ก่อนหมดอายุ"))}</p>`, confirm: tt("Refuse", "ปฏิเสธ") }; },
+    done: (d) => { if (!BGC.paid && !(d.auth && !d.auth.ok)) { BGC.paid = ok ? "paid" : "refused"; setTimeout(render, 0); } return ok ? tt("Paid to PTT; LN-EEC-0101 booked for the shortfall.", "ชำระให้ ปตท. แล้ว บันทึก LN-EEC-0101 สำหรับส่วนที่ขาด") : tt("Refusal sent to PTT.", "ส่งการปฏิเสธถึง ปตท. แล้ว"); } }; },
+});
+document.addEventListener("change", (e) => {
+  const d = e.target.dataset || {};
+  if (d.lcChk !== undefined) { const i = +d.lcChk; LCS.flip.has(i) ? LCS.flip.delete(i) : LCS.flip.add(i); render(); $(`[data-lc-chk="${i}"]`)?.focus(); }
+  if (d.bgChk !== undefined) { const i = +d.bgChk; BGC.flip.has(i) ? BGC.flip.delete(i) : BGC.flip.add(i); render(); $(`[data-bg-chk="${i}"]`)?.focus(); }
+});
+
+ACTIONS.push(["trade", "Trade payments and claims", "Head of trade operations"]);
+Object.assign(AUTH.ops, { trade: 100000000 });
+Object.assign(RECS, {
+  "LC-26-0412": { sys: "trade", sec: "lc", label: "LC-26-0412", kind: "Import letter of credit", match: ["LC-26-0412"], view: () => viewLC(),
+    tabs: [["summary", "Summary"], ["examine", "Examination", LC_CHECKS.length], ["decide", "Decision"], ["settle", "Payment"], ["amend", "Amendments", 1], ["charges", "Charges"]] },
+  "BG-26-1108": { sys: "trade", sec: "guarantees", label: "BG-26-1108", kind: "Bank guarantee", match: ["BG-26-1108", "EEC Logistics"], view: () => viewBGC(),
+    tabs: [["demand", "Demand", BG_CHECKS.length], ["applicant", "Applicant's side"], ["recovery", "Recovery"], ["terms", "Terms"]] },
+});
+Object.assign(TH, { "Payment": "การชำระเงิน", "Applicant's side": "ฝั่งผู้ขอ", "Examination": "การตรวจเอกสาร", "Demand": "การเรียกร้อง",
+  "LC terms": "เงื่อนไข LC", "Document says": "เอกสารระบุ", "Demand says": "การเรียกร้องระบุ",
+  "Commercial invoice": "ใบกำกับสินค้า", "Bill of lading": "ใบตราส่ง", "Insurance certificate": "ใบรับรองประกันภัย", "Certificate of origin": "หนังสือรับรองถิ่นกำเนิด", "Inspection certificate": "ใบรับรองการตรวจสอบ", "Presentation": "การยื่นเอกสาร",
+  "Payment commission 0.25%": "ค่าธรรมเนียมการชำระ 0.25%" });

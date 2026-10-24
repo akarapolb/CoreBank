@@ -10,7 +10,7 @@ import base64, pathlib, re, urllib.request
 HERE = pathlib.Path(__file__).resolve().parent
 FONTS = HERE / "fonts"
 OUT = HERE / "offline" / "fabor-console.html"
-SCRIPTS = ["core.js", "data.js", "views.js", "records.js", "flows.js", "lending.js", "appform.js", "underwriting.js", "collections.js", "disbursement.js", "policy.js", "finance.js", "deposits.js", "onboarding.js", "commercial.js", "shell.js"]
+SCRIPTS = ["core.js", "data.js", "views.js", "records.js", "flows.js", "lending.js", "appform.js", "underwriting.js", "collections.js", "disbursement.js", "policy.js", "finance.js", "deposits.js", "onboarding.js", "commercial.js", "corporate.js", "trade.js", "shell.js"]
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 
 

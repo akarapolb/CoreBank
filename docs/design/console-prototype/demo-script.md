@@ -1,6 +1,6 @@
 # Fabor console: demo script for bank clients
 
-The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
+The full route is 35 steps in eight chapters, about 45 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
 
 ## Before the meeting
 
@@ -50,7 +50,16 @@ The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to
 | Commercial facilities | **FAC-B2031**, *Test Q3 2026* | DSCR 1.14x against 1.20x: a draw stop, then a waiver to the committee. Limits sit under one umbrella across lending, trade and treasury. |
 | Dealer floor plan | **FP-DEMO**, *Pay off* the sold Fortuner | Payoff with interest to the day, the dealer's balance checked, the VIN typed to confirm. |
 
-### 4. When payments stop (6)
+### 4. Business banking (4)
+
+| Step | Show | Say |
+|---|---|---|
+| A business relationship | **B-0414**, Korat Isuzu: *Limits and accounts*, *Calendar*, *Profitability* | Every line under one group limit, with the connected parties counted for the single lending limit. The calendar holds what the customer owes the bank besides money (the KYC refresh is 24 days overdue). *Temporary increase* lifts the floor plan to ฿26m until January within a credit officer's authority. |
+| Early warning | **EW-B3107**, Chiang Mai Cold Chain, as the credit officer: *Signals*, *Decision* | Not a day late, yet the overdraft is at its limit, cheques bounced and its biggest customer is leaving: score 75. Tick a signal as explained and the score falls. *Decide*: watchlist moves it to Stage 2 and the allowance from ฿132,000 to ฿792,000; choosing Monitor against the score needs the head of retail credit. |
+| Trade documents | **LC-26-0412** in Demo Commercial Bank: *Examination*, then *Ask for a waiver* or *Refuse documents* | 14 checks against the credit, each citing UCP 600; the insurance covers 100% of CIF, not 110%. Refusal is one MT734 by 29 Oct. Once Siam Freight waives, *Pay* settles on a trust receipt; debiting the accounts is refused as they hold too little. |
+| Guarantee claim | **BG-26-1108**: *Demand*, *Recovery* | PTT demands ฿4.5m. The demand complies, so the bank pays whatever EEC Logistics says about the contract; it must tell the applicant first. The margin and the account cover part; the rest becomes a loan. |
+
+### 5. When payments stop (6)
 
 | Step | Show | Say |
 |---|---|---|
@@ -61,7 +70,7 @@ The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to
 | Legal and write-off | **LN-A-C14** | Notice, offers, suit; written off against the 100% allowance with no new loss; recoveries or a debt sale afterwards. |
 | Repossession and auction | **R-A4** | Notice of sale with the right to take the car back; a bid below the reserve needs approval; the shortfall stays owed. |
 
-### 5. Deposits and payments (4)
+### 6. Deposits and payments (4)
 
 | Step | Show | Say |
 |---|---|---|
@@ -70,7 +79,7 @@ The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to
 | Held payment | **TR-9918210** | A sanctions name match stops a $1.18m payment; releasing it is above an operations checker's limit, so it goes to the head of operations. |
 | Customer app | **Customer App → App preview** | Pay an instalment: it lands on the loan and in the live postings at once. |
 
-### 6. Control and the books (6)
+### 7. Control and the books (6)
 
 | Step | Show | Say |
 |---|---|---|
@@ -81,11 +90,10 @@ The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to
 | Ledger drill-down | **GL 1300 → Journals** | From a GL figure to its journal, the balanced postings and the loan. |
 | Exception centre | **Operations → Exception centre** | Every break and breach with an owner and a clock; resolving the ITMX break unblocks the close. |
 
-### 7. Closing (3)
+### 8. Closing (2)
 
 | Step | Show | Say |
 |---|---|---|
-| Commercial bank | **LC-26-0412** in Demo Commercial Bank | Same console, more systems: an import LC with a discrepancy and a five-day deadline. |
 | Thai | The Workbench in Thai | Labels and dates switch together, with Buddhist years; dark mode and compact rows are on the rail and the top bar. |
 | Before and after | **Workbench → Before and after** | About 40 minutes, three systems and a night, against a minute. The times are illustrative. |
 

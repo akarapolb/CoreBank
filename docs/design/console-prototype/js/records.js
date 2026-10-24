@@ -17,8 +17,6 @@ const RECS = {
     tabs: [["setup", "Setup"], ["sim", "Simulation"], ["approvals", "Approvals"], ["changes", "Changes from v1", 5]] },
   "SAV-C10": { sys: "deposits", sec: "accounts", label: "SAV-C10", kind: "Savings account", match: ["SAV-C10"], view: () => viewAccount(),
     tabs: [["tx", "Transactions", 9], ["holds", "Holds", 1], ["interest", "Interest"], ["statement", "Statement"]] },
-  "LC-26-0412": { sys: "trade", sec: "lc", label: "LC-26-0412", kind: "Import letter of credit", match: ["LC-26-0412"], view: () => viewLC(),
-    tabs: [["summary", "Summary"], ["docs", "Documents", 7], ["amend", "Amendments", 1], ["charges", "Charges", 3]] },
   "F2": { sys: "leasing", sec: "leases", label: "F2", kind: "Finance lease", match: ["F2"], view: () => viewLease(),
     tabs: [["summary", "Summary"], ["schedule", "Schedule", 12], ["accounting", "Accounting"], ["asset", "Asset"]] },
   "MA-1": { sys: "leasing", sec: "fleet", label: "MA-1", kind: "Fleet master agreement", match: ["MA-1"], view: () => viewFleet(),
@@ -227,23 +225,6 @@ function viewAccount() {
   return recordPage({ title: "SAV-C10", mono: true, lede: `${esc(t("Savings Standard"))} · ${esc(t("Somchai Prasert"))} · PromptPay 08x-xxx-1180`, pills: P("good", "Active") + P("info", tt("1 hold", "อายัด 1 รายการ")),
     actions: `<button class="btn" type="button" data-flow="withdraw">${esc(tt("Withdraw", "ถอน"))}</button><button class="btn primary" type="button" data-flow="deposit">${esc(tt("Deposit", "ฝากเงิน"))}</button>`,
     facts: [[t("Balance"), baht(L.sav)], [tt("Available", "ใช้ได้"), baht(r2(L.sav - hold))], [t("Holds"), baht(hold)], [t("Rate"), "0.50%"], [tt("Accrued this month", "ค้างรับเดือนนี้"), baht(accrued)], [t("Opened"), fd(Date.UTC(2025, 11, 1))]], panels });
-}
-
-/* ---------------- import LC-26-0412 ---------------- */
-function viewLC() {
-  const docs = [["Commercial invoice", "3 originals", "Complies"], ["Packing list", "3 copies", "Complies"], ["Bill of lading", "Full set 3/3, clean on board", "Complies"], ["Certificate of origin", "Form JTEPA", "Complies"],
-    ["Insurance certificate", "110% CIF", "Discrepant"], ["Inspection certificate", "Issued by SGS", "Complies"], ["Beneficiary certificate", "1 original", "Complies"]];
-  const panels = {
-    summary: () => `<div class="grid-main">${card(t("Contract"), kvHtml([[t("Applicant"), t("Siam Freight Logistics")], [t("Beneficiary"), "Hino Motors Ltd. (JP)"], [tt("Advising bank", "ธนาคารผู้แจ้ง"), "MUFG Bank, Tokyo"], [t("Amount"), "$2,400,000.00 ± 5%"], [tt("Goods", "สินค้า"), tt("12 Hino 500 trucks, CIF Laem Chabang", "รถบรรทุก Hino 500 จำนวน 12 คัน CIF แหลมฉบัง")], [t("Expiry"), fd(Date.UTC(2026, 11, 30))], [tt("Margin held", "เงินประกัน"), "฿8,640,000.00 · 10%"]]))}
-      ${card(t("What happens next"), tl([[Date.UTC(2026, 9, 22), tt("Documents presented", "ยื่นเอกสาร"), tt("7 documents, 1 discrepancy", "7 รายการ ไม่ตรง 1"), "done"], [BIZ, tt("Ask the applicant to waive the discrepancy", "ขอให้ผู้ขอเปิดยอมรับความไม่ตรง"), "", "now"], [Date.UTC(2026, 9, 29), tt("Examination deadline, 5 banking days", "ครบกำหนดตรวจ 5 วันทำการ"), "UCP 600 art. 14", "warn"]]))}</div>`,
-    docs: () => `<section class="card"><div class="card-body flush">${table({ cols: ["Document", "Required", "State"], rows: docs.map(([d, r, s]) => [d, r, P(s === "Complies" ? "good" : "crit", s)]) }, t("Documents"))}</div></section>
-      ${notice("crit", tt("Insurance certificate covers 100% of CIF, the LC asks for 110%", "ใบรับรองประกันคุ้มครอง 100% ของ CIF แต่ LC กำหนด 110%"), tt("Refuse, or ask Siam Freight to waive it. Either way the bank must answer by 29 Oct.", "ปฏิเสธ หรือขอให้สยามเฟรทยอมรับ ต้องตอบภายใน 29 ต.ค."))}`,
-    amend: () => `<section class="card"><div class="card-body flush">${table({ cols: ["Amendment", "Change", "Requested", "State"], rows: [[R("AMD-1"), tt("Latest shipment 15 Nov → 30 Nov 2026", "ส่งสินค้าล่าสุด 15 พ.ย. → 30 พ.ย. 2569"), "10 Oct 2026", P("good", tt("Accepted by beneficiary", "ผู้รับประโยชน์ยอมรับ"))]] }, t("Amendments"))}</div></section>`,
-    charges: () => `<section class="card"><div class="card-body flush">${table({ cols: ["Charge", "Paid by", "Amount", "State"], rows: [["Issuance 0.125%", t("Siam Freight Logistics"), baht(103680), P("good", "Paid")], ["Amendment", t("Siam Freight Logistics"), baht(1500), P("good", "Paid")], ["Discrepancy fee", "Hino Motors Ltd.", "$80.00", P("info", "Scheduled")]] }, t("Charges"))}</div></section>`,
-  };
-  return recordPage({ title: "LC-26-0412", mono: true, lede: esc(tt("Siam Freight Logistics → Hino Motors (JP) · sight LC under UCP 600", "สยามเฟรท โลจิสติกส์ → Hino Motors (JP) · LC ชนิดชำระเมื่อเห็น ตาม UCP 600")), pills: P("good", "Issued") + P("crit", tt("1 discrepancy", "เอกสารไม่ตรง 1")),
-    actions: `<button class="btn" type="button">${esc(tt("Refuse documents", "ปฏิเสธเอกสาร"))}</button><button class="btn primary" type="button" data-flow="lcWaiver">${esc(tt("Ask for a waiver", "ขอให้ยอมรับ"))}</button>`,
-    facts: [[t("Amount"), "$2,400,000.00"], [tt("THB equivalent", "เทียบเท่าบาท"), baht(86400000, 0), "", "@ 36.00"], [t("Expiry"), fd(Date.UTC(2026, 11, 30))], [t("Documents"), tt("6 of 7 comply", "ตรง 6 จาก 7"), "crit"], [tt("Answer by", "ตอบภายใน"), fd(Date.UTC(2026, 9, 29))], [tt("Margin", "เงินประกัน"), "10%"]], panels });
 }
 
 /* ---------------- GL 1300: from a figure to its postings and source records ---------------- */
