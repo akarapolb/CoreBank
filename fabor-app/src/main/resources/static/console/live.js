@@ -53,7 +53,7 @@
     '<div class="set-row"><div><h3>Scheduler</h3><p>Queue any billing, accrual or penalty work that is due for active loans and accounts. Safe to repeat.</p></div>' +
     '<div><button class="btn" type="button" id="acBackfill">Run backfill</button><div class="result" id="acBackfillOut" hidden></div></div></div>' +
     '<div class="set-row"><div><h3>What is live</h3><p>Master Builder and Approvals, Customer 360 and Contracts (look up or create), Ledger (by account), and cash deposits in Branch and teller use the real services. ' +
-    'Fleet and floor plan (open an agreement or a dealer line by id) is live too. Overview, Product Studio, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
+    'Fleet and floor plan (open an agreement or a dealer line by id) is live too, with the Assets tab. Overview, Product Studio, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
     '</div></div>');
   $('#view-settings .panel').after(access);
 
@@ -650,6 +650,149 @@
   }
   $('#fpFreeze').addEventListener('click', function () { lineStatus('/freeze', 'Line frozen: no new drawdowns.'); });
   $('#fpUnfreeze').addEventListener('click', function () { lineStatus('/unfreeze', 'Line is active again.'); });
+
+  // ---------------------------------------------------------------- Assets: a third tab on the Fleet and floor plan screen
+  var afSeg = $('#view-assetfin .seg');
+  var assetsTab = el('<button type="button" data-af="assets" aria-pressed="false">Assets</button>');
+  afSeg.appendChild(assetsTab);
+  var assetsBox = el(
+    '<div id="af-assets" class="grid" style="gap:20px" hidden>' +
+    '<div class="panel" id="assetTools"><h2>Open an asset</h2>' +
+    '<form class="row" id="assetLookup"><div class="field" style="flex:1"><label for="asId">Asset id</label><input id="asId" autocomplete="off" placeholder="A1"></div>' +
+    '<button class="btn primary" type="submit" style="align-self:flex-end">Open</button></form>' +
+    '<div class="result" id="asOut" hidden></div></div>' +
+    '<div class="kpis k4" id="assetKpis" hidden>' +
+    '<div class="kpi"><span class="label">Asset</span><span class="v" id="akAsset" style="font-size:20px"></span><span class="d" id="akAssetD"></span></div>' +
+    '<div class="kpi"><span class="label">Status</span><span class="v" id="akStatus" style="font-size:20px"></span><span class="d" id="akStatusD"></span></div>' +
+    '<div class="kpi"><span class="label">Contract</span><span class="v" id="akContract" style="font-size:20px"></span><span class="d" id="akContractD"></span></div>' +
+    '<div class="kpi"><span class="label">Insurance today</span><span class="v" id="akCover" style="font-size:20px"></span><span class="d" id="akCoverD"></span></div></div>' +
+    '<div class="grid g2" id="assetPanels" hidden>' +
+    '<div class="panel"><h2>Details</h2><dl class="kv" id="assetKv"></dl></div>' +
+    '<div class="panel"><h2>Title history</h2><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>From</th><th>To</th><th>Note</th></tr></thead><tbody id="assetTitle"></tbody></table></div></div></div>' +
+    '<div class="panel" id="assetActions" hidden><h2>Actions on this asset</h2>' +
+    '<form class="row" id="asDeliver" style="flex-wrap:wrap"><div class="field"><label for="asReg">Registration no.</label><input id="asReg" autocomplete="off"></div>' +
+    '<div class="field"><label for="asEng">Engine no.</label><input id="asEng" autocomplete="off"></div><button class="btn" type="submit" style="align-self:flex-end">Record delivery</button></form>' +
+    '<form class="row" id="asActivate" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="asContract">Contract (loan or lease id)</label><input id="asContract" autocomplete="off"></div>' +
+    '<div class="field check"><input id="asIns" type="checkbox" checked><label for="asIns">Insurance required</label></div><button class="btn" type="submit" style="align-self:flex-end">Put under contract</button></form>' +
+    '<form class="row" id="asPolicy" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="asInsurer">Insurer</label><input id="asInsurer" autocomplete="off"></div>' +
+    '<div class="field"><label for="asPolNo">Policy no.</label><input id="asPolNo" autocomplete="off"></div>' +
+    '<div class="field"><label for="asFrom">From</label><input id="asFrom" type="date"></div><div class="field"><label for="asTo">To</label><input id="asTo" type="date"></div>' +
+    '<div class="field"><label for="asSum">Sum insured, THB</label><input id="asSum" type="number" min="0.01" step="0.01"></div>' +
+    '<div class="field"><label for="asPrem">Premium, THB</label><input id="asPrem" type="number" min="0" step="0.01" value="0"></div>' +
+    '<div class="field check"><input id="asFin" type="checkbox"><label for="asFin">Premium financed</label></div><button class="btn" type="submit" style="align-self:flex-end">Add policy</button></form>' +
+    '<form class="row" id="asPlace" style="flex-wrap:wrap;margin-top:10px"><div class="field"><label for="asLoc">Location</label><input id="asLoc" autocomplete="off"></div>' +
+    '<button class="btn" type="submit" style="align-self:flex-end">Move</button>' +
+    '<div class="field"><label for="asCond">Condition</label><select id="asCond"><option>NEW</option><option>GOOD</option><option>FAIR</option><option>POOR</option><option>DAMAGED</option></select></div>' +
+    '<button class="btn" type="button" id="asSetCond" style="align-self:flex-end">Set condition</button></form>' +
+    '<div class="row" style="margin-top:10px"><button class="btn" type="button" id="asTitle">Transfer title to customer</button><button class="btn" type="button" id="asReturn">Return to lessor</button></div></div>' +
+    '<div class="panel"><h2>Register an asset</h2><form class="form" id="asOrder">' +
+    '<div class="field"><label for="orId">Asset id</label><input id="orId" required></div>' +
+    '<div class="field"><label for="orKind">Kind</label><select id="orKind"><option>VEHICLE</option><option>EQUIPMENT</option></select></div>' +
+    '<div class="field"><label for="orMake">Make</label><input id="orMake" required></div><div class="field"><label for="orModel">Model</label><input id="orModel" required></div>' +
+    '<div class="field"><label for="orSerial">Serial or VIN</label><input id="orSerial" required></div><div class="field"><label for="orDealer">Dealer id</label><input id="orDealer" required></div>' +
+    '<div class="field"><label for="orCost">Cost, THB</label><input id="orCost" type="number" min="0.01" step="0.01" required></div>' +
+    '<div class="field"><label for="orLoc">Location</label><input id="orLoc"></div></form>' +
+    '<div class="row"><button class="btn primary" type="button" id="orGo"><svg class="ico"><use href="#i-plus"/></svg><span>Order asset</span></button></div></div>' +
+    '<div class="panel"><div class="panel-head"><h2>Needs attention</h2><button class="btn" type="button" id="asRefresh">Refresh</button></div>' +
+    '<h3 style="margin-bottom:6px">Active assets with no insurance today</h3><div class="tbl-wrap"><table><thead><tr><th>Asset</th><th>Make and model</th><th>Contract</th><th>Location</th></tr></thead><tbody id="asUninsured"></tbody></table></div>' +
+    '<h3 style="margin:14px 0 6px">Cover ending within 30 days</h3><div class="tbl-wrap"><table><thead><tr><th>Asset</th><th>Make and model</th><th>Contract</th><th>Location</th></tr></thead><tbody id="asExpiring"></tbody></table></div></div>' +
+    '</div>');
+  $('#af-floor').after(assetsBox);
+  var currentAsset = null;
+  $$('#view-assetfin [data-af]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var which = b.getAttribute('data-af');
+      assetsBox.hidden = which !== 'assets';
+      if (which === 'assets') {
+        $('#af-fleet').hidden = true; $('#af-floor').hidden = true;
+        $$('#view-assetfin [data-af]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        if (signedIn()) loadAttention();
+      }
+    });
+  });
+  $('#assetLookup').addEventListener('submit', function (e) { e.preventDefault(); openAsset($('#asId').value.trim()); });
+  var attentionRows = function (list) {
+    return list.map(function (a) {
+      return "<tr data-asset='" + esc(a.id) + "' style='cursor:pointer'><td class='mono'>" + esc(a.id) + '</td><td>' + esc(a.make + ' ' + a.model) + "</td><td class='mono'>" + esc(a.contractId || '—') + '</td><td>' + esc(a.location || '—') + '</td></tr>';
+    }).join('') || "<tr><td colspan='4' class='muted'>None.</td></tr>";
+  };
+  async function loadAttention() {
+    try {
+      var got = await Promise.all([api('GET', '/assets/uninsured?day=' + today), api('GET', '/assets/expiring-cover?day=' + today + '&days=30')]);
+      $('#asUninsured').innerHTML = attentionRows(got[0]);
+      $('#asExpiring').innerHTML = attentionRows(got[1]);
+      $$('#asUninsured [data-asset], #asExpiring [data-asset]').forEach(function (r) { r.addEventListener('click', function () { openAsset(r.getAttribute('data-asset')); }); });
+    } catch (e) { fail('Load assets needing attention')(e); }
+  }
+  $('#asRefresh').addEventListener('click', function () { if (signedIn()) loadAttention(); else toast('Sign in under Settings first'); });
+
+  async function openAsset(id) {
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var base = '/assets/' + encodeURIComponent(id);
+      var got = await Promise.all([api('GET', base), api('GET', base + '/title-history'), api('GET', base + '/coverage?day=' + today)]);
+      var a = got[0], title = got[1], cov = got[2];
+      currentAsset = a.id;
+      $('#asId').value = a.id;
+      $('#assetKpis').hidden = false; $('#assetPanels').hidden = false; $('#assetActions').hidden = false;
+      $('#akAsset').textContent = a.id;
+      $('#akAssetD').textContent = a.make + ' ' + a.model + (a.registrationNo ? ' · ' + a.registrationNo : '');
+      $('#akStatus').textContent = a.status.toLowerCase();
+      $('#akStatusD').textContent = 'Condition ' + a.condition.toLowerCase() + (a.location ? ' · ' + a.location : '');
+      $('#akContract').textContent = a.contractId || 'none';
+      $('#akContractD').textContent = 'Title held by the ' + a.titleHolder.toLowerCase();
+      $('#akCover').textContent = cov.covered ? 'covered' : 'not covered';
+      $('#akCoverD').textContent = cov.covered ? cov.policy.insurer + ' · to ' + cov.policy.to : 'no policy in force today';
+      $('#assetKv').innerHTML = '<dt>Serial or VIN</dt><dd class="mono">' + esc(a.serialNo) + '</dd><dt>Engine no.</dt><dd class="mono">' + esc(a.engineNo || '—') + '</dd>' +
+        '<dt>Registration</dt><dd class="mono">' + esc(a.registrationNo || '—') + '</dd><dt>Dealer</dt><dd class="mono">' + esc(a.dealerId) + '</dd>' +
+        '<dt>Cost</dt><dd class="mono">' + thb(a.cost) + ' ' + esc(a.currency) + '</dd><dt>Kind</dt><dd>' + esc(a.kind.toLowerCase()) + '</dd>';
+      $('#assetTitle').innerHTML = title.map(function (t) {
+        return "<tr><td class='mono'>" + esc(t.on) + '</td><td>' + esc(t.from ? t.from.toLowerCase() : '—') + '</td><td>' + esc(t.to.toLowerCase()) + '</td><td>' + esc(t.note || t.reference || '') + '</td></tr>';
+      }).join('') || "<tr><td colspan='4' class='muted'>No title events yet.</td></tr>";
+      $('#asOut').hidden = true;
+    } catch (e) { fail('Open asset')(e); }
+  }
+  async function assetCall(path, body, done) {
+    if (!currentAsset) { say('#asOut', 'warn', 'Open an asset first.'); return; }
+    try {
+      await api('POST', '/assets/' + encodeURIComponent(currentAsset) + path, body);
+      await openAsset(currentAsset);
+      say('#asOut', 'ok', done);
+      loadAttention();
+    } catch (e) { say('#asOut', 'warn', e.message); }
+  }
+  $('#asDeliver').addEventListener('submit', function (e) {
+    e.preventDefault();
+    assetCall('/delivery', { registrationNo: $('#asReg').value.trim(), engineNo: $('#asEng').value.trim(), date: today }, 'Delivery recorded; the title is registered with the lessor.');
+  });
+  $('#asActivate').addEventListener('submit', function (e) {
+    e.preventDefault();
+    assetCall('/activation', { contractId: $('#asContract').value.trim(), date: today, insuranceRequired: $('#asIns').checked }, 'The asset is now under contract ' + $('#asContract').value.trim() + '.');
+  });
+  $('#asPolicy').addEventListener('submit', function (e) {
+    e.preventDefault();
+    assetCall('/policies', { insurer: $('#asInsurer').value.trim(), policyNo: $('#asPolNo').value.trim(), from: $('#asFrom').value, to: $('#asTo').value,
+      sumInsuredMinor: minor($('#asSum').value), premiumMinor: minor($('#asPrem').value || '0'), financed: $('#asFin').checked }, 'Policy added.');
+  });
+  $('#asPlace').addEventListener('submit', function (e) {
+    e.preventDefault();
+    assetCall('/location', { location: $('#asLoc').value.trim() }, 'Location updated.');
+  });
+  $('#asSetCond').addEventListener('click', function () { assetCall('/condition', { condition: $('#asCond').value }, 'Condition updated.'); });
+  $('#asTitle').addEventListener('click', function () { assetCall('/title-transfer', { date: today, reference: 'console-' + Date.now() }, 'Title passed to the customer.'); });
+  $('#asReturn').addEventListener('click', function () { assetCall('/return', null, 'Returned to the lessor.'); });
+  $('#orGo').addEventListener('click', async function () {
+    var f = $('#asOrder');
+    if (!f.reportValidity()) return;
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var a = await api('POST', '/assets', { id: $('#orId').value.trim(), kind: $('#orKind').value, make: $('#orMake').value.trim(), model: $('#orModel').value.trim(),
+        serialNo: $('#orSerial').value, dealerId: $('#orDealer').value.trim(), costMinor: minor($('#orCost').value), currency: 'THB', location: $('#orLoc').value.trim() });
+      say('#asOut', 'ok', 'Ordered ' + a.id + ' (serial ' + a.serialNo + ').');
+      toast('Asset ' + a.id + ' registered');
+      openAsset(a.id);
+    } catch (e) { say('#asOut', 'warn', e.message); }
+  });
 
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
 
