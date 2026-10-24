@@ -13,6 +13,7 @@ A clickable prototype of the staff console across every Fabor system, used to ag
 | `js/flows.js` | Action dialogs: enter, review and confirm (with the authority check), done |
 | `js/lending.js` | Lending in depth: servicing on the home loan LN-77120, the commercial facility FAC-B2031 with covenants and collateral, and the Lending overview |
 | `js/appform.js` | The loan application APP-30416: a field catalogue (166 fields, each with its source and the reason it is collected) that drives the form, its checks, the document list and the review, through decision, e-signature and disbursement |
+| `js/underwriting.js` | The credit officer's side: the Credit review queue, the workbench for APP-30409 (income and debt worksheet, bureau history, appraisal, deviations and mitigants, Copilot's memo, five decisions with the approver set by amount and deviation), and the committee meeting CC-2026-21 with conflicts, quorum, votes and minutes |
 | `tools/application-fields.mjs` | Prints the catalogue as [`../loan-application-fields.md`](../loan-application-fields.md); run it with `node` after changing the form |
 | `js/shell.js` | Side panels, sign-in, tour, presenter mode, live feel, rendering and events; starts the app |
 | `demo-script.md` | How to present it to a bank |

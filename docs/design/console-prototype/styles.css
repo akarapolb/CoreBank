@@ -654,3 +654,8 @@ textarea.input { min-height: 84px; padding: 10px 12px; resize: vertical; }
 .input:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
 .sticky { position: sticky; top: 16px; align-self: start; }
 .step .count { font-size: 10.5px; margin-left: 4px; }
+
+/* credit bureau payment history: one cell a month, oldest first */
+.paygrid { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; }
+.paygrid i { height: 14px; border-radius: 3px; background: var(--good-soft); border: 1px solid color-mix(in srgb, var(--good) 35%, transparent); }
+.paygrid i.late { background: var(--warn); border-color: var(--warn); }
