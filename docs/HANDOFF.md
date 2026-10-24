@@ -29,13 +29,14 @@ The detail of each item, and what each one still lacks, is in the git history an
 - record pages, and every action as enter, review and confirm, with an authority check per role;
 - Copilot, the exception centre, month-end close, an AML case, a held payment, loan origination, a customer app and analytics;
 - light, dark and Calm themes, sign-in with MFA, presenter and executive modes, and bank branding;
-- the presenter route is one story in seven chapters (31 steps) with a 7-step executive cut; each step sets its own tenant and role. Between 860 and 1180px wide the sections fold into the menu button so pages keep their width. `demo-script.md` follows the route.
+- the presenter route is one story in seven chapters (32 steps) with a 7-step executive cut; each step sets its own tenant and role. Between 860 and 1180px wide the sections fold into the menu button so pages keep their width. `demo-script.md` follows the route.
 
 Lending goes deeper than the other systems (`js/lending.js`):
 - servicing on the home loan LN-77120: prepay, rate review, payment holiday, due date, e-DDA, fee waiver, letters;
 - a new application APP-30416 (`js/appform.js`): 166 fields from a catalogue that records each field's source and the reason it is collected, with validation, completeness, documents that follow the answers, and automatic, referred and declined decisions through e-signature and disbursement. `docs/design/loan-application-fields.md` is generated from it as the backend's starting field list;
 - the commercial facility FAC-B2031, with limits across Lending, Trade and Treasury, drawdowns, covenants (the Q3 test breaches DSCR and sets a draw stop), collateral and the annual review;
 - a Lending overview with the pipeline and the book;
+- a commercial credit application (`js/commercial.js`), APP-30414 Korat Isuzu: spreading with analyst adjustments, a projection with live stress against the DSCR policy, TCG cover, a rating scorecard that sets pricing and RAROC, the term sheet, the memo, the committee and construction drawdowns;
 - the credit officer's side (`js/underwriting.js`): a Credit review queue, the workbench for APP-30409 with an adjustable income and debt worksheet, bureau history, appraisal, deviations that each carry their own approver level, a Copilot memo and five decisions; and the credit committee CC-2026-21 with conflicts, quorum, votes and minutes. The approval levels (credit officer ฿2m, head of retail credit ฿10m, committee above) are sample values;
 - approval to payout (`js/disbursement.js`): DSB-30409 with conditions under maker-checker, the e-contract and stamp duty, insurance, the Land Office appointment and mortgage registration, and the payout gate;
 - the retail credit policy (`js/policy.js`): POL-RETAIL holds the limits in one versioned place with draft, impact simulation, maker-checker and publish, and the form, credit review and collections read it. Its values are still sample values for the bank to set;

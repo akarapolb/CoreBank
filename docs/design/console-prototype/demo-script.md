@@ -1,6 +1,6 @@
 # Fabor console: demo script for bank clients
 
-The full route is 31 steps in seven chapters, about 40 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
+The full route is 32 steps in seven chapters, about 40 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
 
 ## Before the meeting
 
@@ -37,12 +37,13 @@ The full route is 31 steps in seven chapters, about 40 minutes; pick chapters to
 | Open an account | **ONB-7731**, Weerapong at branch 0123: *Identity*, then *Due diligence*, then *Review and open* | 98 fields, each tagged DOPA, NDID, staff or customer, much of it prefilled. Set *opening for someone else* and *transfers with Myanmar*: the risk turns high, the most common mule-account pattern. *Review and open* lists what is missing with Fix links; low risk opens at once. |
 | A business customer | **AO-26-0412**, Lanna Craft Export: *Owners*, *Due diligence*, *Signing mandate* | Ownership traced through a Hong Kong company to the people behind it; a screening near match to clear; shareholdings must add to 100%; a PEP owner sends it to compliance. Both journeys print as a field dictionary for the backend. |
 
-### 3. Lending (7)
+### 3. Lending (8)
 
 | Step | Show | Say |
 |---|---|---|
 | New loan application | **APP-30416**: the product, then *Review and submit* | 166 fields; the instalment and debt ratio update as you type. Fill the 14 missing answers and ฿300,000 is approved automatically; a PEP answer is referred; a home loan goes to a credit officer. |
 | Credit review | **APP-30409** as the credit officer: *Income and debts*, *Policy and deviations*, *Decision* | Approve is blocked until each deviation has a mitigant and the employer is called on a number the bank found itself. ฿2,150,000 at LTV 93.5% needs the head of retail credit; a ฿2,000,000 counter-offer is within the officer's authority. |
+| Commercial credit | **APP-30414**, Korat Isuzu: *Repayment capacity*, *Financials*, *Rating and pricing*, *Credit memo* | A ฿12m showroom loan. Move the stress sliders and the yearly DSCR is tested against policy (1.25× base, 1.0× stressed); untick an analyst adjustment and every ratio moves. The rating sets the price and RAROC; the memo follows. Above ฿10m it goes to the committee, and drawdowns open only on the engineer's certificates. |
 | Credit committee | **CC-2026-21** | A member with a conflict does not vote on that item; quorum and the chair's casting vote are checked; the minutes write themselves. |
 | Approval to payout | **DSB-30409** | One person receives a condition and another verifies it; the Land Office registration and the payout are each refused until what comes before is done. |
 | Servicing a home loan | **LN-77120**, *Prepay* | ฿200,000 from the maturing deposit: 33 months sooner, about ฿413,000 of interest saved; or a lower instalment. Rate review, holiday, due date, direct debit and letters work the same way. |
