@@ -225,6 +225,23 @@ class FaborAppTest {
                 new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
 
+        // loan list for the console: search, status and overdue filters
+        assertThat(http.exchange("/api/v1/loans?q=app1", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                List.class).getBody()).hasSize(1);
+        assertThat(http.exchange("/api/v1/loans?q=nobody", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                List.class).getBody()).isEmpty();
+        assertThat(http.exchange("/api/v1/loans?status=CLOSED", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                List.class).getBody()).isEmpty();
+        Map<?, ?> row = (Map<?, ?>) http.exchange("/api/v1/loans", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                List.class).getBody().get(0);
+        assertThat(row.get("id")).isEqualTo("LN-APP1");
+        assertThat(((Number) row.get("outstandingMinor")).longValue()).isEqualTo(10_000_000L);
+        // the OpenAPI document the console client is generated from: behind sign-in, and the caller is not a parameter
+        assertThat(http.getForEntity("/api/v1/openapi", String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        String openapi = http.exchange("/api/v1/openapi", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                String.class).getBody();
+        assertThat(openapi).contains("\"/api/v1/loans\"").contains("\"/api/v1/collections/queue\"").doesNotContain("\"actor\"");
+
         // the console overview: totals read from the services (one account and one 100,000.00 loan so far, nothing overdue)
         Map<String, Object> overview = call(HttpMethod.GET, "/api/v1/overview?asOf=2026-01-20", "ops", null, MediaType.APPLICATION_JSON);
         assertThat(((Number) overview.get("depositAccounts")).longValue()).isEqualTo(1L);
@@ -370,6 +387,8 @@ class FaborAppTest {
                 "curtailments", List.of(Map.of("atDay", 120, "cumulativePercent", 10)), "signedOn", "2026-01-15"),
                 MediaType.APPLICATION_JSON);
         assertThat(line.get("status")).isEqualTo("ACTIVE");
+        assertThat(http.exchange("/api/v1/floorplans", HttpMethod.GET, new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)),
+                List.class).getBody()).hasSize(1);
         call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units", "ops", Map.of("unitId", "VIN1", "type", "NEW", "amountMinor",
                 1_000_000, "date", "2026-01-15", "supplierAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);
         call(HttpMethod.POST, "/api/v1/floorplans/FP-1/units", "ops", Map.of("unitId", "VIN2", "type", "USED", "amountMinor",

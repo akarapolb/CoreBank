@@ -119,6 +119,12 @@ class FloorPlanController {
                 r.date() == null ? LocalDate.now() : r.date());
     }
 
+    @GetMapping
+    List<FloorPlanLine> lines(Actor actor) {
+        actor.require(ROLE);
+        return floorPlan.lines();
+    }
+
     @GetMapping("/{id}")
     FloorPlanLine line(Actor actor, @PathVariable String id) {
         actor.require(ROLE);

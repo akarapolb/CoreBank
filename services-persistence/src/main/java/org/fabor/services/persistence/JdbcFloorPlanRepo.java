@@ -108,6 +108,20 @@ public final class JdbcFloorPlanRepo implements FloorPlanRepo {
     }
 
     @Override
+    public List<String> lineIds() {
+        return Jdbc.tx(ds, c -> {
+            List<String> out = new ArrayList<>();
+            try (PreparedStatement ps = Jdbc.prep(c, "SELECT id FROM fp_line WHERE tenant = ? ORDER BY id", tenant.value());
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        });
+    }
+
+    @Override
     public List<FloorPlanUnit> units(String lineId) {
         return query("", lineId);
     }

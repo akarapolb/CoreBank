@@ -73,6 +73,46 @@ class StaffViewController {
                 l.principal(), outstanding, l.rateOverride(), l.generation(), loans.dpd(id, day), rows);
     }
 
+    /** One row of the loan list: enough to recognise the loan and decide whether to open it. */
+    record LoanRow(String id, String party, String productCode, int productVersion, String status, String currency, LocalDate disbursedOn,
+                   long principalMinor, long outstandingMinor, long overdueMinor, int dpd) { }
+
+    /**
+     * Loans, newest first: {@code q} matches the loan id, the customer or the product (case-insensitive), {@code status} one
+     * status, {@code overdue} only loans with something billed and unpaid past its due date. Reads every loan, so it is a
+     * first version: a large book needs an indexed search.
+     */
+    @GetMapping("/loans")
+    List<LoanRow> loans(Actor actor, @RequestParam(required = false) String q, @RequestParam(required = false) String status,
+                        @RequestParam(defaultValue = "false") boolean overdue, @RequestParam(defaultValue = "200") int limit) {
+        actor.require("ops");
+        LocalDate day = lifecycle.today();
+        String needle = q == null ? "" : q.trim().toLowerCase(java.util.Locale.ROOT);
+        java.util.List<LoanRow> out = new java.util.ArrayList<>();
+        for (String id : loanRepo.allIds()) {
+            Loan l = loanRepo.find(id).orElseThrow();
+            if (status != null && !status.isBlank() && !l.status().name().equalsIgnoreCase(status)) {
+                continue;
+            }
+            if (!needle.isEmpty() && !(l.id().toLowerCase(java.util.Locale.ROOT).contains(needle)
+                    || l.party().toLowerCase(java.util.Locale.ROOT).contains(needle)
+                    || l.productCode().toLowerCase(java.util.Locale.ROOT).contains(needle))) {
+                continue;
+            }
+            long overdueMinor = l.instalments().stream().filter(i -> i.billed() && !i.settled() && i.dueDate().isBefore(day))
+                    .mapToLong(Loan.Instalment::outstanding).sum();
+            if (overdue && overdueMinor == 0) {
+                continue;
+            }
+            long outstanding = l.instalments().stream().mapToLong(Loan.Instalment::principalOutstanding).sum();
+            boolean live = l.status() != Loan.Status.CLOSED && l.status() != Loan.Status.WRITTEN_OFF;
+            out.add(new LoanRow(l.id(), l.party(), l.productCode(), l.productVersion(), l.status().name(), l.currency(), l.disbursedOn(),
+                    l.principal(), outstanding, overdueMinor, live ? loans.dpd(id, day) : 0));
+        }
+        out.sort(java.util.Comparator.comparing(LoanRow::disbursedOn).reversed().thenComparing(LoanRow::id));
+        return out.subList(0, Math.min(out.size(), Math.max(1, Math.min(limit, 1000))));
+    }
+
     record Leg(String account, String balanceType, String direction, long minor, String currency) { }
 
     record BatchView(String id, LocalDate valueDate, java.time.Instant recordedAt, String reason, String origin, List<Leg> legs) { }

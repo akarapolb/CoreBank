@@ -282,6 +282,7 @@ class ServicesPersistenceTest {
     void floorPlanLineTermsAndUnitsRoundTrip() {
         var repo = new JdbcFloorPlanRepo(ds, T);
         assertThat(repo.findLine("FP-1")).isEmpty();
+        assertThat(repo.lineIds()).isEmpty();
         var line = new org.fabor.lending.FloorPlanLine("FP-1", "DLR-1", "THB", 100_000_000, new java.math.BigDecimal("0.09"), 2, "DLR",
                 java.util.Map.of(
                         org.fabor.lending.FloorPlanLine.UnitType.NEW, new org.fabor.lending.FloorPlanLine.UnitTerms(80_000_000, 60),
@@ -290,6 +291,7 @@ class ServicesPersistenceTest {
                         new org.fabor.lending.FloorPlanLine.Step(270, 100)),
                 org.fabor.lending.FloorPlanLine.Status.ACTIVE, LocalDate.of(2026, 1, 15));
         repo.saveLine(line);
+        assertThat(repo.lineIds()).containsExactly("FP-1");
         var found = repo.findLine("FP-1").orElseThrow();
         assertThat(found.terms()).isEqualTo(line.terms());
         assertThat(found.curtailments()).isEqualTo(line.curtailments());

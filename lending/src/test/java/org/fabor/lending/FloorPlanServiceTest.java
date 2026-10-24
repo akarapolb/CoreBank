@@ -199,6 +199,7 @@ class FloorPlanServiceTest {
         svc.recordSale("FP-1", "VIN1", D0.plusDays(5));
         svc.payoff("FP-1", "VIN1", "po1", D0.plusDays(5));
         assertThat(svc.units("FP-1")).extracting(FloorPlanUnit::unitId).containsExactly("VIN1", "VIN2");   // oldest draw first
+        assertThat(svc.lines()).extracting(FloorPlanLine::id).containsExactly("FP-1");
         assertThat(svc.units("FP-1").get(0).status()).isEqualTo(FloorPlanUnit.Status.PAID);
         assertThatThrownBy(() -> svc.units("NOPE")).isInstanceOf(IllegalArgumentException.class);
     }

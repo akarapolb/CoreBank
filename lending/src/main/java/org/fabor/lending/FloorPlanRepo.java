@@ -17,6 +17,9 @@ public interface FloorPlanRepo {
     /** The units of one line, oldest draw first. */
     List<FloorPlanUnit> units(String lineId);
 
+    /** Ids of every line, in id order. */
+    List<String> lineIds();
+
     final class InMemory implements FloorPlanRepo {
         private final Map<String, FloorPlanLine> lines = new HashMap<>();
         private final Map<String, FloorPlanUnit> units = new HashMap<>();
@@ -39,6 +42,11 @@ public interface FloorPlanRepo {
         @Override
         public synchronized Optional<FloorPlanUnit> findUnit(String lineId, String unitId) {
             return Optional.ofNullable(units.get(lineId + "/" + unitId));
+        }
+
+        @Override
+        public synchronized List<String> lineIds() {
+            return lines.keySet().stream().sorted().toList();
         }
 
         @Override

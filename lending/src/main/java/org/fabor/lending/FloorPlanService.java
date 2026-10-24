@@ -270,6 +270,11 @@ public final class FloorPlanService {
         return new Statement(lineId, asOf, List.copyOf(rows), rows.stream().mapToLong(StatementRow::total).sum());
     }
 
+    /** Every line, in id order. */
+    public List<FloorPlanLine> lines() {
+        return repo.lineIds().stream().map(this::line).toList();
+    }
+
     /** Every unit of the line, paid ones included, oldest draw first. */
     public List<FloorPlanUnit> units(String lineId) {
         line(lineId);

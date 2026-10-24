@@ -17,6 +17,12 @@ spring:
 server:
   port: ${FABOR_HTTP_PORT:8080}
 
+# OpenAPI document of the HTTP API, behind sign-in like the API itself (ADR-0011: the console client is generated from it)
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  packages-to-scan: org.fabor.app
+
 management:
   server:
     port: ${FABOR_MGMT_PORT:8081}

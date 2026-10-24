@@ -51,8 +51,23 @@ class SecurityConfig implements WebMvcConfigurer {
         return http.build();
     }
 
+    /**
+     * The React console ({@code web/apps/console}, ADR-0011). It self-hosts its fonts and uses no inline styles or
+     * scripts, so its policy is stricter than the prototype's: everything from this origin only.
+     */
     @Bean
     @Order(3)
+    SecurityFilterChain consoleNext(HttpSecurity http, ConsoleProperties console) throws Exception {
+        http.securityMatcher("/console-next", "/console-next/**").authorizeHttpRequests(a -> a.anyRequest().permitAll())
+                .csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
+                        "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' "
+                                + console.tokenOrigin() + "; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")));
+        return http.build();
+    }
+
+    @Bean
+    @Order(4)
     SecurityFilterChain api(HttpSecurity http, FaborProperties props, ConsoleProperties console) throws Exception {
         http.csrf(c -> c.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
