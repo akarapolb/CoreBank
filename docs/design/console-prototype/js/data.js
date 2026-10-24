@@ -318,7 +318,7 @@ function moreLists() {
     "deposits/statements": { cols: ["Account", "Customer", "Period", "Channel", "Sent", "State"], rows: [
       [R("SAV-C10"), t("Somchai Prasert"), "Sep 2026", "e-Statement", "1 Oct 2026", P("good", "Delivered")], [R("CUR-B2031"), t("Siam Freight Logistics"), "Sep 2026", "Encrypted PDF by email", "1 Oct 2026", P("good", "Delivered")],
       [R("SAV-P9"), "Arthit Wong", "Sep 2026", "Post", "2 Oct 2026", P("warn", "Returned")]] },
-    "lending/disbursements": { cols: ["Disbursement", "Loan", "Customer", "Amount", "To", "State"], rows: [
+    "lending/disbursements": { cols: ["Disbursement", "Loan", "Customer", "Amount", "To", "State"], rows: [dsbRow(),
       [R("DSB-55102"), "LN-A-C13", t("Pimchanok Rattana"), baht(125000), "SAV-C13", P("good", "Paid")], [R("DSB-55103"), "MS-4", t("Siam Freight Logistics"), baht(45279.48), t("Bangna Motors"), P("good", "Paid")],
       [R("DSB-55110"), "APP-30412", "Thanakorn Ruang", baht(150000), "PromptPay 08x-xxx-4412", P("warn", "Waiting for signature")]] },
     "collections/writeoffs": { cols: ["Loan", "Customer", "Days late", "Amount", "Recovery expected", "State"], rows: [

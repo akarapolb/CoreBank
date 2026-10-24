@@ -36,6 +36,7 @@ Lending goes deeper than the other systems (`js/lending.js`):
 - the commercial facility FAC-B2031, with limits across Lending, Trade and Treasury, drawdowns, covenants (the Q3 test breaches DSCR and sets a draw stop), collateral and the annual review;
 - a Lending overview with the pipeline and the book;
 - the credit officer's side (`js/underwriting.js`): a Credit review queue, the workbench for APP-30409 with an adjustable income and debt worksheet, bureau history, appraisal, deviations that each carry their own approver level, a Copilot memo and five decisions; and the credit committee CC-2026-21 with conflicts, quorum, votes and minutes. The approval levels (credit officer ฿2m, head of retail credit ฿10m, committee above) are sample values;
+- approval to payout (`js/disbursement.js`): DSB-30409 with conditions under maker-checker, the e-contract and stamp duty, insurance, the Land Office appointment and mortgage registration, and the payout gate;
 - Collections in depth (`js/collections.js`): strategy by bucket, contact rules the console enforces, the collector's case LN-A-C11 with hardship and restructuring, the legal and write-off case LN-A-C14, and the repossession R-A4 through auction. The restructured-loan cure rule now reads 3 consecutive months or 3 instalments, whichever is longer, everywhere. The Thai collection and restructuring rules are the prototype's reading, to confirm with counsel.
 
 These screens add four authority actions (servicing, fee waivers, drawdowns, covenant waivers) that the backend authority check will need.
