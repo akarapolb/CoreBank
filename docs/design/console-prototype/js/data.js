@@ -5,7 +5,7 @@ const SYS = [
   { id: "workbench", name: "Workbench", group: "Everyday", icon: "i-home", desc: "Your work across every system", sections: [["today", "Today"], ["approvals", "Approvals", "appr"], ["tasks", "My tasks", 12], ["recent", "Recently viewed"], ["compare", "Before and after"]] },
   { id: "customers", name: "Customers", group: "Everyday", icon: "i-users", desc: "Parties, KYC and every relationship", sections: [["overview", "Overview"], ["c360", "Customer 360"], ["directory", "Directory"], ["onboarding", "Onboarding", 9], ["kyc", "KYC reviews", 4, true]] },
   { id: "branch", name: "Branch & Teller", group: "Everyday", icon: "i-cash", desc: "Counter, cash drawer and branch queue", sections: [["counter", "Counter"], ["drawer", "Cash drawer"], ["bqueue", "Branch queue", 4], ["eod", "End of day"]] },
-  { id: "deposits", name: "Deposits", group: "Retail & business banking", icon: "i-vault", desc: "Savings, current and term deposits", sections: [["overview", "Overview"], ["accounts", "Accounts"], ["term", "Term deposits"], ["interest", "Interest and fees"], ["statements", "Statements"]] },
+  { id: "deposits", name: "Deposits", group: "Retail & business banking", icon: "i-vault", desc: "Savings, current and term deposits", sections: [["overview", "Overview"], ["accounts", "Accounts"], ["opening", "Account opening", 2], ["orders", "Holds and orders", 3, true], ["dormant", "Dormant accounts"], ["term", "Term deposits"], ["interest", "Interest and fees"], ["statements", "Statements"]] },
   { id: "lending", name: "Lending", group: "Retail & business banking", icon: "i-loan", desc: "Applications, loans and servicing", sections: [["overview", "Overview"], ["applications", "Applications", 14], ["credit", "Credit review", 4], ["committee", "Credit committee"], ["loans", "Loans"], ["facilities", "Facilities"], ["servicing", "Servicing", 4], ["restructuring", "Restructuring", 3], ["disbursements", "Disbursements"]] },
   { id: "leasing", name: "Leasing & Asset Finance", group: "Retail & business banking", icon: "i-truck", desc: "Leases, hire purchase, fleet, floor plan", sections: [["overview", "Overview"], ["leases", "Leases"], ["hp", "Hire purchase"], ["fleet", "Fleet agreements"], ["floorplan", "Floor plan", 1, true], ["assets", "Assets"], ["dealers", "Dealers"]] },
   { id: "collections", name: "Collections & Recovery", group: "Retail & business banking", icon: "i-phone", desc: "Arrears, promises, repossession", sections: [["overview", "Overview"], ["queue", "Queue", 128, true], ["promises", "Promises", 31], ["hardship", "Hardship and restructuring", 12], ["legal", "Legal", 9], ["repossessions", "Repossessions", 6], ["writeoffs", "Write-offs"], ["strategy", "Strategy"]] },
@@ -221,9 +221,6 @@ function lists() {
       [R("SAV-C10"), t("Somchai Prasert"), "Savings Standard", baht(LOAN.sav), "0.50%", P("good", "Active")], [R("CUR-B2031"), t("Siam Freight Logistics"), "Business Current", baht(18240612), "—", P("good", "Active")],
       [R("SAV-C14"), t("Kittipong Siri"), "Savings Standard", baht(1003806.11), "0.50%", P("good", "Active")], [R("SAV-P9"), "Arthit Wong", "Savings Standard", baht(0), "0.50%", P("warn", "Dormant")],
       [R("FCD-B2031"), t("Siam Freight Logistics"), "USD Deposit", "$412,880.00", "1.10%", P("good", "Active")]] },
-    "deposits/term": { cols: ["Deposit", "Customer", "Principal", "Rate", "Matures", "At maturity"], rows: [
-      [R("TD-88102"), t("Malee Wongsa"), baht(500000), "2.10%", "27 Oct 2026", "Roll over"], [R("TD-88140"), "Siam Energy PCL", baht(120000000), "2.45%", "29 Oct 2026", "Pay to current"],
-      [R("TD-88201"), t("Anan Chaiyo"), baht(200000), "2.00%", "3 Nov 2026", "Ask customer"], [R("TD-88244"), t("Pimchanok Rattana"), baht(1000000), "2.25%", "12 Nov 2026", "Roll over"]] },
     "lending/applications": { cols: ["Application", "Applicant", "Product", "Amount", "Score", "Decision"], rows: [
       [R("APP-30412"), "Thanakorn Ruang", t("Personal loan"), baht(150000), "702", P("good", "Approved")], [R("APP-30413"), "Napat Srisuk", "Car hire purchase", baht(890000), "655", P("info", "Needs documents")],
       [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000), "—", P("warn", "Credit committee")], [R("APP-30415"), "Arthit Wong", t("Personal loan"), baht(80000), "541", P("crit", "Declined")]] },
@@ -295,7 +292,7 @@ function lists() {
       [who("Wanida Kaewmanee"), "RM, credit-officer", "Customers, Lending, Trade", "12 min", P("good", "On"), P("good", "Active")]] },
     "admin/tenants": { cols: ["Tenant", "Name", "Systems", "Users", "Region", "State"], rows: TENANTS.map((x) => [R(x.mark), esc(t(x.name)), String(x.systems.length), x.id === "commercial" ? "1,240" : x.id === "retail" ? "3,912" : "184", "TH", P("good", "Active")]) },
   };
-  return Object.assign(base, moreLists(), colLists(), finLists());
+  return Object.assign(base, moreLists(), colLists(), finLists(), depLists());
 }
 
 // the sections that complete every system
@@ -312,9 +309,6 @@ function moreLists() {
       ["Savings Standard", "Up to ฿1,000,000", "0.50%", "—", "1 Jul 2026", P("good", "Live")], ["Savings Standard", "Above ฿1,000,000", "0.75%", "—", "1 Jul 2026", P("good", "Live")],
       ["Term deposit 6 months", "All balances", "1.90%", "—", "1 Jul 2026", P("good", "Live")], ["Term deposit 12 months", "All balances", "2.25%", "—", "1 Jul 2026", P("good", "Live")],
       ["Business Current", "—", "0.00%", "฿100.00 a month", "1 Jan 2026", P("good", "Live")], ["Dormant account fee", "After 2 years", "—", "฿50.00 a year", "1 Jan 2027", P("info", "Waiting for checker")]] },
-    "deposits/statements": { cols: ["Account", "Customer", "Period", "Channel", "Sent", "State"], rows: [
-      [R("SAV-C10"), t("Somchai Prasert"), "Sep 2026", "e-Statement", "1 Oct 2026", P("good", "Delivered")], [R("CUR-B2031"), t("Siam Freight Logistics"), "Sep 2026", "Encrypted PDF by email", "1 Oct 2026", P("good", "Delivered")],
-      [R("SAV-P9"), "Arthit Wong", "Sep 2026", "Post", "2 Oct 2026", P("warn", "Returned")]] },
     "lending/disbursements": { cols: ["Disbursement", "Loan", "Customer", "Amount", "To", "State"], rows: [dsbRow(),
       [R("DSB-55102"), "LN-A-C13", t("Pimchanok Rattana"), baht(125000), "SAV-C13", P("good", "Paid")], [R("DSB-55103"), "MS-4", t("Siam Freight Logistics"), baht(45279.48), t("Bangna Motors"), P("good", "Paid")],
       [R("DSB-55110"), "APP-30412", "Thanakorn Ruang", baht(150000), "PromptPay 08x-xxx-4412", P("warn", "Waiting for signature")]] },

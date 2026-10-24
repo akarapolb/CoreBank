@@ -30,7 +30,7 @@ const HOME = (() => {
   const int2025 = r2(rows.filter((x) => new Date(x.due).getUTCFullYear() === 2025).reduce((s, x) => s + x.interest, 0));
   const int2026 = r2(rows.filter((x) => x.state === "paid" && new Date(x.due).getUTCFullYear() === 2026).reduce((s, x) => s + x.interest, 0));
   return { P, pay, mrr, margin, rate, r, rows, paid, bal, left, ends: addMonths(rows[paid - 1].due, left.n), contractEnds: Date.UTC(2053, 2, 15), next: rows[paid],
-    int2025, int2026, valuation: 3900000, td: 200000, tdInterest: r2(200000 * 0.02 * 182 / 365) };
+    int2025, int2026, valuation: 3900000, td: 200000, tdInterest: r2(r2(200000 * 0.02 * 184 / 365) * 0.85), tdToLoan: 0 };
 })();
 const homeDailyInterest = () => r2(HOME.bal * HOME.rate / 365);
 let homeLog = [];
@@ -113,7 +113,7 @@ Object.assign(FLOWS, {
       en = `Applies <b>${baht(d.amount)}</b> to principal ${when}, after interest to that day. No fee. A new schedule goes to Anan in the app, and the change is in the history of LN-77120.`;
       th = `ตัด <b>${baht(d.amount)}</b> เข้าเงินต้น${when} หลังหักดอกเบี้ยถึงวันนั้น ไม่มีค่าธรรมเนียม ส่งตารางผ่อนใหม่ให้คุณอนันต์ในแอป และบันทึกในประวัติของ LN-77120`;
       return { html: quoteRows(rows) + `<p class="consequence">${tt(en, th)}</p>`, confirm: tt("Confirm prepayment", "ยืนยันชำระล่วงหน้า"), auth: ["service", d.amount] }; },
-    done: (d) => { if (!d.logged) { d.logged = true; homeLog.unshift([BIZ, tt(`Prepayment of ${baht(d.amount)} booked`, `บันทึกชำระเงินต้นล่วงหน้า ${baht(d.amount)}`), d.mode === "term" ? tt(`Term ${d.saved} months shorter`, `ระยะเวลาสั้นลง ${d.saved} เดือน`) : tt(`Instalment ${baht(d.newPay)} from Dec 2026`, `ค่างวด ${baht(d.newPay)} ตั้งแต่ ธ.ค. 2569`), "done"]); }
+    done: (d) => { if (!d.logged) { d.logged = true; if (d.from === "td") HOME.tdToLoan = d.amount; homeLog.unshift([BIZ, tt(`Prepayment of ${baht(d.amount)} booked`, `บันทึกชำระเงินต้นล่วงหน้า ${baht(d.amount)}`), d.mode === "term" ? tt(`Term ${d.saved} months shorter`, `ระยะเวลาสั้นลง ${d.saved} เดือน`) : tt(`Instalment ${baht(d.newPay)} from Dec 2026`, `ค่างวด ${baht(d.newPay)} ตั้งแต่ ธ.ค. 2569`), "done"]); }
       return d.from === "td" ? tt("Booked for 3 Nov 2026. TD-88201 is instructed to pay the loan at maturity.", "ตั้งรายการไว้วันที่ 3 พ.ย. 2569 สั่ง TD-88201 ให้ชำระเข้าสินเชื่อเมื่อครบกำหนด") : tt("Prepayment applied. The new schedule is in the app.", "ชำระเงินต้นแล้ว ตารางผ่อนใหม่อยู่ในแอป"); } }),
 
   hmReprice: () => ({ title: tt("Review the rate", "ทบทวนอัตราดอกเบี้ย"), sub: homeSub() + " · SRV-26-1042", init: { offer: "fix" },
