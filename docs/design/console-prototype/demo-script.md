@@ -1,0 +1,46 @@
+# Fabor console: demo script for bank clients
+
+About 25 minutes for the full script, 5 minutes for the executive version. Open `index.html` (or the published link) in a desktop browser at full width; with no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data; nothing is posted. In presenter mode a ribbon at the top says so.
+
+**Executive version (5 steps):** in the presenter panel, choose *Executive · 5*: Workbench and tour, Settle early, Ledger drill-down, Customer app, Before and after.
+
+## Before the meeting
+
+- Pick the tenant that matches the client: **Demo Retail Bank** for retail and auto finance, **Demo Commercial Bank** for corporate, trade and treasury, **Demo Virtual Bank** for a digital-only bank. Switch it from the tenant button at the top left.
+- Open the avatar menu (bottom left), choose **Settings**, and set the language the audience reads. Thai switches labels and dates, with Buddhist years.
+- Put the client's brand on it: **Admin → Branding** (bank name, two-letter mark, colour, logo). It only changes this browser, and **Back to Fabor** undoes it.
+- Turn on **Presenter mode** from the avatar menu. The panel over the sidebar lists the steps below; clicking a step takes the console there and sets it up (opens the dialog, the panel or the tour), with a one-line prompt of what to say.
+- Before each meeting, **Reset demo data** (presenter panel or Settings) clears saved views, pins, branding and settings, and signs out so you start on the sign-in screen.
+
+## The story
+
+| # | Show | Say |
+|---|---|---|
+| 1 | Sign in: bank SSO, or staff ID and the six-digit code | Staff sign in with the bank's own identity provider and a second factor. Sessions end after 15 minutes idle. |
+| 2 | Workbench, then **Take the tour** | The day starts with what needs this person, from every system. The tour walks the main ideas in nine steps; skip it if time is short. |
+| 3 | Avatar menu → **Preview as** Collector, then Teller | The Workbench and the pinned systems change with the role. Same core, different job. |
+| 4 | Press **G** → open **Lending → Loans → LN-A-C10** | One page per record: the figures that matter on top, a tab for each facet. 144 days late, Stage 3, the car repossessed. |
+| 5 | **Settle early** → Next | The review shows the quote line by line. Paying from savings is blocked because the account is ฿1,545.98 short. Go back, choose the branch: the review now says the amount is within an operations checker's authority. Type the loan id to confirm. Preview as Collector and the same step goes to a credit officer instead (**Admin → Limits and authorities** shows the table). |
+| 6 | **History** on the same page | Every change with who made it, who approved it, and the values before and after. |
+| 7 | **Copilot** → *Draft a restructuring* → *Open for review* | Copilot reads what is on screen and drafts. It cannot post; its draft goes through the same review and approval as a person's. |
+| 8 | **Leasing → Floor plan → FP-DEMO** → *Pay off* the sold Fortuner | Dealer stock finance: the payoff with interest to the day, the dealer's account balance checked, the VIN typed to confirm. |
+| 9 | **Collections → Queue**: tick two rows → *Send reminder* | Bulk actions keep the review step. Press J and K to move through the queue, P to record a promise. |
+| 10 | **Finance & Risk → General ledger → 1300 → Journals** → a journal → *Source* | From a GL figure to its journal, its balanced postings, and the loan that caused it. |
+| 10a | **Compliance & AML → Alerts → AML-ALR-7712** | Nine cash deposits just under the ฿2,000,000 report threshold. The case shows what the investigator did; *File a suspicious transaction report* goes to AMLO and the customer is never told. |
+| 10b | **Payments → Held payments → TR-9918210** | A sanctions name match stops a $1.18m payment. The screening tab shows only the name matches. Releasing it is above an operations checker's limit, so it goes to the head of operations. |
+| 10c | **Lending → Applications → APP-30413** | Policy rules with the applicant's figures, a recommendation, then the decision: an operations checker cannot approve credit, a credit officer can. Disbursement opens after approval. |
+| 11 | **Operations → Exception centre** | Every break, failed task, integration fault and limit breach in one queue, each with an owner and a clock. Resolve the ITMX break. |
+| 12 | **Customer App → App preview** → *Pay an instalment* | What the customer sees. The payment lands on LN-A-C10 and in the Workbench's live postings at once; there is no overnight sync. |
+| 13 | **Reports & Analytics → Vintage**, then **Roll rates** | The Q2 2026 vintage is worsening faster; the roll-rate matrix shows where accounts move. |
+| 14 | **Finance & Risk → Month-end close** | With no batch window there is no close night: the close is a checklist of controls. The suspense step unblocks once the ITMX break is resolved; run the loss allowance as finance controller. |
+| 15 | Switch tenant to **Demo Commercial Bank** → **Trade Finance → LC-26-0412** | Same console, more systems: an import LC with a discrepant document and a 5-day deadline. Then **Treasury → New deal** for the FX to pay it. |
+| 15a | **LN-A-C10 → What if** | Move term and rate: the instalment, the share of income and the TFRS 9 modification loss follow. *Propose these terms* opens the review. |
+| 15b | **Workbench → Before and after** | The same early settlement: about 40 minutes, three systems and a night in a typical core, against a minute here. Times are illustrative; say so. |
+| 16 | Toggle Thai at the top, then dark mode on the rail | Thai and English, light and dark, compact rows for people who work a queue all day. |
+
+## If they ask
+
+- **Is this the product?** It is the agreed design, built as a clickable prototype. The production console is React on the same patterns and already runs Loans, Collections and Floor plan against the live core.
+- **Where does the data come from?** In the prototype, sample data computed so the figures agree (the schedule, the settlement quote and the loss allowance reconcile). In the product, the immutable ledger and the core services.
+- **Can we change the look?** Settings offers Modern and Calm styles. A bank's own colours are a change to a few design tokens, not to the screens.
+- **Rule-pack values** (rate caps, rebate tiers) are configuration to confirm with counsel, not legal advice.
