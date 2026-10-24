@@ -1,6 +1,6 @@
 # Fabor console: demo script for bank clients
 
-The full route is 42 steps in nine chapters, about 55 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
+The full route is 46 steps in nine chapters, about 60 minutes; pick chapters to fit the time. The executive route is 7 steps, about 10 minutes. Open `index.html` (or the published link) in a desktop browser, 1200px wide or more; between 860 and 1180px the sections fold into the menu button at the top left. With no internet in the room, use `offline/fabor-console.html` (built by `build-offline.py`). Everything is sample data and nothing is posted; in presenter mode a ribbon at the top says so.
 
 ## Before the meeting
 
@@ -59,7 +59,7 @@ The full route is 42 steps in nine chapters, about 55 minutes; pick chapters to 
 
 More to show: **HP-2025-004812** (*Servicing*, *Registration book*: renewals, change of registration, the book released after payoff) and **DLR-1** (*Scorecard*, *Clawback*: late books keep Bangna Motors at Silver; commission clawed back on early payoff or default).
 
-### 5. Business banking (5)
+### 5. Business banking (7)
 
 | Step | Show | Say |
 |---|---|---|
@@ -68,6 +68,11 @@ More to show: **HP-2025-004812** (*Servicing*, *Registration book*: renewals, ch
 | Trade documents | **LC-26-0412** in Demo Commercial Bank: *Examination*, then *Ask for a waiver* or *Refuse documents* | 14 checks against the credit, each citing UCP 600; the insurance covers 100% of CIF, not 110%. Refusal is one MT734 by 29 Oct. Once Siam Freight waives, *Pay* settles on a trust receipt; debiting the accounts is refused as they hold too little. |
 | Guarantee claim | **BG-26-1108**: *Demand*, *Recovery* | PTT demands ฿4.5m. The demand complies, so the bank pays whatever EEC Logistics says about the contract; it must tell the applicant first. The margin and the account cover part; the rest becomes a loan. |
 | FX deal front to back | **FX-26-10-0918** in Demo Commercial Bank: *Confirmations* | Siam Freight buys USD 2.4m forward to repay its trust receipt. The line was checked at booking (93% used); the bank's cover deal's MT300 has the wrong value date; we chase with an MT399, then match. |
+| Agent on a syndicated loan | **SYN-001** in Demo Commercial Bank: *Drawdowns*, *Interest*, *Payment waterfall* | We run the loan for six banks. The ฿600m drawdown's notices come from the register; Andaman failed to fund last time, so the borrower got less and Andaman earns no commitment fee. Interest is THOR compounded in arrears, 2.9055% all-in; on 2 Nov the agent pays fees, interest and principal in that order, pro rata. |
+| Lender vote | **SYN-001**: *Lender votes*, *Record a vote*, *Count and declare* | Raising the leverage covenant to 4.0× needs 66⅔% of commitments. Record Bangkok Bank's yes: 70.7% with the defaulting lender disregarded (65.0% if it counted), so it passes and the facility changes. |
+
+More to show: **SYN-001** *Transfers* (MUFG sells 4% to ICBC (Thai): four KYC checks before the agent registers it, and every later notice and payment follows the new shares) and *Fees* (the arrangement fee split by role and the agency fee the agent keeps).
+
 
 ### 6. When payments stop (6)
 
@@ -80,7 +85,7 @@ More to show: **HP-2025-004812** (*Servicing*, *Registration book*: renewals, ch
 | Legal and write-off | **LN-A-C14** | Notice, offers, suit; written off against the 100% allowance with no new loss; recoveries or a debt sale afterwards. |
 | Repossession and auction | **R-A4** | Notice of sale with the right to take the car back; a bid below the reserve needs approval; the shortfall stays owed. |
 
-### 7. Deposits and payments (7)
+### 7. Deposits and payments (9)
 
 | Step | Show | Say |
 |---|---|---|
@@ -90,9 +95,11 @@ More to show: **HP-2025-004812** (*Servicing*, *Registration book*: renewals, ch
 | Payments on a Saturday | **Payments → Overview** | PromptPay runs all day; BAHTNET and bulk files are closed, so four items wait for Monday, checked against the bank's balance at the BOT. |
 | Large-value transfer | **TR-9918231**: *Checks*, then *Approve* | ฿31.85m on paper: approval is refused until the call-back is recorded and for the person who entered it; within the operations checker's ฿50m authority it waits for Monday 08:30. |
 | Payroll on a Sunday | **PAY-26-10-0414**: *Validation*, *Payday*, *Release* | Four bad rows (check digit, duplicate, name mismatch, closed account); payday is a Sunday, so real-time transfers today or bulk on Monday. |
+| Cash at the counter | **Branch → Counter** as the teller: *Large withdrawal*, *Large cash deposit*, *Suspect note* | ฿650,000 is above the teller's ฿500,000, so it goes to the branch manager, and the vault tops up the drawer first; if the customer says someone phoned and told them to withdraw, the console stops it. ฿2.15m in cash files an AMLO report and flags three earlier deposits just under the threshold, without telling the customer. A suspect ฿1,000 note is retained with a receipt. |
+| Branch end of day | **Branch → End of day** | The teller counts ฿100 short and must explain it; only the branch manager can post it to GL 1990. The drawer goes back to the vault under dual control (the teller cannot be their own second person), the vault is counted, the checklist ticked, and only then can the manager sign off. |
 | Customer app | **Customer App → App preview** | Pay an instalment: it lands on the loan and in the live postings at once. |
 
-More to show: **TR-9918203** (an outgoing SWIFT MT103: two false screening hits, OUR/SHA/BEN, the BOT purpose code, gpi tracking) and **RCL-26-1024-03** (a mistaken PromptPay transfer: the receiving bank needs the receiver's consent; nobody is debited without it).
+More to show: **TR-9918203** (an outgoing SWIFT MT103: two false screening hits, OUR/SHA/BEN, the BOT purpose code, gpi tracking) and **RCL-26-1024-03** (a mistaken PromptPay transfer: the receiving bank needs the receiver's consent; nobody is debited without it); **Branch → Cash drawer** (denominations, every movement, top-up or sell-back under dual control) and **Branch → Vault** (two custodians, the ฿25m insurance limit and Monday's cash pickup).
 
 ### 8. Control and the books (7)
 
