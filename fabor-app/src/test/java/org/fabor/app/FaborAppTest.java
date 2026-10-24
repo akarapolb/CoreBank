@@ -397,6 +397,19 @@ class FaborAppTest {
                 "vehicleClass", "TRUCK", "assetIds", List.of("A1"), "principalMinor", 5_000_000, "term", 12, "date", "2026-06-15",
                 "customerAccountId", "SAV-P1", "payoutAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);
         assertThat(callOff.get("id")).isEqualTo("MS-1");
+        try (Connection c = ds.getConnection(); Statement st = c.createStatement();
+             var rs = st.executeQuery("SELECT count(*) FROM scheduler_due WHERE task_key LIKE 'bill:MS-1:%' OR task_key = 'accrue:MS-1'")) {
+            rs.next();
+            assertThat(rs.getLong(1)).isEqualTo(12 + 1);          // a call-off is billed and accrued like any loan
+        }
+        call(HttpMethod.POST, "/api/v1/masters/MA-1/call-offs", "ops", Map.of("loanId", "MS-1", "vehicleClass", "TRUCK", "assetIds",
+                List.of("A1"), "principalMinor", 5_000_000, "term", 12, "date", "2026-06-15", "customerAccountId", "SAV-P1",
+                "payoutAccountId", "SAV-P1"), MediaType.APPLICATION_JSON);                                                    // retry
+        try (Connection c = ds.getConnection(); Statement st = c.createStatement();
+             var rs = st.executeQuery("SELECT count(*) FROM scheduler_due WHERE task_key LIKE 'bill:MS-1:%' OR task_key = 'accrue:MS-1'")) {
+            rs.next();
+            assertThat(rs.getLong(1)).isEqualTo(12 + 1);          // keyed tasks: the retry queued nothing more
+        }
         assertThat(http.exchange("/api/v1/masters/MA-1/schedules", HttpMethod.GET,
                 new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), List.class).getBody()).hasSize(1);
         Map<String, Object> facility = call(HttpMethod.GET, "/api/v1/masters/MA-1/facility", "ops", null, MediaType.APPLICATION_JSON);

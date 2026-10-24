@@ -30,9 +30,11 @@ class MasterController {
     private static final String ROLE = "fleet-officer";
 
     private final MasterService masters;
+    private final Lifecycle lifecycle;
 
-    MasterController(MasterService masters) {
+    MasterController(MasterService masters, Lifecycle lifecycle) {
         this.masters = masters;
+        this.lifecycle = lifecycle;
     }
 
     record SignRequest(String id, String party, String currency, long limitMinor, String productCode, int productVersion,
@@ -57,9 +59,11 @@ class MasterController {
     @PostMapping("/{id}/call-offs")
     Loan callOff(Actor actor, @PathVariable String id, @RequestBody CallOffRequest r) {
         actor.require(ROLE);
-        return masters.callOff(id, r.loanId(), r.vehicleClass(), r.assetIds() == null ? List.of() : r.assetIds(),
+        Loan loan = masters.callOff(id, r.loanId(), r.vehicleClass(), r.assetIds() == null ? List.of() : r.assetIds(),
                 money(id, r.principalMinor()), r.term(), r.date() == null ? LocalDate.now() : r.date(), r.customerAccountId(),
                 r.payoutAccountId());
+        lifecycle.onLoanDisbursed(loan);       // queue its billing and accrual like any loan; keyed tasks, so a retry adds none
+        return loan;
     }
 
     @PostMapping("/{id}/collections")
