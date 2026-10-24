@@ -1044,6 +1044,38 @@
     } catch (err) { say('#rpOut', 'warn', err.message); }
   });
 
+  // ---------------------------------------------------------------- Settings: loss allowance (TFRS 9) run and preview
+  var eclPanel = el(
+    '<div class="panel" id="eclPanel"><h2>Loss allowance (TFRS 9)</h2><div>' +
+    '<div class="set-row"><div><h3>Daily run</h3><p>Assesses every loan and books the change in its allowance for today. It needs the bank PD and LGD in the app settings; without them it refuses to run. ' +
+    'Safe to repeat: a loan is booked once per day. Closed and written-off loans have their allowance released.</p></div>' +
+    '<div><button class="btn" type="button" id="eclRun">Run for today</button><div class="result" id="eclRunOut" hidden></div></div></div>' +
+    '<div class="set-row"><div><h3>Preview a loan</h3><p>What the allowance would be today for one loan, without booking anything.</p></div>' +
+    '<form class="form" id="eclPreview" style="min-width:300px"><div class="field"><label for="eclLoan">Loan id</label><input id="eclLoan" autocomplete="off" placeholder="LN-APP1" required></div>' +
+    '<div class="field check"><input id="eclRisk" type="checkbox"><label for="eclRisk">Assume credit risk has increased</label></div>' +
+    '<div class="row"><button class="btn" type="submit">Preview</button></div><div class="result" id="eclPrevOut" hidden></div></form></div>' +
+    '</div></div>');
+  access.after(eclPanel);
+  var pct = function (x) { return (Number(x) * 100).toFixed(2).replace(/\.?0+$/, '') + '%'; };
+  $('#eclRun').addEventListener('click', async function () {
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var r = await api('POST', '/ecl/run?asOf=' + today);
+      var money = Object.keys(r.allowanceByCurrency).map(function (c) { return thb(r.allowanceByCurrency[c]) + ' ' + c; }).join(', ') || 'nothing';
+      say('#eclRunOut', r.failures.length ? 'warn' : 'ok', 'Assessed ' + r.assessed + ' loan' + (r.assessed === 1 ? '' : 's') + ' (stage 1: ' + r.stage1 + ', stage 2: ' + r.stage2 + ', stage 3: ' + r.stage3 + '). ' +
+        r.inactive + ' closed or written-off loan' + (r.inactive === 1 ? '' : 's') + ' released. Allowance held: ' + money + '.' + (r.failures.length ? ' Not booked: ' + r.failures.join('; ') : ''));
+    } catch (e) { say('#eclRunOut', 'warn', e.message); }
+  });
+  $('#eclPreview').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!signedIn()) { toast('Sign in under Settings first'); return; }
+    try {
+      var r = await api('GET', '/ecl/loans/' + encodeURIComponent($('#eclLoan').value.trim()) + '?asOf=' + today + '&riskIncreased=' + $('#eclRisk').checked);
+      say('#eclPrevOut', 'ok', r.loanId + ': ' + r.stage.replace('_', ' ').toLowerCase() + ' · PD ' + pct(r.horizonPd) + ' · LGD ' + pct(r.lgd) + ' · exposure ฿' + thb(r.exposureMinor) +
+        ' · allowance ฿' + thb(r.allowanceMinor) + '.');
+    } catch (err) { say('#eclPrevOut', 'warn', err.message); }
+  });
+
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
 
   async function refresh() {
