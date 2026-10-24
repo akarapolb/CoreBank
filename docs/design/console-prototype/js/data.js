@@ -281,9 +281,6 @@ function lists() {
     "products/catalogue": { cols: ["Product", "Code", "Family", "Version", "Contracts", "State"], rows: [
       [t("Personal loan"), R("PERSONAL_LOAN_STD"), "Lending", "v1", "11", P("good", "Live")], [t("Savings Standard"), R("SAVINGS_STD"), "Deposits", "v1", "9", P("good", "Live")],
       ["Car hire purchase, new", R("CAR_HP_NEW"), "Asset finance", "v3", "4,812", P("good", "Live")], ["Used car hire purchase", R("AUTO_HP_USED"), "Asset finance", "v2", "—", P("info", "In review")]] },
-    "finance/ecl": { cols: ["Loan", "Stage", "Exposure", "PD", "LGD", "Allowance"], rows: [
-      [R("LN-A-C14"), P("crit", "Stage 3"), baht(140000), "100%", "45%", baht(63000)], [R("LN-A-C10"), P("crit", "Stage 3"), baht(LOAN.total), "100%", "45%", baht(LOAN.allowance)],
-      [R("LN-A-C11"), P("warn", "Stage 2"), baht(121128.80), "3.72%", "45%", baht(1960.24)], [R("MS-1"), P("good", "Stage 1"), baht(67219.50), "2.68%", "45%", baht(798.71)]] },
     "finance/gl": { cols: ["GL", "Name", "Type", "Debit", "Credit", "Net"], rows: [
       [R("1300"), "Loans receivable", "Asset", baht(31744120000, 0), "—", baht(31744120000, 0)], [R("1390"), "Loss allowance on loans", "Asset (contra)", "—", baht(1420180000, 0), baht(-1420180000, 0)],
       [R("2310"), "VAT payable", "Liability", "—", baht(48211640, 0), baht(-48211640, 0)], [R("5300"), "Expected credit loss expense", "Expense", baht(18611200, 0), "—", baht(18611200, 0)]] },
@@ -298,7 +295,7 @@ function lists() {
       [who("Wanida Kaewmanee"), "RM, credit-officer", "Customers, Lending, Trade", "12 min", P("good", "On"), P("good", "Active")]] },
     "admin/tenants": { cols: ["Tenant", "Name", "Systems", "Users", "Region", "State"], rows: TENANTS.map((x) => [R(x.mark), esc(t(x.name)), String(x.systems.length), x.id === "commercial" ? "1,240" : x.id === "retail" ? "3,912" : "184", "TH", P("good", "Active")]) },
   };
-  return Object.assign(base, moreLists(), colLists());
+  return Object.assign(base, moreLists(), colLists(), finLists());
 }
 
 // the sections that complete every system
@@ -367,12 +364,6 @@ function moreLists2(W) {
     "products/papprovals": { cols: ["Product", "Version", "Maker", "Needs", "Waiting", "State"], rows: [
       [R("AUTO_HP_USED v2"), "v2", "Krit S.", "Risk ✓ · Compliance", "2 h", P("info", "Waiting for checker")], [R("SAVINGS_STD v2"), "v2", "Krit S.", "Finance · Compliance", "1 day", P("info", "Waiting for checker")],
       [R("TPL-TERM-DEPOSIT v1"), "v1", "Krit S.", "Architecture board", "3 days", P("warn", "Escalated")]] },
-    "finance/recon": { cols: ["Ledger", "GL", "Sub-ledger", "GL balance", "Difference", "State"], rows: [
-      ["Loans", R("1300"), baht(31744120000, 0), baht(31744120000, 0), baht(0), P("good", "Matched")], ["Deposits", R("2100"), baht(48210004112, 0), baht(48210004112, 0), baht(0), P("good", "Matched")],
-      ["Leases", R("1350"), baht(9860220000, 0), baht(9860220000, 0), baht(0), P("good", "Matched")], ["Suspense", R("2990"), baht(0), baht(4200), baht(4200), P("warn", "Review")]] },
-    "finance/reports": { cols: ["Report", "Regulator", "Period", "Due", "Prepared", "State"], rows: [
-      ["Loan data set (DS_LOAN)", "BOT", "Sep 2026", "15 Oct 2026", "Automatic", P("good", "Submitted")], ["Liquidity coverage ratio", "BOT", "Oct 2026", "24 Oct 2026", "Automatic", P("good", "Submitted")],
-      ["Cash transaction report", "AMLO", "Oct 2026", "27 Oct 2026", "Automatic", P("info", "Ready")], ["NPL and provisions", "BOT", "Sep 2026", "15 Nov 2026", "Arunee T.", P("warn", "Drafting")]] },
     "ops/audit": { cols: ["When", "Who", "Action", "Record", "Channel", "Result"], rows: [
       ["24 Oct 2026 09:41", "Ploy C.", "Approved cash deposit", "TX-0123-8840", "Console", P("good", "Done")], ["24 Oct 2026 09:12", "RM copilot", "Proposed restructuring", "TL-2024-000311", "Agent", P("info", "Waiting for checker")],
       ["24 Oct 2026 08:57", "Krit S.", "Submitted product", "AUTO_HP_USED v2", "Console", P("good", "Done")], ["24 Oct 2026 06:00", "Scheduler", "Reconciled sub-ledger to GL", "All ledgers", "System", P("good", "Done")]] },
