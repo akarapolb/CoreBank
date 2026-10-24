@@ -52,8 +52,8 @@
     '</form></div>' +
     '<div class="set-row"><div><h3>Scheduler</h3><p>Queue any billing, accrual or penalty work that is due for active loans and accounts. Safe to repeat.</p></div>' +
     '<div><button class="btn" type="button" id="acBackfill">Run backfill</button><div class="result" id="acBackfillOut" hidden></div></div></div>' +
-    '<div class="set-row"><div><h3>What is live</h3><p>Master Builder and Approvals, Customer 360 and Contracts (look up or create), Ledger (by account), and cash deposits in Branch and teller use the real services. ' +
-    'Fleet and floor plan (open an agreement or a dealer line by id) is live too, with the Assets tab. Overview, Product Studio, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
+    '<div class="set-row"><div><h3>What is live</h3><p>Master Builder and Approvals, Customer 360 and Contracts (look up or create, with collections and repossession), Ledger (by account), and cash deposits in Branch and teller use the real services. ' +
+    'Fleet and floor plan (open an agreement or a dealer line by id) is live too, with the Assets, Leases and Dealers tabs, and Overview shows real totals. The loss allowance run is below, in this screen. Product Studio, Trade finance, Treasury, Syndication, Corporate banking and AI agents still show sample data.</p></div></div>' +
     '</div></div>');
   $('#view-settings .panel').after(access);
 
@@ -1076,6 +1076,44 @@
     } catch (err) { say('#eclPrevOut', 'warn', err.message); }
   });
 
+  // ---------------------------------------------------------------- Overview: real totals instead of the prototype's sample numbers
+  async function loadOverview() {
+    if (!signedIn()) return;
+    try {
+      var o = await api('GET', '/overview?asOf=' + today);
+      var toggle = $('#streamToggle');
+      if (toggle && toggle.textContent.trim() === 'Pause') toggle.click();       // the sample stream writes into the Postings tile this replaces
+      var tiles = $$('#view-overview .kpis .kpi');
+      var tile = function (i, label, value, note) {
+        var k = tiles[i], spk = k.querySelector('.spk');
+        if (spk) spk.remove();                                    // the sparkline is sample data
+        k.querySelector('.label').textContent = label;
+        k.querySelector('.v').textContent = value;
+        if (i === 3) k.querySelector('.v').insertAdjacentHTML('beforeend', '<span id="kpiPostings" hidden></span>');   // the prototype's stream timer writes here
+        k.querySelector('.d').textContent = note;
+      };
+      tile(0, 'Deposits', '฿' + thb(o.depositsMinor), o.depositAccounts + ' account' + (o.depositAccounts === 1 ? '' : 's'));
+      tile(1, 'Loans', '฿' + thb(o.loansOutstandingMinor), o.activeLoans + ' active loan' + (o.activeLoans === 1 ? '' : 's') + ', principal outstanding');
+      tile(2, 'NPL ratio', (o.nplRatio * 100).toFixed(2) + '%', '฿' + thb(o.nonPerformingMinor) + ' at 90+ days or non-accrual');
+      tile(3, 'Overdue loans', String(o.overdueLoans), 'Open Contracts for the collections queue');
+      tile(4, 'Loss allowance held', '฿' + thb(o.lossAllowanceMinor), 'TFRS 9, booked per loan');
+      tile(5, 'Assets without cover', String(o.uninsuredAssets), 'Active assets with no insurance today');
+      $('#spark').closest('.panel').hidden = true;                // sample charts and stream: no real source for them yet
+      $('#stream').closest('.panel').hidden = true;
+      var items = [];
+      var sev = function (cls, icon, title, text) {
+        return '<div class="sev ' + cls + '"><i><svg class="ico"><use href="#' + icon + '"/></svg></i><div><strong>' + esc(title) + '</strong><p class="muted">' + esc(text) + '</p></div></div>';
+      };
+      if (o.overdueLoans > 0) items.push(sev(o.nplRatio > 0 ? 'crit' : 'warn', 'i-alert', o.overdueLoans + ' overdue loan' + (o.overdueLoans === 1 ? '' : 's'), 'Work the queue under Contracts: contacts, promises, and the recommended next step.'));
+      if (o.uninsuredAssets > 0) items.push(sev('warn', 'i-alert', o.uninsuredAssets + ' active asset' + (o.uninsuredAssets === 1 ? '' : 's') + ' without insurance', 'See Needs attention on the Assets tab of Fleet and floor plan.'));
+      if (!items.length) items.push(sev('good', 'i-check', 'Nothing needs attention', 'No overdue loans and every active asset is insured.'));
+      var panel = $$('#view-overview .grid .panel').filter(function (p) { return !p.hidden; })[0];
+      panel.querySelector('.panel-head .label').textContent = (o.overdueLoans > 0 ? 1 : 0) + (o.uninsuredAssets > 0 ? 1 : 0) + ' open';
+      panel.querySelector('.panel-head').nextElementSibling.innerHTML = items.join('');
+    } catch (e) { fail('Load overview')(e); }
+  }
+  window.addEventListener('hashchange', function () { if (location.hash === '#overview') loadOverview(); });
+
   document.addEventListener('submit', function (e) { if (e.target.matches('form.form')) e.preventDefault(); });
 
   async function refresh() {
@@ -1083,6 +1121,7 @@
     if (!signedIn()) return;
     try { await loadApprovals(); } catch (e) { fail('Load approvals')(e); }
     await loadQueue();
+    await loadOverview();
   }
 
   F.live = { active: signedIn, submitProduct: submitProduct };

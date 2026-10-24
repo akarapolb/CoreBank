@@ -225,6 +225,16 @@ class FaborAppTest {
                 new HttpEntity<>(headers("ops", MediaType.APPLICATION_JSON)), Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
 
+        // the console overview: totals read from the services (one account and one 100,000.00 loan so far, nothing overdue)
+        Map<String, Object> overview = call(HttpMethod.GET, "/api/v1/overview?asOf=2026-01-20", "ops", null, MediaType.APPLICATION_JSON);
+        assertThat(((Number) overview.get("depositAccounts")).longValue()).isEqualTo(1L);
+        assertThat(((Number) overview.get("depositsMinor")).longValue()).isEqualTo(9_893_000L);
+        assertThat(((Number) overview.get("activeLoans")).longValue()).isEqualTo(1L);
+        assertThat(((Number) overview.get("loansOutstandingMinor")).longValue()).isEqualTo(10_000_000L);
+        assertThat(((Number) overview.get("nplRatio")).doubleValue()).isZero();
+        assertThat(((Number) overview.get("overdueLoans")).longValue()).isZero();
+        assertThat(((Number) overview.get("lossAllowanceMinor")).longValue()).isZero();
+
         // asset register: order, deliver, insure and put the vehicle under the loan; refusals map to stable statuses
         Map<String, Object> ordered = call(HttpMethod.POST, "/api/v1/assets", "ops", Map.of("id", "A1", "kind", "VEHICLE",
                 "make", "Isuzu", "model", "D-Max", "serialNo", " mpav1234567890 ", "dealerId", "DLR-1", "costMinor", 12_000_000,

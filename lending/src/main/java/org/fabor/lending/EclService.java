@@ -51,6 +51,12 @@ public final class EclService {
         return new AccountId("loan:" + loanId + ":ecl-allowance");
     }
 
+    /** The allowance currently booked against the loan (minor units, in the loan's currency). */
+    public long allowanceHeld(String loanId, LocalDate asOf) {
+        Loan loan = load(loanId);
+        return ledger.balance(tenant, allowanceAcct(loanId), BalanceType.SETTLED, Currency.of(loan.currency()), asOf).minor();
+    }
+
     /** The allowance the loan needs on {@code asOf}. A closed or written-off loan needs none. */
     public ExpectedCreditLoss.Result assess(String loanId, LocalDate asOf, boolean riskIncreased,
                                             ExpectedCreditLoss.Parameters params) {

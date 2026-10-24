@@ -77,6 +77,8 @@ class EclServiceTest {
         assertThat(r.allowance().minor()).isPositive();
         assertThat(bal(EclService.allowanceAcct("L1"))).isEqualTo(r.allowance().minor());
         assertThat(bal(EclService.ECL_EXPENSE)).isEqualTo(-r.allowance().minor());
+        assertThat(ecl.allowanceHeld("L1", D0)).isEqualTo(r.allowance().minor());
+        assertThatThrownBy(() -> ecl.allowanceHeld("NOPE", D0)).isInstanceOf(IllegalArgumentException.class);
         ecl.book("L1", D0, false, PARAMS);                                    // same day again: nothing more
         assertThat(bal(EclService.allowanceAcct("L1"))).isEqualTo(r.allowance().minor());
         assertThat(ecl.book("L1", D0.plusDays(1), true, PARAMS).stage()).isEqualTo(Stage.STAGE_2);
