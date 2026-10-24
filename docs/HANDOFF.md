@@ -32,7 +32,7 @@ The detail of each item, and what each one still lacks, is in the git history an
 
 Lending goes deeper than the other systems (`js/lending.js`):
 - servicing on the home loan LN-77120: prepay, rate review, payment holiday, due date, e-DDA, fee waiver, letters;
-- a new application APP-30416 from product through affordability, decision and e-signature to disbursement;
+- a new application APP-30416 (`js/appform.js`): 166 fields from a catalogue that records each field's source and the reason it is collected, with validation, completeness, documents that follow the answers, and automatic, referred and declined decisions through e-signature and disbursement. `docs/design/loan-application-fields.md` is generated from it as the backend's starting field list;
 - the commercial facility FAC-B2031, with limits across Lending, Trade and Treasury, drawdowns, covenants (the Q3 test breaches DSCR and sets a draw stop), collateral and the annual review;
 - a Lending overview with the pipeline and the book.
 

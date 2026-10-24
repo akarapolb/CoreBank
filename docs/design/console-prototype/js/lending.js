@@ -1,5 +1,4 @@
-// Fabor console prototype · Lending: servicing a home loan, a new application from intake to disbursement,
-// commercial credit facilities with covenants and collateral, and the Lending overview.
+// Fabor console prototype · Lending: servicing a home loan, commercial credit facilities with covenants and collateral, and the Lending overview.
 // Classic scripts sharing one global scope; load order is set in index.html.
 const pmt = (r, n, pv) => (r ? pv * r / (1 - Math.pow(1 + r, -n)) : pv / n);
 // months and interest to repay a balance at a fixed instalment
@@ -186,109 +185,6 @@ Object.assign(FLOWS, {
     done: () => tt("Letter sent.", "ส่งหนังสือแล้ว") }),
 });
 
-/* ---------------- APP-30416: a loan application from intake to disbursement ---------------- */
-const INTAKE_PRODUCTS = {
-  personal: { name: "Personal loan", th: "สินเชื่อส่วนบุคคล", code: "PERSONAL_LOAN_STD v1", rate: 0.15, min: 20000, max: 1000000, step: 10000, tmin: 12, tmax: 60, amount: 300000, term: 48, dsr: 60, auto: 500000, contract: "LN-A-C15" },
-  home: { name: "Home loan", th: "สินเชื่อบ้าน", code: "HOME_STD v3", rate: 0.0555, min: 500000, max: 10000000, step: 50000, tmin: 120, tmax: 360, amount: 2500000, term: 360, dsr: 70, auto: 0, contract: "LN-77302" },
-  car: { name: "Car hire purchase", th: "เช่าซื้อรถยนต์", code: "CAR_HP_NEW v2", rate: 0.0479, min: 200000, max: 2000000, step: 10000, tmin: 24, tmax: 84, amount: 850000, term: 72, dsr: 60, auto: 1500000, contract: "HP-2026-005020" },
-};
-const INTAKE0 = () => ({ product: "personal", amount: 300000, term: 48, income: 85000, decided: null, sent: false, paid: false });
-let INTAKE = INTAKE0();
-const intakeExisting = r2(pmt(0.01, 36, 125000)) + 2000;
-function intakeCalc() {
-  const I = INTAKE, p = INTAKE_PRODUCTS[I.product], inst = r2(pmt(p.rate / 12, I.term, I.amount)), total = r2(inst * I.term);
-  const dsr = (intakeExisting + inst) / I.income * 100, cap = I.product === "personal" ? I.income * 5 : Infinity;
-  const room = p.dsr / 100 * I.income - intakeExisting, maxLoan = Math.max(0, Math.min(cap, room > 0 ? room * (1 - Math.pow(1 + p.rate / 12, -I.term)) / (p.rate / 12) : 0));
-  const age = 31, ageEnd = age + Math.ceil(I.term / 12), ltv = I.product === "home" ? I.amount / 3050000 * 100 : I.product === "car" ? I.amount / 1104000 * 100 : 0;
-  const checks = [[tt(`Debt service ratio up to ${p.dsr}%`, `ภาระหนี้ต่อรายได้ไม่เกิน ${p.dsr}%`), `${dsr.toFixed(1)}%`, dsr <= p.dsr],
-    ...(I.product === "personal" ? [[tt("Up to 5 times monthly income", "ไม่เกิน 5 เท่าของรายได้ต่อเดือน"), baht(cap, 0), I.amount <= cap]] : []),
-    ...(ltv ? [[tt(`Loan to value up to ${I.product === "home" ? 90 : 85}%`, `วงเงินต่อมูลค่าหลักประกันไม่เกิน ${I.product === "home" ? 90 : 85}%`), `${ltv.toFixed(1)}%`, ltv <= (I.product === "home" ? 90 : 85)]] : []),
-    [tt("Age at the end of the loan up to 65", "อายุเมื่อสิ้นสุดสัญญาไม่เกิน 65 ปี"), String(ageEnd), ageEnd <= 65], [tt("Bureau score 600 or more", "คะแนนเครดิตบูโร 600 ขึ้นไป"), "702", true], [tt("No 90-day arrears in 24 months", "ไม่มีค้างชำระ 90 วันใน 24 เดือน"), tt("None", "ไม่มี"), true]];
-  const ok = checks.every((c) => c[2]);
-  return { p, inst, total, interest: r2(total - I.amount), dsr, maxLoan, checks, ok, ltv, auto: ok && I.amount <= p.auto };
-}
-function intakeOut() {
-  const c = intakeCalc(), I = INTAKE;
-  return quoteRows([[t("Instalment"), baht(c.inst)], [tt("Total interest", "ดอกเบี้ยทั้งหมด"), baht(c.interest)], [tt("Total repaid", "ยอดชำระทั้งหมด"), baht(c.total)]]) +
-    `<p class="note" style="margin-top:12px">${esc(I.product === "home" ? tt("The instalment is tested at the floating rate of 5.55%, though the first 3 years are fixed at 2.99%.", "ทดสอบค่างวดที่อัตราลอยตัว 5.55% แม้สามปีแรกคงที่ 2.99%") : tt(`Effective rate ${(c.p.rate * 100).toFixed(2)}% a year on the reducing balance, as the disclosure will show.`, `อัตราดอกเบี้ยที่แท้จริง ${(c.p.rate * 100).toFixed(2)}% ต่อปี แบบลดต้นลดดอก ตามที่แสดงในเอกสารเปิดเผยข้อมูล`))}</p>`;
-}
-function affordOut() {
-  const c = intakeCalc(), tone = c.dsr > c.p.dsr ? "crit" : c.dsr > c.p.dsr * 0.8 ? "warn" : "";
-  return `<div class="bars"><div class="bar-row"><span>${esc(tt("Debt service ratio", "ภาระหนี้ต่อรายได้"))}</span><span class="num">${c.dsr.toFixed(1)}% <span class="muted">/ ${c.p.dsr}%</span></span><div class="bar"><span class="${tone}" style="width:${Math.min(100, c.dsr)}%"></span></div></div></div>
-    <div style="margin-top:14px">${table({ cols: ["Rule", "Applicant", "Result"], rows: c.checks.map(([r, v, ok]) => [r, v, P(ok ? "good" : "crit", ok ? tt("Passes", "ผ่าน") : tt("Fails", "ไม่ผ่าน"))]) }, tt("Credit policy", "นโยบายสินเชื่อ"))}</div>
-    <p class="note" style="margin-top:12px">${esc(tt(`Most she can borrow over ${monthsTh(INTAKE.term).toLowerCase()} at this income: ${baht(Math.floor(c.maxLoan / 1000) * 1000, 0)}.`, `วงเงินสูงสุดใน ${monthsTh(INTAKE.term)} ที่รายได้นี้: ${baht(Math.floor(c.maxLoan / 1000) * 1000, 0)}`))}</p>`;
-}
-function viewIntake() {
-  const def = RECS["APP-30416"], steps = def.tabs, i = Math.max(0, steps.findIndex(([k]) => k === current.tab)), I = INTAKE, c = intakeCalc(), p = c.p;
-  const slider = (id, label, val, min, max, step, show) => `<div class="field"><label for="${id}">${esc(label)}: <b id="${id}V">${esc(show)}</b></label><input type="range" id="${id}" data-intake="${id}" min="${min}" max="${max}" step="${step}" value="${val}" style="accent-color:var(--accent)"></div>`;
-  const content = {
-    product: [tt("What the customer wants", "ลูกค้าต้องการอะไร"), `<div class="choices" role="radiogroup" aria-label="${esc(t("Product"))}">${Object.entries(INTAKE_PRODUCTS).map(([k, x]) => `<button class="choice" type="button" role="radio" aria-checked="${k === I.product}" data-intake-product="${k}"><span class="row">${esc(tt(x.name, x.th))}<span class="tick">${icon("i-check")}</span></span><small>${esc(x.code)} · ${(x.rate * 100).toFixed(2)}%</small></button>`).join("")}</div>
-      <div class="grid-main" style="margin-top:16px"><div style="display:grid;gap:16px">${slider("inAmount", t("Amount"), I.amount, p.min, p.max, p.step, baht(I.amount, 0))}${slider("inTerm", t("Term"), I.term, p.tmin, p.tmax, p.tmin >= 120 ? 12 : 6, monthsTh(I.term))}</div><div id="inOut" aria-live="polite">${intakeOut()}</div></div>`],
-    applicant: [tt("Found by citizen ID: an existing customer", "พบจากเลขบัตรประชาชน: เป็นลูกค้าเดิม"), `<div class="grid-main"><div>${kvHtml([[t("Name"), t("Pimchanok Rattana")], [tt("Party", "รหัสลูกค้า"), "C13"], [tt("Customer since", "เป็นลูกค้าตั้งแต่"), fd(Date.UTC(2026, 9, 15))], ["KYC", tt("Verified with NDID, IAL 2.3", "ยืนยันด้วย NDID IAL 2.3")], [tt("Sanctions and PEP", "รายชื่อคว่ำบาตรและ PEP"), tt(`Clear, screened ${fd(BIZ)}`, `ไม่พบ ตรวจ ${fd(BIZ)}`)], [tt("Work", "อาชีพ"), tt("Salaried, logistics manager, 6 years", "พนักงานประจำ ผู้จัดการโลจิสติกส์ 6 ปี")], [tt("Age", "อายุ"), "31"]])}</div>
-      <div>${notice("good", tt("Nothing to key again", "ไม่ต้องกรอกข้อมูลซ้ำ"), tt("Identity, address and contact come from the customer record. The credit bureau check uses the consent she gave in the app today.", "ข้อมูลตัวตน ที่อยู่ และช่องทางติดต่อมาจากข้อมูลลูกค้า การตรวจเครดิตบูโรใช้ความยินยอมที่ให้ในแอปวันนี้"))}</div></div>`],
-    affordability: [tt("Can she afford it", "ความสามารถในการชำระหนี้"), `<div class="grid-main"><div id="inAfford" aria-live="polite">${affordOut()}</div><div style="display:grid;gap:14px">
-      <div class="field"><label for="inIncome">${esc(tt("Monthly income, verified", "รายได้ต่อเดือน ตรวจแล้ว"))}</label><input class="input money" id="inIncome" data-intake="inIncome" inputmode="decimal" value="${esc(I.income.toLocaleString("en-US"))}"><span class="hint">${esc(tt("From 6 months of statements, read automatically", "จากรายการเดินบัญชี 6 เดือน อ่านอัตโนมัติ"))}</span></div>
-      ${table({ cols: ["Existing debt", "Monthly"], rows: [["LN-A-C13 · " + tt("personal loan, this bank", "สินเชื่อส่วนบุคคล ธนาคารนี้"), baht(intakeExisting - 2000)], [tt("Credit card, from NCB", "บัตรเครดิต จาก NCB"), baht(2000)]] }, tt("Existing debt", "หนี้เดิม"))}</div></div>`],
-    collateral: [tt("Security", "หลักประกัน"), I.product === "personal" ? notice("good", tt("Unsecured: no collateral and no guarantor", "ไม่มีหลักประกัน ไม่ต้องมีผู้ค้ำ"), tt("Priced on the scorecard and the debt service ratio.", "กำหนดราคาจากแบบจำลองคะแนนและภาระหนี้ต่อรายได้"))
-      : I.product === "home" ? kvHtml([[tt("Property", "ทรัพย์"), tt("Condominium, Ratchada, 34 m² · title deed 88120", "คอนโดมิเนียม รัชดา 34 ตร.ม. · โฉนด 88120")], [tt("Purchase price", "ราคาซื้อ"), baht(3200000)], [tt("Appraisal", "ราคาประเมิน"), tt(`${baht(3050000)} · bank's panel appraiser, 21 Oct 2026`, `${baht(3050000)} · ผู้ประเมินในบัญชีของธนาคาร 21 ต.ค. 2569`)], ["LTV", `${c.ltv.toFixed(1)}%`], [tt("Charge", "การจดทะเบียน"), tt("First-rank mortgage at the Land Office on transfer day", "จำนองลำดับแรกที่สำนักงานที่ดินในวันโอน")], [tt("Fire insurance", "ประกันอัคคีภัย"), tt("Required; any insurer the customer chooses", "จำเป็น เลือกบริษัทประกันได้เอง")]])
-      : kvHtml([[t("Vehicle"), "Toyota Corolla Cross HEV, 2026"], [tt("Cash price", "ราคาเงินสด"), baht(1104000)], [tt("Down payment", "เงินดาวน์"), baht(1104000 - I.amount)], ["LTV", `${c.ltv.toFixed(1)}%`], [tt("Title", "กรรมสิทธิ์"), tt("Stays with the bank until the last instalment", "เป็นของธนาคารจนชำระงวดสุดท้าย")], [tt("Dealer", "ดีลเลอร์"), t("Bangna Motors")]])],
-    documents: [tt("Documents", "เอกสาร"), `<div class="list">${[[tt("Citizen ID, checked with DOPA", "บัตรประชาชน ตรวจกับกรมการปกครอง"), true], [tt("Bank statements, 6 months", "รายการเดินบัญชี 6 เดือน"), true], [tt("Payslip, last month", "สลิปเงินเดือนล่าสุด"), true],
-      ...(I.product === "home" ? [[tt("Sale and purchase agreement", "สัญญาจะซื้อจะขาย"), true], [tt("Title deed copy", "สำเนาโฉนด"), false]] : I.product === "car" ? [[tt("Dealer's quotation", "ใบเสนอราคาจากดีลเลอร์"), true]] : [])]
-      .map(([d, ok]) => `<div class="li"><span class="sev ${ok ? "good" : "warn"}">${icon(ok ? "i-check" : "i-alert")}</span><div><strong>${esc(d)}</strong><p>${esc(ok ? tt("Received and read", "ได้รับและอ่านแล้ว") : tt("Asked for in the app", "ขอผ่านแอปแล้ว"))}</p></div></div>`).join("")}</div>`],
-    decision: [tt("Decision", "ผลการพิจารณา"), I.decided ? notice(I.decided.ok ? "good" : "info", I.decided.text, I.decided.sub)
-      : `${kvHtml([[t("Product"), tt(p.name, p.th)], [t("Amount"), baht(I.amount)], [t("Term"), monthsTh(I.term)], [t("Instalment"), baht(c.inst)], [tt("Debt service ratio", "ภาระหนี้ต่อรายได้"), `${c.dsr.toFixed(1)}%`], [tt("Policy", "นโยบาย"), c.ok ? tt("All rules pass", "ผ่านทุกข้อ") : tt("One or more rules fail", "ไม่ผ่านบางข้อ")]])}<div class="actions" style="margin-top:14px"><button class="btn primary" type="button" data-flow="appSubmit">${esc(tt("Submit for decision", "ส่งพิจารณา"))}</button></div>`],
-    offer: [tt("Offer and signature", "ข้อเสนอและการลงนาม"), !I.decided || !I.decided.ok ? `<div class="state"><span class="sev info">${icon("i-clock")}</span><strong>${esc(tt("Opens once the application is approved", "เปิดเมื่ออนุมัติใบสมัครแล้ว"))}</strong></div>`
-      : `<div class="grid-main"><div>${kvHtml([[t("Product"), `${tt(p.name, p.th)} · ${p.code}`], [t("Amount"), baht(I.amount)], [t("Term"), monthsTh(I.term)], [t("Instalment"), baht(c.inst)], [tt("Effective rate", "อัตราดอกเบี้ยที่แท้จริง"), I.product === "home" ? tt("2.99% for 3 years, then MRR − 1.75%", "2.99% สามปี จากนั้น MRR − 1.75%") : `${(p.rate * 100).toFixed(2)}%`], [tt("Total interest", "ดอกเบี้ยทั้งหมด"), baht(c.interest)], [tt("Fees", "ค่าธรรมเนียม"), I.product === "home" ? tt("Mortgage registration 1% at the Land Office; no bank fee", "ค่าจดจำนอง 1% ที่สำนักงานที่ดิน ไม่มีค่าธรรมเนียมธนาคาร") : tt("None", "ไม่มี")], [tt("Insurance", "ประกัน"), tt("Optional; never a condition of the loan", "เป็นทางเลือก ไม่ใช่เงื่อนไขของสินเชื่อ")]])}</div>
-        <div>${I.paid ? notice("good", tt(`Paid. Contract ${p.contract} is open.`, `จ่ายเงินแล้ว เปิดสัญญา ${p.contract}`), tt("The first instalment is due on 25 Nov 2026.", "ค่างวดแรกครบกำหนด 25 พ.ย. 2569"))
-          : I.sent ? `${notice("good", tt("Signed in the app with NDID at 10:44", "ลงนามในแอปด้วย NDID เวลา 10:44"), tt("The key facts sheet was shown before signing and is kept with the contract.", "แสดงเอกสารสรุปข้อมูลสำคัญก่อนลงนาม และเก็บไว้กับสัญญา"))}<div class="actions" style="margin-top:14px"><button class="btn primary" type="button" data-flow="appDisburse">${esc(tt("Disburse", "จ่ายเงิน"))}</button></div>`
-          : `<p class="muted">${esc(tt("The key facts sheet and the contract go to the customer's app to read and sign.", "เอกสารสรุปข้อมูลสำคัญและสัญญาส่งไปที่แอปของลูกค้าเพื่ออ่านและลงนาม"))}</p><div class="actions" style="margin-top:14px"><button class="btn primary" type="button" data-flow="appOffer">${esc(tt("Send to sign", "ส่งให้ลงนาม"))}</button></div>`}</div></div>`],
-  };
-  const [title, body] = content[steps[i][0]];
-  const last = i === steps.length - 1;
-  return `<button class="back" type="button" data-go="lending/applications">${icon("i-back")}${esc(t("Applications"))}</button>
-    <div class="head"><div>${eyebrow(sysById.lending, "APP-30416")}<h1 class="title">${esc(tt(`New application: ${tt(p.name, p.th).toLowerCase()}`, `ใบสมัครใหม่: ${p.th}`))}</h1><p class="lede">${esc(tt("Pimchanok Rattana · started by Ploy C. at 10:31 · each step saves as you go", "พิมพ์ชนก รัตนะ · เริ่มโดยพลอย ช. เวลา 10:31 · บันทึกทุกขั้นตอน"))}</p></div><div class="actions"><button class="btn" type="button" data-intake-reset>${esc(tt("Start again", "เริ่มใหม่"))}</button></div></div>
-    <div class="steps" style="padding:0;border:0" aria-label="${esc(tt("Steps", "ขั้นตอน"))}">${steps.map(([k, l], n) => `<button class="step ${n === i ? "on" : n < i ? "done" : ""}" type="button" data-tab="${k}" style="border:0;background:transparent;padding:0" ${n === i ? 'aria-current="step"' : ""}><b>${n < i ? "✓" : n + 1}</b>${esc(t(l))}</button>`).join("")}</div>
-    ${card(title, body)}
-    <div class="actions" style="justify-content:flex-end">${i > 0 ? `<button class="btn" type="button" data-tab="${steps[i - 1][0]}">${esc(t("Back"))}</button>` : ""}${!last ? `<button class="btn primary" type="button" data-tab="${steps[i + 1][0]}">${esc(t("Next"))}</button>` : ""}</div>`;
-}
-Object.assign(FLOWS, {
-  appSubmit: () => ({ title: tt("Submit for decision", "ส่งพิจารณา"), sub: "APP-30416 · " + t("Pimchanok Rattana"), init: {}, fields: () => `<p class="muted">${esc(tt("The decision engine runs the credit policy and the scorecard now.", "ระบบตัดสินใจตรวจนโยบายสินเชื่อและแบบจำลองคะแนนทันที"))}</p>`, read: () => "",
-    review: (d) => { const c = intakeCalc(), I = INTAKE; d.c = c;
-      if (!c.ok) return { html: notice("crit", tt("Outside credit policy", "อยู่นอกนโยบายสินเชื่อ"), c.checks.filter((x) => !x[2]).map((x) => `${x[0]}: ${x[1]}`).join(" · ")) + `<p class="consequence">${esc(tt("Go back and lower the amount or lengthen the term. Declining instead tells her the main reason, as responsible lending requires.", "ย้อนกลับไปลดวงเงินหรือขยายระยะเวลา หากปฏิเสธจะแจ้งเหตุผลหลักให้ลูกค้าตามหลักการให้สินเชื่ออย่างรับผิดชอบ"))}</p>`, blocked: true };
-      if (c.auto) return { html: notice("good", tt("Within the automatic approval band", "อยู่ในเกณฑ์อนุมัติอัตโนมัติ"), tt(`Score 702, all rules pass, ${baht(I.amount, 0)} is within ${baht(c.p.auto, 0)}.`, `คะแนน 702 ผ่านทุกข้อ ${baht(I.amount, 0)} อยู่ในวงเงิน ${baht(c.p.auto, 0)}`)) + `<p class="consequence">${esc(tt("Approves the application now, with no condition. The offer is ready to send.", "อนุมัติใบสมัครทันทีโดยไม่มีเงื่อนไข พร้อมส่งข้อเสนอ"))}</p>`, confirm: tt("Submit", "ส่ง") };
-      return { html: notice("info", tt("Needs a credit decision by a person", "ต้องให้เจ้าหน้าที่พิจารณา"), I.product === "home" ? tt("Home loans are always decided by a credit officer.", "สินเชื่อบ้านพิจารณาโดยเจ้าหน้าที่สินเชื่อเสมอ") : tt(`Above the automatic band of ${baht(c.p.auto, 0)}.`, `เกินเกณฑ์อนุมัติอัตโนมัติ ${baht(c.p.auto, 0)}`)) + `<p class="consequence">${esc(tt("All rules pass. The recommendation is to approve.", "ผ่านทุกข้อ คำแนะนำคืออนุมัติ"))}</p>`, confirm: tt("Approve", "อนุมัติ"), auth: ["credit", I.amount] }; },
-    done: (d) => { if (!INTAKE.decided) { const pending = d.auth && !d.auth.ok;
-        INTAKE.decided = pending ? { ok: false, text: tt(`With the ${d.auth.second.toLowerCase()} for a decision`, `อยู่ระหว่าง${t(d.auth.second)}พิจารณา`), sub: tt("Target: 4 working hours. The customer sees the progress in the app.", "เป้าหมาย 4 ชั่วโมงทำการ ลูกค้าเห็นความคืบหน้าในแอป") }
-          : { ok: true, text: d.c.auto ? tt("Approved automatically in 2 seconds", "อนุมัติอัตโนมัติใน 2 วินาที") : tt("Approved within your authority", "อนุมัติภายในอำนาจของคุณ"), sub: tt("The offer is ready to send for signature.", "ข้อเสนอพร้อมส่งให้ลงนาม") };
-        setTimeout(render, 0); }
-      return INTAKE.decided.text; } }),
-  appOffer: () => ({ title: tt("Send to sign", "ส่งให้ลงนาม"), sub: "APP-30416 · " + t("Pimchanok Rattana"), init: {}, fields: () => kvHtml([[tt("To", "ถึง"), tt("Pimchanok's app, with a push notification", "แอปของคุณพิมพ์ชนก พร้อมการแจ้งเตือน")], [tt("Signs with", "ลงนามด้วย"), "NDID"], [tt("Offer valid", "ข้อเสนอมีผล"), tt("7 days", "7 วัน")]]), read: () => "",
-    review: () => ({ html: `<p class="consequence">${esc(tt("Sends the key facts sheet and the contract. She must open the key facts before she can sign.", "ส่งเอกสารสรุปข้อมูลสำคัญและสัญญา ลูกค้าต้องเปิดอ่านเอกสารสรุปก่อนจึงลงนามได้"))}</p>`, confirm: tt("Send", "ส่ง") }),
-    done: () => { if (!INTAKE.sent) { INTAKE.sent = true; setTimeout(render, 0); } return tt("Sent. In this concept she signs at once.", "ส่งแล้ว ในต้นแบบนี้ลูกค้าลงนามทันที"); } }),
-  appDisburse: () => { const p = INTAKE_PRODUCTS[INTAKE.product], to = INTAKE.product === "personal" ? "SAV-C13" : INTAKE.product === "car" ? "CUR-D0007 · " + t("Bangna Motors") : tt("The seller, by cashier's cheque at the Land Office", "ผู้ขาย ด้วยแคชเชียร์เช็คที่สำนักงานที่ดิน");
-    return { title: tt("Disburse", "จ่ายเงิน"), sub: `APP-30416 → ${p.contract}`, init: {}, fields: () => kvHtml([[tt("To", "ถึง"), to], [t("Amount"), baht(INTAKE.amount)]]), read: () => "",
-      review: () => ({ html: `<p class="consequence">${tt(`Pays <b>${baht(INTAKE.amount)}</b> to ${esc(to)} and opens ${p.contract} with ${INTAKE.term} instalments. The ledger, the GL and the customer's app update at once.`, `จ่าย <b>${baht(INTAKE.amount)}</b> ให้ ${esc(to)} และเปิดสัญญา ${p.contract} ${INTAKE.term} งวด บัญชีแยกประเภท GL และแอปของลูกค้าอัปเดตทันที`)}</p>`, confirm: tt("Disburse", "จ่ายเงิน"), auth: ["payout", INTAKE.amount] }),
-      done: (d) => { if (!(d.auth && !d.auth.ok) && !INTAKE.paid) { INTAKE.paid = true; setTimeout(render, 0); } return tt(`Paid. ${p.contract} is open.`, `จ่ายเงินแล้ว เปิดสัญญา ${p.contract}`); } }; },
-});
-document.addEventListener("click", (e) => {
-  const el = e.target.closest("[data-intake-product], [data-intake-reset]");
-  if (!el) return;
-  if (el.dataset.intakeReset !== undefined) { INTAKE = INTAKE0(); current.tab = "product"; render(); return; }
-  const p = INTAKE_PRODUCTS[el.dataset.intakeProduct];
-  Object.assign(INTAKE, { product: el.dataset.intakeProduct, amount: p.amount, term: p.term, decided: null, sent: false, paid: false });
-  render(); $(`[data-intake-product="${el.dataset.intakeProduct}"]`)?.focus();
-});
-document.addEventListener("input", (e) => {
-  const k = e.target.dataset.intake;
-  if (!k) return;
-  if (k === "inAmount") { INTAKE.amount = +e.target.value; $("#inAmountV").textContent = baht(INTAKE.amount, 0); }
-  if (k === "inTerm") { INTAKE.term = +e.target.value; $("#inTermV").textContent = monthsTh(INTAKE.term); }
-  if (k === "inIncome") { const v = parseMoney(e.target.value); if (!isNaN(v) && v > 0) INTAKE.income = v; }
-  INTAKE.decided = null; INTAKE.sent = false; INTAKE.paid = false;
-  if ($("#inOut")) $("#inOut").innerHTML = intakeOut();
-  if ($("#inAfford")) $("#inAfford").innerHTML = affordOut();
-});
-
 /* ---------------- FAC-B2031: credit facilities for Siam Freight Logistics ---------------- */
 const FAC = {
   limit: 120000000, review: Date.UTC(2026, 10, 30),
@@ -412,8 +308,6 @@ function viewLendingOverview() {
 Object.assign(RECS, {
   "LN-77120": { sys: "lending", sec: "loans", label: "LN-77120", kind: "Home loan", match: ["LN-77120"], view: () => viewHome(),
     tabs: [["summary", "Summary"], ["schedule", "Schedule", 18], ["payments", "Payments", 8], ["servicing", "Servicing"], ["letters", "Letters", 4]] },
-  "APP-30416": { sys: "lending", sec: "applications", label: "APP-30416", kind: "Loan application", match: ["APP-30416"], view: () => viewIntake(),
-    tabs: [["product", "Product"], ["applicant", "Applicant"], ["affordability", "Affordability"], ["collateral", "Security"], ["documents", "Documents"], ["decision", "Decision"], ["offer", "Offer and signature"]] },
   "FAC-B2031": { sys: "lending", sec: "facilities", label: "FAC-B2031", kind: "Credit facilities", match: ["FAC-B2031"], view: () => viewFacility(),
     tabs: [["limits", "Limits", 5], ["drawdowns", "Drawdowns"], ["covenants", "Covenants", 5], ["collateral", "Collateral", 4], ["review", "Annual review"]] },
 });

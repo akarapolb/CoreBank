@@ -638,3 +638,19 @@ textarea.input { padding: 10px 12px; min-height: 84px; resize: vertical; }
   .actions { width: 100%; }
   .tl { grid-template-columns: 58px 14px minmax(0, 1fr); gap: 10px; }
 }
+
+/* application form: sections of fields, where each value came from, and what is required */
+.form-sec + .form-sec { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 18px; }
+.form-sec > h3 { font-size: 14px; font-weight: 600; margin: 0 0 4px; display: flex; gap: 6px; align-items: center; }
+.form-sec > p { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+.form-sec > h3 + .form-grid, .form-sec > h3 + .choices { margin-top: 12px; }
+.form-grid { display: grid; gap: 14px 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+.form-grid .wide { grid-column: 1 / -1; }
+.req { color: var(--crit); }
+.src-tag { font-size: 10.5px; font-weight: 500; color: var(--info); background: var(--info-soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; font-weight: 400; cursor: pointer; }
+.check input { margin-top: 3px; width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+textarea.input { min-height: 84px; padding: 10px 12px; resize: vertical; }
+.input:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
+.sticky { position: sticky; top: 16px; align-self: start; }
+.step .count { font-size: 10.5px; margin-left: 4px; }

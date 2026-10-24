@@ -11,7 +11,9 @@ A clickable prototype of the staff console across every Fabor system, used to ag
 | `js/views.js` | Charts and the shared views: overview, list, Workbench, approvals, Customer 360 |
 | `js/records.js` | Record pages, analytics, branch, settings, exceptions, close, customer app, branding, AML, held payment, loan application, before and after, what-if |
 | `js/flows.js` | Action dialogs: enter, review and confirm (with the authority check), done |
-| `js/lending.js` | Lending in depth: servicing on the home loan LN-77120, a new application from product to disbursement, the commercial facility FAC-B2031 with covenants and collateral, and the Lending overview |
+| `js/lending.js` | Lending in depth: servicing on the home loan LN-77120, the commercial facility FAC-B2031 with covenants and collateral, and the Lending overview |
+| `js/appform.js` | The loan application APP-30416: a field catalogue (166 fields, each with its source and the reason it is collected) that drives the form, its checks, the document list and the review, through decision, e-signature and disbursement |
+| `tools/application-fields.mjs` | Prints the catalogue as [`../loan-application-fields.md`](../loan-application-fields.md); run it with `node` after changing the form |
 | `js/shell.js` | Side panels, sign-in, tour, presenter mode, live feel, rendering and events; starts the app |
 | `demo-script.md` | How to present it to a bank |
 | `build-offline.py` | Builds `offline/fabor-console.html`, one file with fonts inlined, for rooms without internet |
