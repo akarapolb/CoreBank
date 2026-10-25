@@ -110,6 +110,8 @@ Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts f
 - **Vehicle hire purchase in Thailand** may not be quoted flat (Contract Committee notification from 10 January 2023; BOT supervision since Notification 55/2568). Vehicle products use `ANNUITY` plus the rule pack; flat rate suits non-vehicle hire purchase. The primary texts were not read; confirm with counsel.
 - A stale app holding the database makes `drop database` fail silently. `pkill -f` can kill your own shell; use pid files.
 
+**Engineering specs** (`docs/design/specs/`): one spec per area (00 cross-cutting, 01–11) describing screens, fields, actions with their rules and approvals, configurable values and acceptance criteria, each action mapped to an existing core endpoint or marked **New**; generated inventories of the core API and of the prototype; and `backlog.md`, which groups every New item into twelve slices, lists nine decisions where the prototype and the core disagree, and twelve fixes to make in the prototype. Use them as the backlog for the production console; the slices replace the order below where they conflict.
+
 ## Next steps (recommended order; confirm with the user first)
 
 1. **React console milestone 2: the shell.** Port the prototype's frame into `web/`:
