@@ -1,6 +1,6 @@
 # Prototype inventory
 
-Generated on 25 Oct 2026 from the running console prototype (`docs/design/console-prototype`), all 23 scripts loaded. It lists what the specs in this folder describe: the systems and sections, every record page, every action (flow) and the file that defines it, and the authority matrix the actions are checked against.
+Generated on 26 Oct 2026 from the running console prototype (`docs/design/console-prototype`), all 23 scripts loaded. It lists what the specs in this folder describe: the systems and sections, every record page, every action (flow) and the file that defines it, and the authority matrix the actions are checked against.
 
 ## Roles
 
@@ -12,35 +12,37 @@ Generated on 25 Oct 2026 from the running console prototype (`docs/design/consol
 | `product` | Krit Sombat | Product maker |
 | `finance` | Arunee Thongdee | Finance controller |
 | `teller` | Somsak Jaidee | Teller · Branch 0123 |
+| `manager` | Rattikorn Boonsri | Branch manager · Branch 0123 |
 
 ## Authority matrix
 
-An action above the person's limit goes to the second approver named on the right. `—` means no authority of their own (always sent on). Values are samples for the bank to set in the credit and operations policy.
+An action above the person's limit goes to the second approver named on the right. `—` means no authority of their own (always sent on). For `credit` the officer's limit comes from the credit policy's levels and the second approver is named by amount: credit officer, head of retail credit (to ฿10m), credit committee. Values are samples for the bank to set in the credit and operations policy.
 
-| Action key | What it covers | `ops` | `collector` | `credit` | `product` | `finance` | `teller` | Second approver |
-|---|---|---|---|---|---|---|---|---|
-| `credit` | Credit approval | — | — | ฿2,000,000 | — | — | — | Credit officer |
-| `settle` | Early settlement | ฿2,000,000 | — | ฿5,000,000 | — | — | ฿1,000,000 | Credit officer |
-| `payout` | Payouts and dealer payoffs | ฿5,000,000 | — | — | — | ฿10,000,000 | — | Head of operations |
-| `cash` | Cash at the counter | ฿2,000,000 | — | — | — | — | ฿500,000 | Branch manager |
-| `restructure` | Restructuring | — | — | ฿5,000,000 | — | — | — | Credit committee |
-| `fx` | FX deals | — | — | — | — | — | — | Head of dealing |
-| `journal` | Manual journals | ฿1,000,000 | — | — | — | ฿50,000,000 | — | Finance controller |
-| `service` | Loan servicing changes | ฿5,000,000 | — | ฿20,000,000 | — | — | — | Credit officer |
-| `waive` | Fee waivers | ฿5,000 | — | ฿20,000 | — | — | ฿500 | Head of operations |
-| `drawdown` | Drawdowns within approved limits | ฿20,000,000 | — | ฿50,000,000 | — | — | — | Head of operations |
-| `waiver` | Covenant waivers | — | — | ฿50,000,000 | — | — | — | Credit committee |
-| `hardship` | Hardship programmes | — | ฿150,000 | ฿2,000,000 | — | — | — | Collections manager |
-| `writeoff` | Write-offs and debt sales | — | — | ฿200,000 | — | — | — | Chief credit officer |
-| `override` | Decisions against a risk score | — | — | — | — | — | — | Head of retail credit |
-| `limit` | Temporary limit increases | — | — | ฿10,000,000 | — | — | — | Head of retail credit |
-| `trade` | Trade payments and claims | ฿100,000,000 | — | — | — | — | — | Head of trade operations |
-| `rtgs` | Large-value transfers | ฿50,000,000 | — | — | — | ฿500,000,000 | — | Head of operations |
-| `alco` | Contingency funding actions | — | — | — | — | — | — | Asset and liability committee chair |
-| `agency` | Agency distributions | ฿1,000,000,000 | — | — | — | — | — | Head of loan agency |
-| `cashin` | Large cash deposits | ฿10,000,000 | — | — | — | — | ฿1,999,999 | Branch manager |
-| `overshort` | Teller differences | ฿1,000 | — | — | — | — | — | Branch manager |
-| `branchclose` | Closing the branch day | ฿1 | — | — | — | — | — | Branch manager |
+| Action key | What it covers | `ops` | `collector` | `credit` | `product` | `finance` | `teller` | `manager` | Second approver |
+|---|---|---|---|---|---|---|---|---|---|
+| `credit` | Credit approval | — | — | ฿2,000,000 | — | — | — | — | by amount (see above) |
+| `settle` | Early settlement | ฿2,000,000 | — | ฿5,000,000 | — | — | ฿1,000,000 | ฿1,000,000 | Credit officer |
+| `payout` | Payouts and dealer payoffs | ฿5,000,000 | — | — | — | ฿10,000,000 | — | — | Head of operations |
+| `cash` | Cash at the counter | ฿2,000,000 | — | — | — | — | ฿500,000 | ฿5,000,000 | Branch manager |
+| `restructure` | Restructuring | — | — | ฿5,000,000 | — | — | — | — | Credit committee |
+| `fx` | FX deals | — | — | — | — | — | — | — | Head of dealing |
+| `journal` | Manual journals | ฿1,000,000 | — | — | — | ฿50,000,000 | — | — | Finance controller |
+| `service` | Loan servicing changes | ฿5,000,000 | — | ฿20,000,000 | — | — | — | — | Credit officer |
+| `waive` | Fee waivers | ฿5,000 | — | ฿20,000 | — | — | ฿500 | ฿5,000 | Head of operations |
+| `drawdown` | Drawdowns within approved limits | ฿20,000,000 | — | ฿50,000,000 | — | — | — | — | Head of operations |
+| `waiver` | Covenant waivers | — | — | ฿50,000,000 | — | — | — | — | Credit committee |
+| `hardship` | Hardship programmes | — | ฿150,000 | ฿2,000,000 | — | — | — | — | Collections manager |
+| `writeoff` | Write-offs and debt sales | — | — | ฿200,000 | — | — | — | — | Chief credit officer |
+| `closesign` | Closing the month | — | — | — | — | — | — | — | Chief financial officer |
+| `override` | Decisions against a risk score | — | — | — | — | — | — | — | Head of retail credit |
+| `limit` | Temporary limit increases | — | — | ฿10,000,000 | — | — | — | — | Head of retail credit |
+| `trade` | Trade payments and claims | ฿100,000,000 | — | — | — | — | — | — | Head of trade operations |
+| `rtgs` | Large-value transfers | ฿50,000,000 | — | — | — | ฿500,000,000 | — | — | Head of operations |
+| `alco` | Contingency funding actions | — | — | — | — | — | — | — | Asset and liability committee chair |
+| `agency` | Agency distributions | ฿1,000,000,000 | — | — | — | — | — | — | Head of loan agency |
+| `cashin` | Large cash deposits | — | — | — | — | — | ฿1,999,999 | ฿10,000,000 | Branch manager |
+| `overshort` | Teller differences | — | — | — | — | — | — | ฿1,000 | Branch manager |
+| `branchclose` | Closing the branch day | — | — | — | — | — | — | ฿1 | Branch manager |
 
 ## Systems and sections
 
@@ -138,7 +140,7 @@ An action above the person's limit goes to the second approver named on the righ
 
 ## Actions (flows)
 
-121 actions, each a three-step dialog: enter, review and confirm, done. The review step states the consequence and, where an action key applies, checks the authority matrix.
+123 actions, each a three-step dialog: enter, review and confirm, done. The review step states the consequence and, where an action key applies, checks the authority matrix.
 
 | Flow | Defined in |
 |---|---|
@@ -146,6 +148,8 @@ An action above the person's limit goes to the second approver named on the righ
 | `appOffer` | appform.js |
 | `appSubmit` | appform.js |
 | `approveProduct` | flows.js |
+| `bgAmend` | trade.js |
+| `bgClaim` | trade.js |
 | `bgDecide` | trade.js |
 | `bgNotify` | trade.js |
 | `bnApprove` | payments.js |
@@ -184,7 +188,7 @@ An action above the person's limit goes to the second approver named on the righ
 | `dsbSend` | disbursement.js |
 | `dsbWaive` | disbursement.js |
 | `eclOverlay` | finance.js |
-| `eclRun` | finance.js, flows.js |
+| `eclRun` | finance.js |
 | `ewClassify` | corporate.js |
 | `ewFreeze` | corporate.js |
 | `facDraw` | lending.js |

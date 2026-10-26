@@ -25,12 +25,18 @@ function eclLoans() {
   if (INTAKE.paid) add(INTAKE_PRODUCTS[INTAKE.product].contract, t("Pimchanok Rattana"), 1, num(INTAKE.f.amount), 0.025, INTAKE.product === "home" ? 0.15 : 0.7, tt("New this month", "ใหม่เดือนนี้"));
   return out;
 }
+// BOT loan classification by days past due (the prototype's reading): the NPL ratio counts substandard or worse, whatever the stage
+const DPD = () => ({ "LN-A-C10": 144, "LN-A-C11": MALC.accepted ? 0 : MAL.dpd, "LN-A-C14": 135 });
+const botClass = (id) => { const d = DPD()[id] || 0; return d > 360 ? "Doubtful of loss" : d > 180 ? "Doubtful" : d > 90 ? "Substandard" : d > 30 ? "Special mention" : "Pass"; };
+const isNpl = (id) => ["Substandard", "Doubtful", "Doubtful of loss"].includes(botClass(id));
 function eclRunCalc() {
   const loans = eclLoans(), scale = macro() / MACRO_BOARD, stages = ECL_BASE.map(([s, ead, al]) => ({ s, ead, al: r2((s === 3 ? al : al * scale)) }));
   for (const l of loans) { const st = stages[l.stage - 1]; st.ead += l.ead; st.al = r2(st.al + l.ecl); }
   const overlays = ECLS.overlays.filter((o) => o.state === "approved").reduce((s, o) => s + o.amount, 0), model = r2(stages.reduce((s, x) => s + x.al, 0)), required = r2(model + overlays);
   return { loans, stages, overlays, model, required, held: ECLS.posted ? ECLS.postedAmount : ECL_HELD, topup: r2(required - (ECLS.posted ? ECLS.postedAmount : ECL_HELD)), ead: stages.reduce((s, x) => s + x.ead, 0) };
 }
+ACTIONS.push(["closesign", "Closing the month", "Chief financial officer"]);
+let closeSent = false;
 const bn = (v) => `฿${(v / 1e9).toFixed(2)}bn`, mn = (v) => `฿${(v / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}m`;
 function viewEcl() {
   const c = eclRunCalc(), s3 = c.stages[2];
@@ -108,7 +114,7 @@ Object.assign(FLOWS, {
 });
 
 /* ---------------- DS-LOAN-2026-10: the loan data set for the BOT ---------------- */
-const RPT = { fix: {}, generated: false, preparer: null, submitted: false };
+const RPT = { fix: {}, prop: {}, generated: false, preparer: null, submitted: false };
 function rptRules() {
   const c = eclRunCalc();
   return [{ k: "gl1300", en: "Outstanding balances agree with GL 1300", th: "ยอดคงค้างตรงกับ GL 1300", ok: true },
@@ -121,13 +127,13 @@ function rptRules() {
 }
 const rptReady = () => rptRules().every((r) => r.ok);
 function viewRpt() {
-  const rules = rptRules(), fails = rules.filter((r) => !r.ok), c = eclRunCalc(), npl = c.stages[2].ead / c.ead * 100;
+  const rules = rptRules(), fails = rules.filter((r) => !r.ok), c = eclRunCalc(), npl = (ECL_BASE[2][1] + c.loans.filter((l) => isNpl(l.id)).reduce((a, l) => a + l.ead, 0)) / c.ead * 100;
   return recordPage({ title: "DS-LOAN-2026-10", mono: true, lede: esc(tt("Loan data set for the BOT · October 2026 · due 15 Nov 2026 · one row per contract", "ชุดข้อมูลสินเชื่อนำส่ง ธปท. · ตุลาคม 2569 · ครบกำหนด 15 พ.ย. 2569 · หนึ่งแถวต่อสัญญา")),
     pills: RPT.submitted ? P("good", "Submitted") : fails.length ? P("crit", tt(`${fails.length} validation errors`, `ผิดพลาด ${fails.length} รายการ`)) : RPT.generated ? P("info", tt("Generated, waiting for checker", "สร้างไฟล์แล้ว รอผู้ตรวจ")) : P("good", tt("Validated", "ตรวจสอบผ่าน")),
     actions: RPT.submitted ? "" : RPT.generated ? `<button class="btn primary" type="button" data-flow="rptSubmit">${esc(tt("Approve and submit", "อนุมัติและนำส่ง"))}</button>` : `<button class="btn primary" type="button" data-flow="rptGenerate" ${fails.length ? "disabled" : ""}>${esc(tt("Generate the file", "สร้างไฟล์"))}</button>`,
-    facts: [[tt("Contracts", "สัญญา"), "214,880"], [tt("Gross NPL ratio", "อัตรา NPL ขั้นต้น"), `${npl.toFixed(2)}%`], [tt("Allowance", "ค่าเผื่อ"), mn(c.required)], [tt("Rules passed", "ผ่านกฎ"), `${rules.filter((r) => r.ok).length} / ${rules.length}`, fails.length ? "crit" : ""], [tt("Due", "ครบกำหนด"), fd(Date.UTC(2026, 10, 15))]],
-    panels: { validation: () => `<section class="card"><div class="card-body"><div class="list">${rules.map((r) => `<div class="li"><span class="sev ${r.ok ? (r.warn ? "info" : "good") : "crit"}">${icon(r.ok ? "i-check" : "i-alert")}</span><div><strong>${esc(tt(r.en, r.th))}</strong>${!r.ok ? `<p>${esc(r.why)}</p>` : r.warn ? `<p>${esc(r.warn)}</p>` : ""}</div>${r.ok ? "" : r.fix ? `<button class="btn row-btn primary" type="button" data-rpt-fix="${r.fix}" style="margin-left:auto">${esc(tt("Fix the data", "แก้ไขข้อมูล"))}</button>` : `<button class="btn row-btn" type="button" data-go="${r.go}" style="margin-left:auto">${esc(tt("Open", "เปิด"))}</button>`}</div>`).join("")}</div></div></section><p class="note">${esc(tt("Rules come from the BOT's data set specification and the bank's own cross-checks. A fix changes the source record, never the file.", "กฎมาจากข้อกำหนดชุดข้อมูลของ ธปท. และการตรวจไขว้ของธนาคาร การแก้ไขทำที่ข้อมูลต้นทาง ไม่ใช่ที่ไฟล์"))}</p>`,
-      contracts: () => `<section class="card"><div class="card-body flush">${table({ cols: ["Contract", "Product code", "Stage", "Days past due", "Restructured", "Outstanding", "Allowance"], rows: c.loans.map((l) => [R(l.id), l.id.startsWith("FAC") ? "C-TERM" : l.id === "LN-77120" || l.id === DSB_LOAN ? "R-HOME" : "R-PERS", `S${l.stage}`, String({ "LN-A-C10": 144, "LN-A-C11": MALC.accepted ? 0 : MAL.dpd, "LN-A-C14": 135 }[l.id] || 0), l.id === "LN-A-C11" && MALC.accepted ? (RPT.fix.tdr ? "TDR-02" : "—") : "—", baht(l.ead), baht(l.ecl)]).concat(KIT.wo && !RPT.fix.wo ? [[R("LN-A-C14"), "R-PERS", "S3", "135", "—", baht(140000), baht(0)]] : []) }, tt("Contracts", "สัญญา"))}</div></section><p class="note">${esc(tt("The prototype's loans; the file holds every contract.", "สัญญาในต้นแบบ ไฟล์จริงมีทุกสัญญา"))}</p>`,
+    facts: [[tt("Contracts", "สัญญา"), "214,880"], [tt("Gross NPL ratio", "อัตรา NPL ขั้นต้น"), `${npl.toFixed(2)}%`, "", tt("substandard or worse, by classification", "ต่ำกว่ามาตรฐานขึ้นไป ตามการจัดชั้น")], [tt("Allowance", "ค่าเผื่อ"), mn(c.required)], [tt("Rules passed", "ผ่านกฎ"), `${rules.filter((r) => r.ok).length} / ${rules.length}`, fails.length ? "crit" : ""], [tt("Due", "ครบกำหนด"), fd(Date.UTC(2026, 10, 15))]],
+    panels: { validation: () => `<section class="card"><div class="card-body"><div class="list">${rules.map((r) => `<div class="li"><span class="sev ${r.ok ? (r.warn ? "info" : "good") : "crit"}">${icon(r.ok ? "i-check" : "i-alert")}</span><div><strong>${esc(tt(r.en, r.th))}</strong>${!r.ok ? `<p>${esc(r.why)}</p>` : r.warn ? `<p>${esc(r.warn)}</p>` : ""}</div>${r.ok ? "" : r.fix ? `<button class="btn row-btn primary" type="button" data-rpt-fix="${r.fix}" style="margin-left:auto">${esc(RPT.prop[r.fix] ? tt("Check the correction", "ตรวจการแก้ไข") : tt("Fix the data", "แก้ไขข้อมูล"))}</button>` : `<button class="btn row-btn" type="button" data-go="${r.go}" style="margin-left:auto">${esc(tt("Open", "เปิด"))}</button>`}</div>`).join("")}</div></div></section><p class="note">${esc(tt("Rules come from the BOT's data set specification and the bank's own cross-checks. A fix changes the source record, never the file.", "กฎมาจากข้อกำหนดชุดข้อมูลของ ธปท. และการตรวจไขว้ของธนาคาร การแก้ไขทำที่ข้อมูลต้นทาง ไม่ใช่ที่ไฟล์"))}</p>`,
+      contracts: () => `<section class="card"><div class="card-body flush">${table({ cols: ["Contract", "Product code", "Stage", "Classification", "Days past due", "Restructured", "Outstanding", "Allowance"], rows: c.loans.map((l) => [R(l.id), l.id.startsWith("FAC") ? "C-TERM" : l.id === "LN-77120" || l.id === DSB_LOAN ? "R-HOME" : "R-PERS", `S${l.stage}`, t(botClass(l.id)), String(DPD()[l.id] || 0), l.id === "LN-A-C11" && MALC.accepted ? (RPT.fix.tdr ? "TDR-02" : "—") : "—", baht(l.ead), baht(l.ecl)]).concat(KIT.wo && !RPT.fix.wo ? [[R("LN-A-C14"), "R-PERS", "S3", t("Substandard"), "135", "—", baht(140000), baht(0)]] : []) }, tt("Contracts", "สัญญา"))}</div></section><p class="note">${esc(tt("The prototype's loans; the file holds every contract.", "สัญญาในต้นแบบ ไฟล์จริงมีทุกสัญญา"))}</p>`,
       submission: () => card(tt("Submission", "การนำส่ง"), tl([[BIZ, tt("Validated against the specification", "ตรวจสอบตามข้อกำหนด"), fails.length ? tt(`${fails.length} errors`, `ผิดพลาด ${fails.length}`) : tt("All rules pass", "ผ่านทุกกฎ"), fails.length ? "warn" : "done"], [RPT.generated ? BIZ : "—", tt("File generated, with a checksum", "สร้างไฟล์พร้อมค่าตรวจสอบ"), RPT.generated ? tt(`by ${ROLE_NAME(RPT.preparer)}`, `โดย ${ROLE_NAME(RPT.preparer)}`) : "", RPT.generated ? "done" : ""], [RPT.submitted ? BIZ : "—", tt("Approved and submitted to the BOT", "อนุมัติและนำส่ง ธปท."), RPT.submitted ? tt("Acknowledged: DMS-26-10-004127", "ได้รับการตอบรับ: DMS-26-10-004127") : tt("A second person approves", "บุคคลที่สองอนุมัติ"), RPT.submitted ? "done" : ""]])) } });
 }
 Object.assign(FLOWS, {
@@ -139,8 +145,8 @@ Object.assign(FLOWS, {
     review: () => ({ html: `<p class="consequence">${esc(tt("Submits the locked file. The BOT's acknowledgement is kept with the file and the validation log.", "นำส่งไฟล์ที่ล็อกไว้ เก็บการตอบรับจาก ธปท. ไว้กับไฟล์และบันทึกการตรวจสอบ"))}</p>`, confirm: tt("Submit", "นำส่ง") }),
     done: () => { if (!RPT.submitted) { RPT.submitted = true; setTimeout(render, 0); } return tt("Submitted. Acknowledged as DMS-26-10-004127.", "นำส่งแล้ว เลขตอบรับ DMS-26-10-004127"); } }),
   closeSignoff: () => ({ title: tt("CFO sign-off", "CFO ลงนามรับรอง"), sub: tt("Month-end close · October 2026", "ปิดบัญชีสิ้นเดือน · ตุลาคม 2569"), init: {}, fields: () => kvHtml([[tt("Allowance posted", "บันทึกค่าเผื่อ"), mn(ECLS.postedAmount)], [tt("Reconciliation", "การกระทบยอด"), tt("All matched or explained", "ตรงกันหรืออธิบายแล้วทั้งหมด")], [tt("BOT loan data set", "ชุดข้อมูลสินเชื่อ ธปท."), tt("Submitted", "นำส่งแล้ว")]]), read: () => "",
-    review: () => ({ html: `<p class="consequence">${esc(tt("Closes October. Postings dated October are locked; any later correction is a dated adjustment in November with its reason.", "ปิดงวดตุลาคม ล็อกรายการที่ลงวันที่ในเดือนตุลาคม การแก้ไขภายหลังทำเป็นรายการปรับปรุงในเดือนพฤศจิกายนพร้อมเหตุผล"))}</p>`, confirm: tt("Sign off", "ลงนาม") }),
-    done: () => { if (!closeDone.has("signoff")) { closeDone.add("signoff"); setTimeout(render, 0); } return tt("October is closed.", "ปิดงวดตุลาคมแล้ว"); } }),
+    review: () => ({ auth: ["closesign", 1], html: `<p class="consequence">${esc(tt("Closes October. Postings dated October are locked; any later correction is a dated adjustment in November with its reason.", "ปิดงวดตุลาคม ล็อกรายการที่ลงวันที่ในเดือนตุลาคม การแก้ไขภายหลังทำเป็นรายการปรับปรุงในเดือนพฤศจิกายนพร้อมเหตุผล"))}</p>`, confirm: tt("Sign off", "ลงนาม") }),
+    done: (d) => { if (d.auth && !d.auth.ok) { closeSent = true; setTimeout(render, 0); } else if (!closeDone.has("signoff")) { closeDone.add("signoff"); setTimeout(render, 0); } return tt("October is closed.", "ปิดงวดตุลาคมแล้ว"); } }),
 });
 
 /* ---------------- the close checklist follows the records above ---------------- */
@@ -155,11 +161,11 @@ function finCloseButton(x, st) {
   if (x[0] === "recon" && st === "ready") return `<button class="btn row-btn" type="button" data-go="rec:REC-2026-10">${esc(tt("Open", "เปิด"))}</button>`;
   if (x[0] === "ecl" && st === "ready") return `<button class="btn row-btn primary" type="button" data-go="rec:ECL-2026-10">${esc(tt("Open the run", "เปิดผลคำนวณ"))}</button>`;
   if (x[0] === "bot" && st === "ready") return `<button class="btn row-btn primary" type="button" data-go="rec:DS-LOAN-2026-10">${esc(tt("Open", "เปิด"))}</button>`;
-  if (x[0] === "signoff" && st === "ready") return `<button class="btn row-btn primary" type="button" data-flow="closeSignoff">${esc(tt("Sign off", "ลงนาม"))}</button>`;
+  if (x[0] === "signoff" && st === "ready") return closeSent ? P("info", tt("With the CFO", "รอ CFO")) : `<button class="btn row-btn primary" type="button" data-flow="closeSignoff">${esc(tt("Send for sign-off", "ส่งให้ลงนาม"))}</button>`;
   return "";
 }
 document.addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.eclWeights !== undefined) { ECLS.weights = e.target.value; render(); $("#eclW")?.focus(); } });
-document.addEventListener("click", (e) => { const el = e.target.closest("[data-rpt-fix]"); if (!el) return; RPT.fix[el.dataset.rptFix] = true; render(); toast(tt("Source record corrected; the rule passes.", "แก้ไขข้อมูลต้นทางแล้ว ผ่านกฎ"), "good"); });
+document.addEventListener("click", (e) => { const el = e.target.closest("[data-rpt-fix]"); if (!el) return; const k = el.dataset.rptFix; if (!RPT.prop[k]) { RPT.prop[k] = role.id; render(); toast(tt("Correction proposed on the source record; a second person checks it.", "เสนอแก้ไขที่ต้นทางแล้ว ผู้ตรวจคนที่สองต้องตรวจ")); return; } if (RPT.prop[k] === role.id) { toast(tt("You proposed this correction; someone else must check it.", "คุณเป็นผู้เสนอการแก้ไขนี้ ต้องให้ผู้อื่นตรวจ")); return; } RPT.fix[k] = true; render(); toast(tt("Source record corrected; the rule passes.", "แก้ไขข้อมูลต้นทางแล้ว ผ่านกฎ"), "good"); });
 
 Object.assign(RECS, {
   "ECL-2026-10": { sys: "finance", sec: "ecl", label: "ECL-2026-10", kind: "Loss allowance run", match: ["ECL-2026-10"], view: () => viewEcl(), tabs: [["summary", "Summary"], ["loans", "Loans"], ["staging", "Staging rules"], ["overlays", "Overlays"], ["movement", "Movement"]] },
@@ -172,6 +178,6 @@ const finLists = () => ({
   "finance/reports": { cols: ["Report", "Regulator", "Period", "Due", "Prepared", "State"], rows: [[R("DS-LOAN-2026-10"), "BOT", "Oct 2026", "15 Nov 2026", RPT.preparer ? ROLE_NAME(RPT.preparer) : tt("Automatic", "อัตโนมัติ"), RPT.submitted ? P("good", "Submitted") : rptReady() ? P("info", "Ready") : P("crit", tt("Errors", "มีข้อผิดพลาด"))],
     ["Loan data set (DS_LOAN)", "BOT", "Sep 2026", "15 Oct 2026", "Automatic", P("good", "Submitted")], ["Liquidity coverage ratio", "BOT", "Oct 2026", "24 Oct 2026", "Automatic", P("good", "Submitted")], ["Cash transaction report", "AMLO", "Oct 2026", "27 Oct 2026", "Automatic", P("info", "Ready")]] },
 });
-Object.assign(TH, { "Loss allowance run": "การคำนวณค่าเผื่อผลขาดทุน", "Regulatory report": "รายงานต่อหน่วยงานกำกับ", "Staging rules": "เกณฑ์การจัดชั้น", "Overlays": "การปรับปรุงโดยผู้บริหาร", "Movement": "การเปลี่ยนแปลง", "Breaks": "ผลต่าง", "Ledgers": "บัญชี", "Validation": "การตรวจสอบ", "Submission": "การนำส่ง",
+Object.assign(TH, { "Classification": "การจัดชั้น", "Pass": "ปกติ", "Special mention": "กล่าวถึงเป็นพิเศษ", "Substandard": "ต่ำกว่ามาตรฐาน", "Doubtful": "สงสัย", "Doubtful of loss": "สงสัยจะสูญ", "Closing the month": "การปิดงวดบัญชี", "Chief financial officer": "ประธานเจ้าหน้าที่ฝ่ายการเงิน", "Loss allowance run": "การคำนวณค่าเผื่อผลขาดทุน", "Regulatory report": "รายงานต่อหน่วยงานกำกับ", "Staging rules": "เกณฑ์การจัดชั้น", "Overlays": "การปรับปรุงโดยผู้บริหาร", "Movement": "การเปลี่ยนแปลง", "Breaks": "ผลต่าง", "Ledgers": "บัญชี", "Validation": "การตรวจสอบ", "Submission": "การนำส่ง",
   "Month": "เดือน", "Top-up": "ตั้งเพิ่ม", "Weights": "น้ำหนัก", "Breaks open": "ผลต่างค้าง", "Scenario": "สถานการณ์", "Weight": "น้ำหนัก", "PD multiplier": "ตัวคูณ PD", "Assumptions": "สมมติฐาน", "Coverage": "อัตราครอบคลุม", "Why": "เหตุผล", "Trigger": "เกณฑ์", "Moves to": "ย้ายไป", "Loans now": "สัญญาตอนนี้", "Overlay": "การปรับปรุง", "Expires": "หมดอายุ",
   "Product code": "รหัสผลิตภัณฑ์", "Restructured": "ปรับโครงสร้าง", "Days past due": "จำนวนวันค้าง" });

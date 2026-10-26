@@ -161,21 +161,21 @@ The prototype is the agreed behaviour, but each of these changes something the c
 | D8 | Loss allowance | Each run books every loan at once with one PD and LGD | Draft run, scenario weights, overlays, posted under authority | 11 |
 | D9 | Loan applications | One call decides and disburses | Separate decision, offer and payout, so a person can decide or counter | 02 |
 
-## Fixes to make in the prototype
+## Fixes made in the prototype
 
-Found while writing the specs. The spec already says the correct behaviour; the prototype should follow.
+Found while writing the specs and fixed in the prototype on 26 Oct 2026, so the prototype and the specs agree.
 
 | # | Where | Fix |
 |---|---|---|
-| P1 | Authority (`data.js`, `underwriting.js`, `policy.js`) | One source for credit approval levels; the credit officer's second approver is the head of retail credit, not "Credit officer" |
+| P1 | Authority (`underwriting.js`) | The credit officer's limit reads the levels the credit policy publishes; above it the approver is named by amount: head of retail credit, then the committee |
 | P2 | `disbursement.js` | Carry APP-30409's spouse consent condition through to payout |
 | P3 | `underwriting.js` CC-2026-21 | The committee can vote APP-30414 only after it has been sent |
 | P4 | `data.js` facilities list | FAC-K0414's state follows the committee decision |
 | P5 | `trade.js` | The examination deadline skips 23 Oct (Chulalongkorn Day): 30 Oct, not 29 Oct |
-| P6 | `records.js` BG-26-1102 | "Amend" and "Record a claim" do nothing |
+| P6 | `records.js`, `trade.js` BG-26-1102 | "Amend" sends an amendment that waits for the beneficiary; "Record a claim" opens a demand case with a five-day clock |
 | P7 | `payments.js` | Recall deadline 3 Nov; payroll fees on the rows actually sent; released payroll leaves the Monday queue |
 | P8 | `flows.js` | Remove the dead `eclRun` flow (`finance.js` replaces it) |
 | P9 | `treasury.js` | The ALM note: earnings break their limit near +107bp, economic value near +161bp |
-| P10 | `finance.js` | Close sign-off only by the CFO; data-set fixes get a second check; NPL by classification, not stage |
-| P11 | `branch.js` | Branch-manager authorities on their own role, not `ops`; drop the stale router comment |
-| P12 | `corporate.js` | Monitoring's "tests due" and "reviews overdue" computed, not fixed |
+| P10 | `finance.js` | Close sign-off goes to the CFO (new action `closesign`); a data-set correction is proposed by one person and checked by another; the NPL ratio counts substandard or worse by BOT classification, shown beside the stage |
+| P11 | `branch.js` | A branch manager role (Rattikorn Boonsri) holds `cash`, `cashin`, `overshort` and `branchclose`; `ops` no longer does; the stale router comment is gone |
+| P12 | `corporate.js` | Monitoring's "tests due in 30 days" and "reviews overdue" are counted from the facilities on the page |

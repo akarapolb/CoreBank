@@ -26,7 +26,7 @@ Figures are the prototype's sample data for October 2026, viewed on Saturday 24 
 |---|---|---|
 | Finance controller | `finance` (Arunee T.) | Post the allowance (`journal` limit ฿50m); propose overlays; explain reconciliation differences; generate or approve the BOT data set; approve journals |
 | Operations checker | `ops` (Ploy C.) | Resolve exceptions; approve journals up to ฿1m; generate or approve the data set |
-| CFO | — | Sign off the close (the prototype lets any role do it; see open question 6) |
+| CFO | — | Sign off the close (action `closesign`; in the prototype every other role sends it to the CFO) |
 | Risk committee | — | Approves overlays (outside the console in the prototype) |
 | Product maker | `product` (Krit S.) | Creates and submits product drafts |
 | Risk and Compliance approvers | `credit` (Wanida K., Risk); Compliance | Approve drafts; Compliance is the last checker |
@@ -85,7 +85,7 @@ Lede: "Loan data set for the BOT · October 2026 · due 15 Nov 2026 · one row p
 | Facts strip | Value |
 |---|---|
 | Contracts | 214,880 |
-| Gross NPL ratio | Stage 3 exposure ÷ total exposure (2.13%) |
+| Gross NPL ratio | Exposure classified substandard or worse (BOT classification by days past due) ÷ total exposure; equals Stage 3 in the sample book (2.13%) |
 | Allowance | the run's required allowance |
 | Rules passed | 6 / 7 by default (the GL 1390 rule fails until the run is posted) |
 | Due | 15 Nov 2026 |
@@ -334,7 +334,7 @@ What exists: `POST /api/v1/ecl/run` and `GET /api/v1/ecl/loans/{loanId}` (lendin
 3. The prototype's movement table derives "model and parameter changes" as the balancing figure; confirm the bank's movement categories for the financial statement note.
 4. Gross NPL ratio: the prototype uses Stage 3 ÷ total exposure; confirm the BOT NPL definition (classification, not stage).
 5. Which other BOT data sets are in the first release (the reports list also shows the LCR submission and the AMLO cash transaction report)?
-6. Sign-off: the prototype lets any role sign off the close; restrict it to the CFO role and decide on a delegate.
+6. Sign-off: only the CFO signs off the close; decide whether a delegate may sign when the CFO is away.
 7. "Fix the data" corrects a source record with no maker-checker in the prototype; should regulatory-code changes need a second person?
 8. Product go-live: the prototype treats Compliance's approval as scheduling publication; the core separates approve (by role) and publish (`product-publisher`). Keep both, or publish automatically on the last approval?
 9. Exception deadlines are per item in the prototype; confirm a deadline per kind and who is paged when one is overdue.
@@ -409,4 +409,4 @@ For each GL code in the reconciliation set: difference = GL balance − sub-ledg
 
 ### A.4 Data set ratios
 
-Gross NPL ratio (prototype) = Stage 3 exposure ÷ total exposure × 100 = 676,702,004.18 ÷ 31,838,213,185.78 = 2.13%. Stage 3 coverage = Stage 3 allowance ÷ Stage 3 exposure = 72.1%.
+Gross NPL ratio (prototype) = exposure classified substandard or worse ÷ total exposure × 100; in the sample book this equals Stage 3 exposure = 676,702,004.18 ÷ 31,838,213,185.78 = 2.13%. Stage 3 coverage = Stage 3 allowance ÷ Stage 3 exposure = 72.1%.

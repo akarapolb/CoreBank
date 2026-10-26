@@ -40,7 +40,7 @@ Lede: "Siam Freight Logistics → Hino Motors (JP) · sight LC under UCP 600 · 
 | Amount | $2,400,000.00 ± 5% |
 | Invoice | $2,398,560.00 ≈ ฿86,540,045 at 36.08 |
 | Checks | 13 of 14 comply (crit while any discrepancy) |
-| Answer by | 29 Oct 2026 · "5 banking days, art. 14(b)" (warn until decided) |
+| Answer by | 30 Oct 2026 · "5 banking days, art. 14(b)"; 23 Oct is Chulalongkorn Day, not a banking day (warn until decided) |
 | Margin held | ฿8,640,000 · 10% |
 | Expiry | 30 Dec 2026 |
 
@@ -213,7 +213,7 @@ Tabs: Facility (tranches, terms, covenants: net debt to EBITDA ≤ 3.5× latest 
 | 1 | LC-26-0412 as presented | open Examination | 14 checks, 13 comply, insurance cover Discrepant (28(f)(ii)) |
 | 2 | override check 8 to comply | — | discrepancies 0, LC payable ("Pay" shown); revert restores 1 |
 | 3 | 1 discrepancy, no decision | Refuse documents (hold) | MT734 preview contains `:77J:` "INSURANCE CERTIFICATE COVER AMOUNT…" and `:77B:` HOLD…; done "MT734 sent to MUFG Bank, Tokyo." |
-| 4 | no decision | Ask for a waiver | review mentions 29 Oct; done "Waiver request sent to Siam Freight Logistics." |
+| 4 | no decision | Ask for a waiver | review mentions 30 Oct; done "Waiver request sent to Siam Freight Logistics." |
 | 5 | waiver asked | Applicant's answer → accept | review mentions the $80 discrepancy fee; done "Waiver accepted; ready to pay." |
 | 6 | payable | Pay → Debit its accounts now | blocked "Not enough in the accounts … ฿77,900,044.80" |
 | 7 | payable, ops | Pay → THB trust receipt | review shows TR-26-0412 and ฿77,900,044.80; done "Paid to MUFG Bank; TR-26-0412 booked; documents released."; Payment tab shows $2,398,480.00 paid and $80 deducted |
@@ -250,7 +250,7 @@ Tabs: Facility (tranches, terms, covenants: net debt to EBITDA ≤ 3.5× latest 
 
 ## 10. Open questions
 
-1. Banking-day calendar for the examination deadline: 23 Oct (Chulalongkorn Day) is a Thai bank holiday, so five banking days after a 22 Oct presentation may end on 30 Oct, not 29 Oct as the prototype shows — *to confirm* with the holiday calendar in the core.
+1. Banking-day calendar for the examination deadline: the prototype now skips 23 Oct (Chulalongkorn Day) and answers by 30 Oct; the production deadline comes from the bank's holiday calendar (slice 0).
 2. Trust receipt booking: on the lending ledger as a loan product, or a trade-finance product with its own accrual?
 3. THOR convention for this facility: lookback, observation shift, lockout, rounding of the daily rate — *to confirm* against the facility agreement and Thai Bankers' Association guidance.
 4. Should the agent prepare a distribution before the money arrives (prototype: prepared now, released on receipt), and who releases it?

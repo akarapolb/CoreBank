@@ -10,7 +10,7 @@ Out of scope for production: the prototype's presenter mode, its tour, the befor
 
 ### Roles
 
-The prototype has six sample roles; the core enforces finer roles with `actor.require(…)`. A production login carries several core roles; the console derives what to show from them.
+The prototype has seven sample roles; the core enforces finer roles with `actor.require(…)`. A production login carries several core roles; the console derives what to show from them.
 
 | Prototype role | Sample person | Title | Core roles it maps to (today) | Also needs (New) |
 |---|---|---|---|---|
@@ -19,7 +19,8 @@ The prototype has six sample roles; the core enforces finer roles with `actor.re
 | `credit` | Wanida Kaewmanee | Credit officer (also RM in the prototype) | `credit-officer`, `write-off-approver` (above limit) | `rm` |
 | `product` | Krit Sombat | Product maker | `product-maker` (`product-publisher` is a different person) | `policy-maker`, `policy-approver` |
 | `finance` | Arunee Thongdee | Finance controller | `ecl-operator` | `finance-controller`, `treasury` |
-| `teller` | Somsak Jaidee | Teller, branch 0123 | `ops` (deposits and withdrawals) | `teller`, `branch-manager` |
+| `teller` | Somsak Jaidee | Teller, branch 0123 | `ops` (deposits and withdrawals) | `teller` |
+| `manager` | Rattikorn Boonsri | Branch manager, branch 0123 | `ops` | `branch-manager` |
 
 Other core roles already in use: `ops-admin` (scheduler backfill), `compliance-analyst`, `customer` (the app; party id from the token, never from the request).
 
@@ -100,7 +101,7 @@ None of its own. Every posting goes through the ledger with a batch id and idemp
 
 | Key | Prototype value | Who sets it | Note |
 |---|---|---|---|
-| Authority matrix | See [prototype-inventory.md](prototype-inventory.md#authority-matrix) (22 action keys × 6 roles) | Bank | Credit approval levels: credit officer ฿2m, head of retail credit ฿10m, committee above (credit policy, spec 02). |
+| Authority matrix | See [prototype-inventory.md](prototype-inventory.md#authority-matrix) (23 action keys × 7 roles) | Bank | Credit approval levels: credit officer ฿2m, head of retail credit ฿10m, committee above (credit policy, spec 02). |
 | Idle session timeout | 15 minutes | Bank (security policy) | |
 | Workbench cards per role | Defaults per role; person may reorder or hide | Bank sets defaults | |
 | Exception time limits | Per kind (for example a reconciliation break 24 h) | Bank | |

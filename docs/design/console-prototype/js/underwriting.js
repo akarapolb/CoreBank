@@ -5,6 +5,10 @@
 /* ---------------- who may approve: the amount sets a level, and so does each deviation ---------------- */
 const LEVELS = [["Credit officer", "เจ้าหน้าที่สินเชื่อ", 2000000], ["Head of retail credit", "หัวหน้าฝ่ายสินเชื่อรายย่อย", 10000000], ["Credit committee", "คณะกรรมการสินเชื่อ", Infinity]];
 const levelFor = (amount) => LEVELS.findIndex((l) => amount <= l[2]);
+// one source for credit authority: the officer's limit and the next approver both come from the levels the credit policy publishes
+Object.defineProperty(AUTH.credit, "credit", { get: () => LEVELS[0][2], enumerable: true });
+const authCheckBase = authCheck;
+authCheck = (action, amount) => { const a = authCheckBase(action, amount); if (action === "credit" && !a.ok) { const i = levelFor(amount); a.second = LEVELS[i < 0 ? LEVELS.length - 1 : i][0]; } return a; };
 const roleLevel = () => (role.id === "credit" ? 0 : -1);
 const levelName = (i) => tt(LEVELS[i][0], LEVELS[i][1]);
 
@@ -213,7 +217,8 @@ Object.assign(FLOWS, {
     return { title: tt("Record the vote", "บันทึกการลงมติ"), sub: `CC-2026-21 · ${x.id}`, init: { votes: voters.map(() => "approve"), res: tt(...x.rec) },
       fields: (d) => voters.map((m, i) => select("cv" + i, `${m[0]} · ${tt(m[1], m[2])}`, [["approve", tt("Approve", "อนุมัติ")], ["conditions", tt("Approve with changes", "อนุมัติโดยมีการแก้ไข")], ["reject", tt("Reject", "ไม่อนุมัติ")], ["abstain", tt("Abstain", "งดออกเสียง")]], d.votes[i])).join("") + (x.conflict ? `<p class="hint muted">${esc(tt(`${x.conflict} does not vote: conflict of interest.`, `${x.conflict} ไม่ออกเสียง: มีส่วนได้เสีย`))}</p>` : "") + area("cres", tt("Resolution", "มติ"), d.res),
       read: (d) => { d.votes = voters.map((_, i) => $("#cv" + i).value); d.res = $("#cres").value.trim(); return d.res ? "" : tt("Write the resolution.", "ระบุมติ"); },
-      review: (d) => { const yes = d.votes.filter((v) => v === "approve" || v === "conditions").length, no = d.votes.filter((v) => v === "reject").length, voting = yes + no, quorum = voters.length >= 3 && voters[0][3];
+      review: (d) => { if (!ccReady(x)) return { html: notice("crit", tt("Not on the agenda yet", "ยังไม่เข้าวาระ"), tt("The paper has not been sent to the committee.", "ยังไม่ได้ส่งเอกสารให้คณะกรรมการ")), blocked: true };
+        const yes = d.votes.filter((v) => v === "approve" || v === "conditions").length, no = d.votes.filter((v) => v === "reject").length, voting = yes + no, quorum = voters.length >= 3 && voters[0][3];
         const tie = yes === no, passed = yes > no || (tie && (d.votes[0] === "approve" || d.votes[0] === "conditions")); d.passed = passed; d.tally = `${yes}–${no}`;
         return { html: quoteRows([[tt("For", "เห็นชอบ"), String(yes)], [tt("Against", "ไม่เห็นชอบ"), String(no)], [tt("Abstained", "งดออกเสียง"), String(d.votes.length - voting)], [tt("Result", "ผล"), passed ? tt(tie ? "Approved on the chair's casting vote" : "Approved", tie ? "อนุมัติด้วยเสียงชี้ขาดของประธาน" : "อนุมัติ") : tt("Rejected", "ไม่อนุมัติ")]]) +
           (quorum ? "" : notice("crit", tt("No quorum", "ไม่ครบองค์ประชุม"), "")) + `<p class="consequence">${esc(passed ? x.waiver ? tt("Grants the waiver: FAC-B2031's draw stop is lifted and the new DSCR level applies from Q3 2026.", "อนุมัติการผ่อนผัน: ยกเลิกการระงับการเบิกของ FAC-B2031 และใช้เกณฑ์ DSCR ใหม่ตั้งแต่ Q3 2569") : tt("Records the approval with the resolution; the paper's owner is told and the conditions are set on the record.", "บันทึกการอนุมัติพร้อมมติ แจ้งเจ้าของเรื่อง และกำหนดเงื่อนไขในรายการ") : tt("Records the rejection; the paper's owner tells the customer.", "บันทึกการไม่อนุมัติ เจ้าของเรื่องแจ้งลูกค้า"))}</p>`, blocked: !quorum, confirm: tt("Record the resolution", "บันทึกมติ") }; },
@@ -244,7 +249,7 @@ Object.assign(RECS, {
 const uwListRows = () => {
   const I = typeof INTAKE !== "undefined" ? INTAKE : null, rows = [
     [R("APP-30409"), tt("Kittisak and Nattaya Wongsawat", "กิตติศักดิ์และณัฐยา วงศ์สวัสดิ์"), t("Home loan"), baht(UW.amount, 0), tt("2 deviations", "ข้อยกเว้น 2 ข้อ"), UW.status ? P(UW.status.tone, UW.status.label) : P("warn", tt("1 h 20 min left", "เหลือ 1 ชม. 20 นาที"))],
-    [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000, 0), tt("TCG guarantee", "บสย. ค้ำประกัน"), P("info", tt("Committee 18 Nov", "คณะกรรมการ 18 พ.ย."))],
+    [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000, 0), tt("TCG guarantee", "บสย. ค้ำประกัน"), comApproved() ? P("good", "Approved") : P("info", tt("Committee 18 Nov", "คณะกรรมการ 18 พ.ย."))],
     [R("APP-30411"), tt("Somkiat Boonrod", "สมเกียรติ บุญรอด"), t("Personal loan"), baht(450000, 0), tt("6 enquiries in 3 months", "สอบถามเครดิต 6 ครั้งใน 3 เดือน"), P("warn", tt("3 h left", "เหลือ 3 ชม."))],
     [R("APP-30413"), "Napat Srisuk", "Car hire purchase", baht(890000, 0), tt("Proof of address", "หลักฐานที่อยู่"), P("info", "Needs documents")]];
   if (I && I.decided && !I.decided.ok) rows.unshift([R("APP-30416"), t("Pimchanok Rattana"), tt(INTAKE_PRODUCTS[I.product].name, INTAKE_PRODUCTS[I.product].th), baht(num(I.f.amount), 0), I.decided.sub || "—", P("warn", tt("New", "ใหม่"))]);

@@ -9,6 +9,7 @@ const DSB0 = () => ({
     { k: "payoff", en: "Krungthai personal loan closed", th: "ปิดสินเชื่อส่วนบุคคลกรุงไทยแล้ว", ev: ["Closure letter from Krungthai", "หนังสือยืนยันการปิดบัญชีจากกรุงไทย"], due: Date.UTC(2026, 10, 8), state: "open" },
     { k: "juristic", en: "Juristic person's debt-free letter for unit 2304", th: "หนังสือปลอดหนี้นิติบุคคลอาคารชุด ห้อง 2304", ev: ["From the condominium office, via the seller", "จากสำนักงานนิติบุคคล ผ่านผู้ขาย"], due: Date.UTC(2026, 10, 12), state: "open" },
     { k: "salarycert", en: "Kittisak's salary certificate, under 30 days old", th: "หนังสือรับรองเงินเดือนคุณกิตติศักดิ์ อายุไม่เกิน 30 วัน", ev: ["Uploaded in the app", "อัปโหลดในแอป"], due: Date.UTC(2026, 10, 8), state: "verified", by: "credit", checker: "ops" },
+    { k: "spouse", en: "Spouse consent to the mortgage", th: "หนังสือยินยอมคู่สมรสในการจำนอง", ev: ["Signed by Nattaya at the branch; she is also a co-borrower", "คุณณัฐยาลงนามที่สาขา และเป็นผู้กู้ร่วม"], due: Date.UTC(2026, 10, 8), state: "received", by: "credit" },
     { k: "titlecheck", en: "Title search refreshed within 7 days of the transfer", th: "ค้นสารบัญที่ดินใหม่ภายใน 7 วันก่อนโอน", ev: ["Land Office search", "ค้นสำนักงานที่ดิน"], due: Date.UTC(2026, 10, 8), state: "open" }],
   signed: { kittisak: false, nattaya: false, bank: false }, sent: false, stamp: false,
   ins: { fire: "received", life: "declined" },
@@ -118,7 +119,7 @@ document.addEventListener("click", (e) => {
 
 Object.assign(RECS, {
   "DSB-30409": { sys: "lending", sec: "disbursements", label: "DSB-30409", kind: "Disbursement", match: ["DSB-30409"], view: () => viewDsb(),
-    tabs: [["overview", "Overview"], ["conditions", "Conditions", 5], ["contract", "e-Contract"], ["insurance", "Insurance"], ["landoffice", "Land Office"], ["payout", "Payout"]] },
+    tabs: [["overview", "Overview"], ["conditions", "Conditions", 6], ["contract", "e-Contract"], ["insurance", "Insurance"], ["landoffice", "Land Office"], ["payout", "Payout"]] },
 });
 const dsbRow = () => [R("DSB-30409"), "APP-30409", tt("Kittisak and Nattaya Wongsawat", "กิตติศักดิ์และณัฐยา วงศ์สวัสดิ์"), baht(DSB_AMT), tt("Seller, cashier's cheque", "ผู้ขาย แคชเชียร์เช็ค"), DSB.paid ? P("good", "Paid") : P("warn", tt(`${dsbGate().length} before payout`, `ก่อนจ่ายอีก ${dsbGate().length}`))];
 Object.assign(TH, { "Conditions": "เงื่อนไข", "e-Contract": "สัญญาอิเล็กทรอนิกส์", "Insurance": "ประกันภัย", "Land Office": "สำนักงานที่ดิน", "Payout": "การจ่ายเงิน", "Signed by": "ผู้ลงนาม", "Party": "คู่สัญญา" });

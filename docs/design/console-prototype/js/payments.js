@@ -11,12 +11,13 @@ const PAYQ = { bn: { callback: false, state: null }, sw: { cleared: false, sent:
 const RAILS = [["PromptPay", "พร้อมเพย์", "24/7", "24 ชั่วโมงทุกวัน", "Open", "เปิด", "good", 1204118, 1842.6], ["ITMX bulk (payroll, suppliers)", "ITMX แบบกลุ่ม (เงินเดือน เจ้าหนี้)", "Files by 10:30 and 14:00 on business days", "ส่งไฟล์ภายใน 10:30 และ 14:00 ในวันทำการ", "Closed until Monday", "ปิดถึงวันจันทร์", "warn", 0, 0],
   ["BAHTNET", "BAHTNET", "Customer transfers 08:30–15:30 on business days", "รายการลูกค้า 08:30–15:30 ในวันทำการ", "Closed until Monday", "ปิดถึงวันจันทร์", "warn", 0, 0], ["SWIFT, outgoing", "SWIFT ขาออก", "Same-day USD by 15:00; sent any day, value the next business day", "USD วันเดียวกันภายใน 15:00 ส่งได้ทุกวัน มูลค่าวันทำการถัดไป", "Sending, value Monday", "ส่งได้ มูลค่าวันจันทร์", "info", 14, 31.4]];
 function payQueue() {
+  // payroll paid in real time today is no longer waiting for Monday
   return [[PAYQ.bn.state === "approved" ? "good" : "info", R("TR-9918231"), "BAHTNET", baht(31850000, 0), PAYQ.bn.state === "approved" ? tt("Approved, warehoused for 08:30", "อนุมัติแล้ว รอส่ง 08:30") : tt("Waiting for checker", "รอผู้ตรวจสอบ")],
     [PAYQ.py.released === "bulk" ? "good" : "info", R("PAY-26-10-0414"), tt("ITMX bulk", "ITMX แบบกลุ่ม"), baht(pyTotal(), 0), PAYQ.py.released ? (PAYQ.py.released === "bulk" ? tt("Released, value Monday", "ปล่อยแล้ว มูลค่าวันจันทร์") : tt("Paid today in real time", "จ่ายวันนี้แบบทันที")) : tt("Validation exceptions", "มีรายการผิดพลาด")],
-    ["info", R("TR-9918202"), "BAHTNET", baht(2480000, 0), tt("Waiting for checker", "รอผู้ตรวจสอบ")], ["info", R("SO-55120"), tt("Standing order", "คำสั่งโอนประจำ"), baht(15000, 0), tt("Due 26 Oct", "ครบ 26 ต.ค.")]];
+    ["info", R("TR-9918202"), "BAHTNET", baht(2480000, 0), tt("Waiting for checker", "รอผู้ตรวจสอบ")], ["info", R("SO-55120"), tt("Standing order", "คำสั่งโอนประจำ"), baht(15000, 0), tt("Due 26 Oct", "ครบ 26 ต.ค.")]].filter((r) => !(PAYQ.py.released === "rt" && r[1] === R("PAY-26-10-0414")));
 }
 function viewPayOverview() {
-  const q = payQueue(), monday = 31850000 + pyTotal() + 2480000 + 15000;
+  const q = payQueue(), monday = 31850000 + (PAYQ.py.released === "rt" ? 0 : pyTotal()) + 2480000 + 15000;
   return `<div class="head"><div>${eyebrow(sysById.payments)}<h1 class="title">${esc(tt("Payments", "การชำระเงิน"))}</h1><p class="lede">${esc(tt("Saturday 24 Oct: PromptPay runs all day; BAHTNET and ITMX bulk are closed, so anything they carry waits for Monday's opening.", "วันเสาร์ที่ 24 ต.ค.: พร้อมเพย์ทำงานตลอดวัน BAHTNET และ ITMX แบบกลุ่มปิด รายการที่ใช้ช่องทางนี้รอเปิดวันจันทร์"))}</p></div></div>
     ${factsHtml([[tt("PromptPay today", "พร้อมเพย์วันนี้"), "1,204,118", "", tt("฿1,842.6m out and in", "เข้าและออก ฿1,842.6 ล้าน")], [tt("Queued for Monday", "รอส่งวันจันทร์"), String(q.length), "", baht(monday, 0)], [tt("Held", "ระงับ"), "1", "crit", "TR-9918210 · $1.18m"], [tt("Balance at the BOT", "ยอดในบัญชีที่ ธปท."), "฿4,210m", "", tt("after PromptPay settlement", "หลังชำระดุลพร้อมเพย์")], [tt("ITMX collateral used", "หลักประกัน ITMX ที่ใช้"), "41%", "", tt("of ฿6,000m pledged", "จาก ฿6,000 ล้านที่วางไว้")]])}
     <section class="card"><div class="card-head"><div class="card-title">${esc(tt("Rails and cut-offs", "ช่องทางและเวลาตัดรอบ"))}</div></div><div class="card-body flush">${table({ cols: ["Rail", "Hours", "Today", "Items", "Value, ฿m"], rows: RAILS.map(([en, th, hen, hth, sen, sth, tone, n, v]) => [tt(en, th), tt(hen, hth), P(tone, tt(sen, sth)), n ? n.toLocaleString("en-US") : "—", v ? v.toFixed(1) : "—"]) }, tt("Rails", "ช่องทาง"))}</div></section>
@@ -84,6 +85,8 @@ const PY_EX = [["Row 17", "แถว 17", "Account number fails the check digit:
 const PY_ALL = 1948600;
 const pyTotal = () => PY_ALL - PY_EX.reduce((a, x, i) => a + (PAYQ.py.excl.has(i) ? x[4] : 0), 0);
 const pyItems = () => 84 - PAYQ.py.excl.size;
+// 31 staff bank with us; every exception row is a payment to another bank, so excluding one saves its interbank fee
+const pyOther = () => 53 - PAYQ.py.excl.size;
 function viewPY() {
   const p = PAYQ.py, open = PY_EX.filter((x, i) => x[5] === "crit" && !p.excl.has(i)).length;
   return recordPage({ title: "PAY-26-10-0414", mono: true, lede: esc(tt("Korat Isuzu Co., Ltd. · October payroll, 84 staff · uploaded Fri 23 Oct 18:42 by Ratana W., approved in business online banking by Somkid W.", "บริษัท โคราช อีซูซุ จำกัด · เงินเดือนตุลาคม 84 คน · อัปโหลด ศ. 23 ต.ค. 18:42 โดย รัตนา ว. อนุมัติในบริการออนไลน์โดย สมคิด ว.")),
@@ -110,7 +113,7 @@ const rcCase = () => `<div class="grid-main">${card(tt("What happened", "เก�
 function rcProcess() {
   const r = PAYQ.rc;
   return card(tt("How a recall works", "ขั้นตอนการเรียกคืน"), tl([[BIZ, tt("Customer's request recorded, with a signed form", "บันทึกคำขอพร้อมแบบฟอร์มที่ลงนาม"), "", "done"], [BIZ, tt("Request to Krungthai through the ITMX dispute service", "ส่งคำขอถึงกรุงไทยผ่านระบบข้อพิพาทของ ITMX"), tt("We cannot debit another bank's customer", "ธนาคารตัดบัญชีลูกค้าของธนาคารอื่นไม่ได้"), r.sent ? "done" : "now"],
-    [Date.UTC(2026, 10, 4), tt("Krungthai asks the receiver to consent", "กรุงไทยขอความยินยอมจากผู้รับ"), tt("Answer within 7 business days", "ตอบภายใน 7 วันทำการ"), r.outcome ? "done" : r.sent ? "now" : ""], [Date.UTC(2026, 10, 4), r.outcome === "returned" ? tt("Returned to SAV-40218", "คืนเข้า SAV-40218") : tt("If refused or no answer: police report and a civil claim for money paid by mistake", "หากปฏิเสธหรือไม่ตอบ: แจ้งความและฟ้องเรียกเงินคืนฐานลาภมิควรได้"), tt("The bank gives the customer a letter with the transfer details", "ธนาคารออกหนังสือรายละเอียดการโอนให้ลูกค้า"), r.outcome ? "done" : ""]]));
+    [Date.UTC(2026, 10, 3), tt("Krungthai asks the receiver to consent", "กรุงไทยขอความยินยอมจากผู้รับ"), tt("Answer within 7 business days", "ตอบภายใน 7 วันทำการ"), r.outcome ? "done" : r.sent ? "now" : ""], [Date.UTC(2026, 10, 4), r.outcome === "returned" ? tt("Returned to SAV-40218", "คืนเข้า SAV-40218") : tt("If refused or no answer: police report and a civil claim for money paid by mistake", "หากปฏิเสธหรือไม่ตอบ: แจ้งความและฟ้องเรียกเงินคืนฐานลาภมิควรได้"), tt("The bank gives the customer a letter with the transfer details", "ธนาคารออกหนังสือรายละเอียดการโอนให้ลูกค้า"), r.outcome ? "done" : ""]]));
 }
 
 Object.assign(FLOWS, {
@@ -138,7 +141,7 @@ Object.assign(FLOWS, {
     read: (d) => { d.how = $("#pyhow").value; return ""; },
     review: (d) => { const bad = PY_EX.map((x, i) => i).filter((i) => PY_EX[i][5] === "crit" && !PAYQ.py.excl.has(i));
       if (bad.length) return { html: notice("crit", tt("Rows that cannot be paid", "แถวที่จ่ายไม่ได้"), tt(`Exclude ${bad.map((i) => PY_EX[i][0].toLowerCase()).join(" and ")} first; ${bad.length > 1 ? "they" : "it"} would bounce back.`, `ตัด ${bad.map((i) => PY_EX[i][1]).join(" และ ")} ออกก่อน จะถูกตีกลับ`)), blocked: true };
-      const fee = d.how === "rt" ? 53 * 5 : 53 * 2;
+      const fee = (d.how === "rt" ? 5 : 2) * pyOther();
       return { html: quoteRows([[tt("Items", "รายการ"), String(pyItems())], [tt("Debit CUR-K0414", "ตัดบัญชี CUR-K0414"), baht(pyTotal())], [tt("Fees", "ค่าธรรมเนียม"), baht(fee)], [tt("Staff paid", "พนักงานได้รับ"), d.how === "rt" ? tt("Today", "วันนี้") : fd(MON26)]]) + `<p class="consequence">${esc(tt(`Pays ${pyItems()} staff and sends the excluded rows back to Korat Isuzu's online banking to fix. 31 staff bank with us and are credited at once either way.`, `จ่ายพนักงาน ${pyItems()} คน และส่งแถวที่ตัดออกกลับไปที่บริการออนไลน์ของโคราช อีซูซุเพื่อแก้ไข พนักงาน 31 คนที่ใช้ธนาคารนี้ได้รับทันทีทั้งสองแบบ`))}</p>`, confirm: tt("Release", "ปล่อยรายการ"), auth: ["payout", pyTotal()] }; },
     done: (d) => { if (!PAYQ.py.released && !(d.auth && !d.auth.ok)) { PAYQ.py.released = d.how; setTimeout(render, 0); } return d.how === "rt" ? tt("Payroll paid; staff credited today.", "จ่ายเงินเดือนแล้ว พนักงานได้รับวันนี้") : tt("Payroll released for Monday.", "ปล่อยรายการเงินเดือนสำหรับวันจันทร์แล้ว"); } }),
   rcSend: () => ({ title: tt("Send recall request", "ส่งคำขอเรียกคืน"), sub: "RCL-26-1024-03 · Krungthai", init: {}, fields: () => kvHtml([[tt("Transfer", "รายการโอน"), "TR-9918188 · " + baht(18500)], [tt("Reason", "เหตุผล"), tt("Sent to the wrong number by mistake", "โอนผิดเบอร์โดยไม่ตั้งใจ")]]), read: () => "",

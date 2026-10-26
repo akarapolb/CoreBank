@@ -149,9 +149,11 @@ document.addEventListener("change", (e) => { const k = e.target.dataset && e.tar
 
 ACTIONS.push(["cashin", "Large cash deposits", "Branch manager"], ["overshort", "Teller differences", "Branch manager"], ["branchclose", "Closing the branch day", "Branch manager"]);
 Object.assign(AUTH.teller, { cashin: 1999999 });
-Object.assign(AUTH.ops, { cashin: 10000000, overshort: 1000, branchclose: 1 });
+// the branch manager approves what the teller cannot: large cash, drawer differences, closing the day
+ROLES.push({ id: "manager", name: "Rattikorn Boonsri", first: "Rattikorn", th: "รัตติกร", title: "Branch manager · Branch 0123", av: "RB", pins: ["workbench", "branch", "customers", "deposits", "lending"],
+  needs: [["branch", "Waiting for your approval", "2", "warn", "A ฿650,000 withdrawal and a ฿2,150,000 cash deposit", "workbench/approvals"], ["branch", "End of day", "3 of 4", "info", "Drawers balanced; counter 3 still open", "branch/eod"]] });
+AUTH.manager = { cash: 5000000, settle: 1000000, waive: 5000, cashin: 10000000, overshort: 1000, branchclose: 1 };
 sysById.branch.sections = [["counter", "Counter"], ["drawer", "Cash drawer"], ["vault", "Vault"], ["bqueue", "Branch queue", 4], ["eod", "End of day"]];
-// the router names viewCounter and viewDrawer before it looks at PAGE_VIEWS, so those two are rebound here
 Object.assign(PAGE_VIEWS, { "branch/counter": viewBrCounter, "branch/drawer": viewBrDrawer, "branch/vault": viewBrVault, "branch/eod": viewBrEod });
-Object.assign(TH, { "Vault": "ห้องมั่นคง", "Teller": "พนักงาน", "Balanced": "ยอดตรง", "To count": "รอนับ",
+Object.assign(TH, { "Branch manager · Branch 0123": "ผู้จัดการสาขา · สาขา 0123", "Waiting for your approval": "รอการอนุมัติของคุณ", "A ฿650,000 withdrawal and a ฿2,150,000 cash deposit": "ถอนเงิน ฿650,000 และฝากเงินสด ฿2,150,000", "Drawers balanced; counter 3 still open": "ลิ้นชักยอดตรงแล้ว เคาน์เตอร์ 3 ยังเปิดอยู่", "Vault": "ห้องมั่นคง", "Teller": "พนักงาน", "Balanced": "ยอดตรง", "To count": "รอนับ",
   "Large cash deposits": "ฝากเงินสดจำนวนมาก", "Teller differences": "ผลต่างเงินสดพนักงาน", "Closing the branch day": "การปิดวันทำการสาขา" });

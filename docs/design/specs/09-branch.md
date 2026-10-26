@@ -19,7 +19,7 @@ The AMLO and BOT thresholds below are the prototype's reading and are *to confir
 | Role | May do |
 |---|---|
 | Teller (`teller`) | Deposits and withdrawals up to the `cash` authority ฿500,000; cash deposits up to ฿1,999,999 (`cashin`); suspect notes; vault top-up and sell-back with a second person; count the drawer; prepare the close |
-| Branch manager (`ops` in the prototype) | `cash` up to ฿2,000,000; `cashin` up to ฿10,000,000; approve differences up to ฿1,000 (`overshort`); sign off the branch day (`branchclose`) |
+| Branch manager (`manager` in the prototype, Rattikorn Boonsri) | `cash` up to ฿5,000,000; `cashin` up to ฿10,000,000; approve differences up to ฿1,000 (`overshort`); sign off the branch day (`branchclose`) |
 | Vault custodians (Wipa K. manager, Kanokwan S. assistant) | Each holds one key and half the combination; second person for vault movements and the vault count |
 | Regional manager, audit | Receive unexplained vault differences and repeated teller differences |
 
@@ -236,5 +236,5 @@ Vault arithmetic: opening ฿20,700,000 − floats to counters 1, 2 and 4 ฿2,1
 2. The structuring rule (3 deposits of ฿1.90m–฿1.98m in 14 days) belongs to compliance's rule set; confirm it and who receives the alert.
 3. Counterfeit notes: the BOT form and the police notification route.
 4. Teller shortage recovery after 7 days is an HR rule; confirm it can be in the console's wording.
-5. The prototype gives the branch manager's authorities to the `ops` role; production needs a distinct `branch-manager` role.
+5. The prototype now has a `manager` role for the branch manager's authorities; production maps it to a `branch-manager` role from the identity provider.
 6. Whether the generic counter withdrawal checks the live drawer: the prototype's `withdraw` flow checks the static noon total, not the running drawer.

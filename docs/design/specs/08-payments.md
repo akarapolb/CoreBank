@@ -244,4 +244,4 @@ The core today has no payment, rail or batch endpoints; `payments` contains only
 4. The prototype charges 53 items' fees regardless of exclusions; production should charge only items actually sent to other banks.
 5. Screening hold threshold (85) and the 4-hour decision target: compliance to set.
 6. ITMX dispute service: the message set and the 7-business-day answer period.
-7. The prototype's recall timeline shows the answer due 4 Nov; seven business days after Saturday 24 Oct is Tuesday 3 Nov unless a holiday intervenes. Confirm the counting rule.
+7. The recall answer is due seven business days after Saturday 24 Oct, Tuesday 3 Nov (the prototype now shows 3 Nov); confirm the counting rule with ITMX.

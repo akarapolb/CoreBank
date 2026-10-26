@@ -279,7 +279,7 @@ Also needed: MT300, MT399 and MT950 handling in payments-hub; the contingent / p
 4. GL codes for the FX position, revaluation and BAHTNET settlement accounts are not in the prototype.
 5. Should the spot deal dialog require the purpose and underlying evidence, as the forward does under the BOT FX rules?
 6. Should a confirmation mismatch past "Monday noon" raise an exception-centre item automatically, with an owner and a clock?
-7. The ALCO card's "above about +150bp" refers to EVE; NII breaks its limit near +107bp. Confirm which limit ALCO watches first and fix the wording.
+7. The ALCO card now says earnings break their limit first, near +107bp, and economic value near +161bp. Confirm which limit ALCO acts on first.
 
 ## Appendix A. Calculations
 
@@ -346,7 +346,7 @@ limits: NII% ≥ −5 and EVE% ≥ −15
 | +175bp | −฿0.672bn | −8.20% | −฿3.578bn | −16.26% | Outside (both) |
 | +200bp | −฿0.768bn | −9.37% | −฿4.089bn | −18.59% | Outside (both) |
 
-Note: at +150bp NII is already outside its −5% limit (it crosses near +107bp); the prototype's ALCO card says the EVE limit breaks "above about +150bp", which is right for EVE (it crosses near +161bp). The demo-script line "+200bp breaks both" is correct.
+Note: at +150bp NII is already outside its −5% limit (it crosses near +107bp); EVE crosses its −15% limit near +161bp. The prototype's ALCO card says so.
 
 ### A.3 FX forward
 

@@ -226,7 +226,7 @@ function lists() {
       [R("FCD-B2031"), t("Siam Freight Logistics"), "USD Deposit", "$412,880.00", "1.10%", P("good", "Active")]] },
     "lending/applications": { cols: ["Application", "Applicant", "Product", "Amount", "Score", "Decision"], rows: [
       [R("APP-30412"), "Thanakorn Ruang", t("Personal loan"), baht(150000), "702", P("good", "Approved")], [R("APP-30413"), "Napat Srisuk", "Car hire purchase", baht(890000), "655", P("info", "Needs documents")],
-      [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000), "—", P("warn", "Credit committee")], [R("APP-30415"), "Arthit Wong", t("Personal loan"), baht(80000), "541", P("crit", "Declined")]] },
+      [R("APP-30414"), "Korat Isuzu Co., Ltd.", "SME term loan", baht(12000000), "—", P(...comState())], [R("APP-30415"), "Arthit Wong", t("Personal loan"), baht(80000), "541", P("crit", "Declined")]] },
     "lending/loans": { cols: ["Loan", "Customer", "Product", "Outstanding", "Overdue", "Status"], rows: [
       [R("LN-A-C10"), t("Somchai Prasert"), t("Personal loan"), baht(LOAN.principalOut), baht(LOAN.overdue), lateP(LATE_DAYS)], [R("LN-A-C11"), t("Malee Wongsa"), t("Personal loan"), baht(MAL.principalOut), baht(MAL.due), lateP(MAL.dpd)],
       [R("LN-A-C13"), t("Pimchanok Rattana"), t("Personal loan"), baht(125000), "—", P("good", "Active")], [R("LN-77120"), t("Anan Chaiyo"), t("Home loan"), baht(HOME.bal), "—", P("good", "Active")], [R("MS-1"), t("Siam Freight Logistics"), t("Fleet schedule"), baht(67219.50), "—", P("good", "Active")],
@@ -237,7 +237,7 @@ function lists() {
     "lending/facilities": { cols: ["Facility", "Customer", "Limit", "In use", "Next review", "Covenants", "State"], rows: [
       [R("FAC-B2031"), t("Siam Freight Logistics"), baht(FAC.limit, 0), baht(facUsed(), 0), "30 Nov 2026", FAC.cov === "due" ? "Q3 test due" : FAC.cov === "breach" ? "DSCR breached" : "Met", facStop() ? P("crit", "Draw stop") : P("good", "Active")],
       [R("FAC-D0007"), t("Bangna Motors"), baht(8800000, 0), baht(6300000, 0), "3 Jun 2027", "Stock audit monthly", P("good", "Active")], [R("FAC-S1120"), "Siam Energy PCL", baht(3000000000, 0), baht(1800000000, 0), "15 Feb 2027", "Passed Q2", P("good", "Active")],
-      [R("FAC-K0414"), "Korat Isuzu Co., Ltd.", baht(12000000, 0), "—", "—", "—", P("warn", "Credit committee")]] },
+      [R("FAC-K0414"), "Korat Isuzu Co., Ltd.", baht(12000000, 0), comApproved() ? baht(kiTL(), 0) : "—", comApproved() ? "31 Mar 2027" : "—", comApproved() ? "DSCR ≥ 1.25×" : "—", comApproved() ? P("good", "Active") : P(...comState())]] },
     "lending/servicing": { cols: ["Request", "Loan", "Customer", "Asked for", "Channel", "State"], rows: [
       [R("SRV-26-1042"), R("LN-77120"), t("Anan Chaiyo"), "Rate review", "App", P("info", "New")], [R("SRV-26-1041"), R("LN-A-C11"), t("Malee Wongsa"), "Payment holiday", "Branch 0123", P("warn", "Credit officer")],
       [R("SRV-26-1039"), R("LN-A-C13"), t("Pimchanok Rattana"), "Due date to the 25th", "App", P("good", "Done")], [R("SRV-26-1036"), R("MS-1"), t("Siam Freight Logistics"), "Statement", "Email", P("good", "Done")],

@@ -60,6 +60,9 @@ const COM_COLL = [["Land, Mittraphap Road, Nakhon Ratchasima (title deed 23810)"
 const comCover = () => { const lv = COM_COLL.reduce((a, c) => a + c[2] * c[3], 0), tcg = LOAN_COM.amount * 0.5; return { lv, tcg, total: lv + tcg, pct: (lv + tcg) / LOAN_COM.amount * 100 }; };
 const COM_TRANCHES = [["Land preparation and foundations", "ปรับพื้นที่และฐานราก", 30], ["Structure and roof", "โครงสร้างและหลังคา", 30], ["Systems, fit-out and workshop", "งานระบบ ตกแต่ง และศูนย์บริการ", 25], ["Completion and occupancy permit", "แล้วเสร็จและใบอนุญาตใช้อาคาร", 15]];
 const comSent = () => COM.submitted || comApproved();
+// the committee votes only on a paper that was sent to it
+CC.items.find((x) => x.id === "APP-30414").needs = () => COM.submitted;
+const comState = () => (comApproved() ? ["good", "Approved"] : comSent() ? ["warn", "Credit committee"] : ["info", "Analysis"]);
 const comApproved = () => { const it = CC.items.find((x) => x.id === "APP-30414"); return !!(it && it.state && it.state.tone === "good"); };
 
 function viewCom() {
@@ -151,5 +154,5 @@ Object.assign(RECS, {
   "APP-30414": { sys: "lending", sec: "credit", label: "APP-30414", kind: "Commercial credit application", match: ["APP-30414"], view: () => viewCom(),
     tabs: [["request", "Request"], ["financials", "Financials"], ["capacity", "Repayment capacity"], ["security", "Security"], ["rating", "Rating and pricing"], ["terms", "Term sheet"], ["memo", "Credit memo"], ["drawdowns", "Drawdowns", 4]] },
 });
-Object.assign(TH, { "Commercial credit application": "ใบสมัครสินเชื่อธุรกิจ", "Financials": "งบการเงิน", "Repayment capacity": "ความสามารถชำระหนี้", "Rating and pricing": "ระดับความเสี่ยงและราคา", "Term sheet": "สรุปเงื่อนไข",
+Object.assign(TH, { "Analysis": "กำลังวิเคราะห์", "Commercial credit application": "ใบสมัครสินเชื่อธุรกิจ", "Financials": "งบการเงิน", "Repayment capacity": "ความสามารถชำระหนี้", "Rating and pricing": "ระดับความเสี่ยงและราคา", "Term sheet": "สรุปเงื่อนไข",
   "Year": "ปี", "Cash for debt service": "เงินสดสำหรับชำระหนี้", "Debt service": "ภาระชำระหนี้", "DSCR base": "DSCR กรณีฐาน", "Cash, stressed": "เงินสด ภาวะวิกฤต", "DSCR stressed": "DSCR ภาวะวิกฤต", "Basis": "ที่มา" });
