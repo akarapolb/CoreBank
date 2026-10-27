@@ -1,2 +1,3 @@
 # built by build-offline.py before a meeting
 offline/
+.run-*.html

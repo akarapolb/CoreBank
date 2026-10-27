@@ -1,0 +1,5 @@
+(function(){ finishSignin(); lang="en"; const names=["Somchai Prasert","Malee Wongsa","Kittipong Siri","Anan Chaiyo","Pimchanok Rattana","Siam Freight Logistics","Napat Srisuk","Weerapong Chaisiri","Pornthip Saelee","Arthit Wong","Suda Panya","Chalida Boonmee","Bangna Motors","Thanakorn Ruang","Korat Isuzu Co., Ltd.","Siam Energy PCL","Prapai Somsri","Kittisak","Nattaya"];
+const L=lists(), map={}, strip=(h)=>String(h).replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+for (const [key,spec] of Object.entries(L)) for (const row of spec.rows) { const cells=row.map(strip), id=(cells[0].match(/[A-Z]{1,4}-[A-Z0-9-]+|\b\d{4}\b/)||[])[0]; if(!id) continue; const who=names.filter(n=>cells.join(" | ").includes(n)); for (const w of who) { (map[id]=map[id]||{})[w]=(map[id][w]||[]).concat(key);} }
+const out=Object.entries(map).filter(([id,w])=>Object.keys(w).length>1).map(([id,w])=>id+": "+Object.entries(w).map(([n,ks])=>n+" ("+[...new Set(ks)].join(",")+")").join(" vs "));
+const pre=document.createElement("pre"); pre.id="x"; pre.textContent=(out.join("\n")||"no conflicts")+"\nids checked "+Object.keys(map).length; document.body.appendChild(pre); })();

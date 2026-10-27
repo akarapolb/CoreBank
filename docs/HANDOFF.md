@@ -1,10 +1,12 @@
 # Handoff for the next session
 
-Read this first, then [`phase1-status.md`](phase1-status.md), [`07-roadmap.md`](07-roadmap.md), the [UX foundation](design/ux-foundation.md) and the [console prototype](design/console-prototype/README.md).
+State as of 27 Oct 2026. Read this first, then [`phase1-status.md`](phase1-status.md), [`07-roadmap.md`](07-roadmap.md), the [UX foundation](design/ux-foundation.md), the [console prototype](design/console-prototype/README.md) and the [engineering specs](design/specs/README.md).
+
+**The short version.** The backend through Phase 2 and a first slice of the React console exist. Since then the session built the clickable console prototype to cover every system in depth, wrote an engineering spec for each area (screens, fields, actions, approvals, configurable values, acceptance criteria, core calls), and fixed the prototype where the specs found problems. The prototype and specs are finished and consistent; **the production console and the backend behind it are mostly not started**. `docs/design/specs/backlog.md` is the plan for that, in twelve slices.
 
 ## What this is
 
-Fabor OS: an AI-native core banking platform (retail, commercial and virtual banks; any loan product including leasing and hire purchase). Java 21, Maven multi-module, Spring Boot 3.5.6, PostgreSQL 16, plain JDBC with Flyway. Front end: the classic static console, a React console in `web/` (ADR-0011), and a clickable design prototype in `docs/design/console-prototype/`. Branch `claude/stoic-lamport-l78s32` on GitHub `akarapolb/CoreBank`. No pull request has been opened; do not open one unless asked.
+Fabor OS: an AI-native core banking platform (retail, commercial and virtual banks; any loan product including leasing and hire purchase). Java 21, Maven multi-module, Spring Boot 3.5.6, PostgreSQL 16, plain JDBC with Flyway. Front end: the classic static console, a React console in `web/` (ADR-0011), and a clickable design prototype in `docs/design/console-prototype/`. Branch `claude/stoic-lamport-l78s32` on GitHub `akarapolb/CoreBank`. This is the repository's only branch and its default (`origin/HEAD`): there is no branch named `main`, so "push to main" means pushing this branch. No pull request has been opened; do not open one unless asked.
 
 ## Where things stand
 
@@ -23,7 +25,7 @@ The detail of each item, and what each one still lacks, is in the git history an
 
 **React console** (`web/`, served at `/console-next/`): milestone 1 done. Sign-in (token mode), Home, Loans list and detail, the Collections queue and Floor plan lines, all through a three-step action dialog. It has 16 unit tests and passes typecheck. It was checked by hand against the demo app, and from the jar with the strict CSP.
 
-**Design prototype** (`docs/design/console-prototype/`, committed in `3ef95fa`): the agreed target design for the whole console. It is a clickable page with sample data covering 19 systems; the main pieces are:
+**Design prototype** (`docs/design/console-prototype/`): the agreed target design for the whole console. It is a clickable page with sample data covering 19 systems (23 scripts, 54 record pages, 123 actions, 7 roles, 3 demo tenants); the main pieces are:
 
 - the shell: a system rail and switcher with a short sidebar per system, tenants and roles, pinning, search, and Thai and English with Buddhist-year dates;
 - record pages, and every action as enter, review and confirm, with an authority check per role;
@@ -52,9 +54,15 @@ Lending goes deeper than the other systems (`js/lending.js`):
 - Deposits in depth (`js/deposits.js`): legal orders (LED, AMLO, police) under maker-checker, dormant accounts and the dormant fee, term deposit maturities with withholding tax, and the statement run. TD-88102 moved from Malee to a new customer, since Malee is in hardship. Legal and tax points are to confirm with counsel;
 - Collections in depth (`js/collections.js`): strategy by bucket, contact rules the console enforces, the collector's case LN-A-C11 with hardship and restructuring, the legal and write-off case LN-A-C14, and the repossession R-A4 through auction. The restructured-loan cure rule now reads 3 consecutive months or 3 instalments, whichever is longer, everywhere. The Thai collection and restructuring rules are the prototype's reading, to confirm with counsel.
 
-These screens add four authority actions (servicing, fee waivers, drawdowns, covenant waivers) that the backend authority check will need.
+The prototype's authority matrix (23 action keys by 7 roles, in `docs/design/specs/prototype-inventory.md`) is what the backend authority check will need. Credit approval levels have one source: the credit policy's levels (`LEVELS` in `underwriting.js`), and above the officer's limit the approver is named by amount (head of retail credit to ฿10m, then the committee).
 
-It is published privately at https://claude.ai/artifact/TV87zHeb7PuDxkSDe2YnUy (sharing is set from the page). `demo-script.md` is the meeting script. `build-offline.py` writes a single offline file (the output is git-ignored).
+**Where it is published (both private; sharing is set from the artifact's Share menu):**
+- the prototype: https://claude.ai/artifact/TV87zHeb7PuDxkSDe2YnUy (republish with the Artifact tool, `root` set to `docs/design/console-prototype`, `files` listing every changed `js/` file);
+- a ten-slide client deck in the console's look, with speaker notes: https://claude.ai/artifact/QdjvBuokzY5tQ2cJPWHVeB. Its placeholders, still to fill before a meeting: client name, presenter and date on the cover; the pilot scope and the baseline-times date on the last slide. Its slide 7 promises that every regulatory reading is marked "to confirm". The deck's files lived in a session scratch folder, not in the repo; read them back from the artifact if they are needed.
+
+`demo-script.md` is the meeting script (46 steps in nine chapters, with "more to show" lines for what is off the route). `build-offline.py` writes a single offline file (the output is git-ignored).
+
+**Testing the prototype.** `node docs/design/console-prototype/tools/run-tests.mjs` runs seven suites in headless Edge (set `EDGE` if it is not at the default path): `main` (569 steps), `payments` (59), `treasury` (54), `leasing` (80), `syndication` (72), `branch` (74) and `walk`, which runs every presenter step (46). Each suite is a script in `tools/tests/` appended after `shell.js`; it opens every record tab in English and Thai, runs every action through review to done, and fails on `undefined`, `NaN` or `[object Object]` in the page. `tools/tests/consistency.js` (not in the runner) lists any record that two lists show with different customers. Add a suite or steps when you add a screen. `tools/core-api-inventory.mjs` and `tools/prototype-inventory.mjs` regenerate the two inventories in `docs/design/specs/`; `tools/application-fields.mjs` and `tools/account-opening-fields.mjs` regenerate the two field dictionaries.
 
 ## Standing instructions from the user
 
@@ -63,7 +71,8 @@ It is published privately at https://claude.ai/artifact/TV87zHeb7PuDxkSDe2YnUy (
 - The rule that the console copies `prototype/index.html` exactly **is lifted**. The design is now the console prototype above plus the UX foundation; departures from it are recorded there.
 - Token mode (`ui-smoke-token-123456`) is for development only.
 - Rule-pack values (rate caps, rebate tiers, termination) are configuration to confirm with counsel. PD and LGD come from the bank.
-- Confirm scope with the user before starting something large. The last answer was **"Not now"** to starting milestone 2 of the React console.
+- Confirm scope with the user before starting something large. The user has so far chosen, in order: deep prototype areas, then engineering specs, then the prototype fixes the specs found. **Starting the production React console has not been approved** ("Not now" to milestone 2 earlier, and not raised since). Ask which slice of `backlog.md` to start with.
+- The user pushes only on request, and asks for it by name ("Push the branch claude/stoic-lamport-l78s32 to origin"). Do not push unprompted.
 
 ## Run it (this Windows machine)
 
@@ -82,7 +91,7 @@ Demo app: `SPRING_PROFILES_ACTIVE=demo FABOR_AUTH_MODE=token FABOR_API_TOKEN=ui-
 
 React console in development: `pnpm --dir web install`, `pnpm --dir web dev` (port 5180, forwards `/api` to 18080), `node web/scripts/seed-demo.mjs` for realistic data. Checks: `pnpm --dir web typecheck`, `pnpm --dir web test`, `pnpm --dir web build` (the next Maven build packs the dist into the jar). After API changes: `FABOR_API=http://localhost:18080 pnpm --dir web api:gen`.
 
-Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts from Google Fonts). The browser pane in the desktop app shows local files as static snapshots without their scripts, so to check the prototype use headless Edge (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe --headless=new --screenshot=... --window-size=1440,900 <file url>`, or `--dump-dom` with a test script appended). That is how it was tested.
+Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts from Google Fonts), or run `PYTHONIOENCODING=utf-8 python docs/design/console-prototype/build-offline.py` and open `offline/fabor-console.html`. In the desktop app, `preview_start` with the `prototype` entry in `.claude/launch.json` serves `offline/` on port 5190 (rebuild the offline file first; after `go(...)` calls in the page's console use `finishSignin()` to get past sign-in). Tests: `node docs/design/console-prototype/tools/run-tests.mjs` (headless Edge).
 
 ## Layout
 
@@ -97,7 +106,8 @@ Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts f
 | `agent-gateway` | MCP gateway for AI agents |
 | `fabor-app` | Spring Boot app: controllers, `SecurityConfig` (strict CSP on `/console-next`), `Lifecycle`, static consoles |
 | `web/` | React console (`apps/console`), design system (`packages/ui`), typed API client (`packages/api`) |
-| `docs/design/` | UX foundation, console prototype, earlier design and engineering-plan pages |
+| `docs/design/` | UX foundation, console prototype (`console-prototype/`: scripts in `js/`, tests and generators in `tools/`), earlier design and engineering-plan pages |
+| `docs/design/specs/` | Engineering specs for the production console: one per area, generated inventories, and `backlog.md` |
 | `plan/plan.json`, `docs/14-engineering-plan.md` | The plan |
 
 ## Things that will bite you
@@ -106,23 +116,46 @@ Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts f
 - **Maven offline:** new dependencies need one online `mvn dependency:resolve -pl <module>`. The app compiles against installed module jars, so install a changed module (often `lending`) before `fabor-app`.
 - **OpenAPI:** request records must have unique simple names (two `SaleRequest`s once gave the client the wrong body); `FaborAppTest` now fails on a clash. `openapi-typescript` needs TypeScript 5.9 (pinned; 7 breaks it) and `--properties-required-by-default`; nullable fields are marked in `apps/console/src/lib/api.ts`.
 - **Front end:** the React console runs under a strict CSP with no inline styles; use classes from `@fabor/ui`. Port 5173 is taken on this machine; the dev server uses 5180. Editing a package during `pnpm dev` reloads the page and closes an open dialog.
-- **Prototype:** its scripts are classic scripts sharing one global scope, so their order in `index.html` matters. Rebuild the offline file after any change.
+- **Prototype:**
+  - Its scripts are classic scripts sharing one global scope, so their order in `index.html` and `build-offline.py` matters (`shell.js` last; add a new file to both). Rebuild the offline file after any change.
+  - New areas should register themselves rather than edit shared files: `RECS`, `FLOWS`, `TH`, `ACTIONS` and `AUTH`, `EXTRA_LISTS.push(() => ({...}))` for list sections, `PAGE_VIEWS["system/section"]` for full pages (the router checks `PAGE_VIEWS` first), and `sysById.<system>.sections` for new sections. `js/payments.js` and `js/branch.js` are good models.
+  - **Thai labels clash silently.** `TH` is one dictionary shared by every file, so a duplicate key overrides an earlier translation everywhere ("Note" was once "banknote"). Before adding keys, search for the key in `js/*.js`; reuse the existing one when the meaning matches, rename your label when it does not. A column named "Credit says" or "Limit" is right-aligned as money (`NUMERIC` in `views.js`); rename it if it holds text.
+  - The page is a fragment with no `<html>` or charset: headless Edge reads it as Latin-1 unless a charset is added (the runners do this), and the preview server serves `offline/fabor-console.html`, which declares UTF-8.
+  - Headless Edge can hang on a test that loops until a button disappears; the test runner has a timeout, but stop a stuck `msedge` by hand. The Browser pane's preview server stops between turns: start it again with `preview_start` (`prototype` in `.claude/launch.json`, port 5190, serving `offline/`).
+  - The business date is Saturday 24 Oct 2026 everywhere (BAHTNET and bulk files closed, payday on Sunday, 23 Oct a Thai holiday); change it in `core.js` and expect dates in several screens and the demo script to follow.
 - **Vehicle hire purchase in Thailand** may not be quoted flat (Contract Committee notification from 10 January 2023; BOT supervision since Notification 55/2568). Vehicle products use `ANNUITY` plus the rule pack; flat rate suits non-vehicle hire purchase. The primary texts were not read; confirm with counsel.
 - A stale app holding the database makes `drop database` fail silently. `pkill -f` can kill your own shell; use pid files.
 
-**Engineering specs** (`docs/design/specs/`): one spec per area (00 cross-cutting, 01–11) describing screens, fields, actions with their rules and approvals, configurable values and acceptance criteria, each action mapped to an existing core endpoint or marked **New**; generated inventories of the core API and of the prototype; and `backlog.md`, which groups every New item into twelve slices, lists nine decisions where the prototype and the core disagree, and twelve fixes to make in the prototype. Use them as the backlog for the production console; the slices replace the order below where they conflict.
+## Engineering specs (`docs/design/specs/`)
+
+Start with its [README](design/specs/README.md): the ten-section template every spec follows (scope and users, screens, fields, actions, states, postings, configurable values, acceptance criteria, gaps against the core, open questions) and the conventions.
+
+| File | What |
+|---|---|
+| `00-cross-cutting.md` | What every screen shares: roles and authority, the three-step action dialog, maker-checker, dual control, history, search, approvals inbox, exception centre, Copilot and agent actions |
+| `01` to `11` | Onboarding; retail lending; business banking; trade and syndication; collections; leasing and auto finance; deposits; payments; branch; treasury; finance and control |
+| `core-api-inventory.md`, `prototype-inventory.md` | Generated: the 101 endpoints the core has today, and the prototype's records, actions and authority matrix |
+| `backlog.md` | Every **New** core call and module in twelve delivery slices; nine decisions where the prototype and the core disagree; the twelve prototype fixes (done) |
+
+What the specs found, in short:
+- The core has about 100 endpoints, mostly retail lending, collections, leases, floor plan, dealers and products. It has **no amount-based authority check, approvals queue, record history, search or Workbench feed**: those are slice 0 and everything else leans on them.
+- Trade finance, syndication, payments rails, branch cash, legal orders, term deposits, treasury and regulatory reporting need **new modules**.
+- Nine places where the prototype's agreed behaviour changes what the core already does (D1 to D9 in `backlog.md`): write-off against the allowance, the settlement quote's extra lines, restructuring as an offer the customer accepts, repossession shortfall kept owed, dealer payment net of subsidy, operating-lease end, the rebate's interest base, the loss-allowance run as a draft with scenarios and overlays, and splitting the loan application's decide-and-disburse call. **Each needs an owner's decision before work starts.**
+- The agents wrote the specs by reading the prototype's source and the controllers and domain modules. Figures in the specs were recomputed from the prototype's code. Nothing in the specs has been compiled or run against the core.
 
 ## Next steps (recommended order; confirm with the user first)
 
-1. **React console milestone 2: the shell.** Port the prototype's frame into `web/`:
+1. **Decide D1 to D9** in `backlog.md` and the open questions at the end of each spec (identity provider and role claims, approval expiry, whether agents may execute within authority in the first release). Quick for the user to answer; blocks most of the backend work.
+2. **Slice 0: foundations** (`backlog.md`): amount limits per role and action with an authority-check endpoint, one approvals service, record history over the existing `AuditLog`, search, the Workbench feed, the exception centre, a Thai holiday calendar, manual journals with maker-checker, and the missing roles. The React console's authority check in the action dialog depends on this.
+3. **React console milestone 2: the shell.** Port the prototype's frame into `web/`:
    - the system rail and switcher, the per-system sidebar, the tenant and role menus, ⌘K search;
    - Thai and English with Buddhist-year dates, light, dark and compact.
 
    Then one record-page component (the figures strip, tabs and History) used for LN-A-C10, then leases, the floor plan and customers.
-2. **Authority check in the action dialog.** It needs a backend piece: a limits table per role and action, and an endpoint the review step calls (the prototype's `AUTH` table in `js/data.js` is the starting shape).
-3. **Customers and Asset finance in React** against the live API (milestone 2 as planned in the UX foundation).
-4. **Backend for screens the prototype added:** the exception centre (unify reconciliation breaks, dead letters, integration errors), held payments with sanctions screening, the month-end close checklist, AML alerts and cases.
-5. **Still open:**
+4. **Slices 1 to 3 (retail)** where the core already has most of the pieces: opening accounts, retail lending from application to payout, servicing and collections. Then the rest in `backlog.md` order; trade and syndication last.
+5. **For a client meeting:** tailor the prototype and deck to a named client (brand in Admin → Branding, products and limits in the credit policy, a 15 to 20 step route from the 46, the deck's placeholders). Not started; needs the client's name or a stand-in profile.
+6. **A rules review pack for counsel:** one document listing every rule the prototype marks "to confirm" (BOT, AMLO, PDPA, OCPB, TFRS 9 and 16, UCP 600, URDG 758) with where it applies and the value used. Not started; the deck's slide 7 promises it.
+7. **Still open:**
    - CI has never run, not even the `web` job;
    - Playwright and axe checks; OIDC sign-in in the React console;
    - the Phase 2 leftovers in `plan/plan.json` (lease payments in advance and VAT on rentals, the ECL significant-increase test, wiring the GL projection into the app, and e-Tax behind the `Invoicing` sink).
@@ -130,3 +163,10 @@ Prototype: open `docs/design/console-prototype/index.html` in a browser (fonts f
 ## Not verified anywhere (be honest about it)
 
 GitHub workflows have never run. The Oracle stores have never executed. The Docker image has never been built. No real Keycloak, OpenBao, eKYC provider, credit bureau, sanctions list or PromptPay rail has been used. There are no ML models and no LLM behind Copilot (the prototype's answers are written in). There are no native apps, no scale test and no penetration test. The prototype's figures are sample data computed to agree with each other, not output from the core. Rule-pack values are configuration to confirm with counsel and the regulator.
+
+Specific to the prototype and specs from this session:
+- The prototype was tested only in headless Edge (the suites above) and looked at in the Browser pane. It was **not tried in Chrome, Safari or on a phone**. The narrow-width layout pass (861 to 1180px) was done before payments, treasury, auto finance, syndication, the branch screens, business banking and trade existed; **those screens' narrow layouts have not been checked**.
+- The deck was published but never viewed after rendering, by me; check it in the viewer.
+- Every regulatory and market-convention reading in the prototype and specs (BOT, AMLO, PDPA, OCPB, TFRS 9 and 16, UCP 600, URDG 758, LMA clauses, THOR, LCR, the OCPB rate cap and rebate tiers, calling hours, cash reporting thresholds) is **the prototype's reading, not confirmed with counsel**. The primary texts were not read. The LCR level 2 caps are known to be simplified.
+- The specs' mapping of actions to core endpoints comes from reading controllers and domain modules; no call was made against a running core.
+- One simplification the specs flag is left in the prototype: syndication's commitment fee is charged on the full undrawn amount for the whole quarter and ignores the ฿460m drawn from 25 Sep (see spec 04).
